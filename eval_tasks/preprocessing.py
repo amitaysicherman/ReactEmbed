@@ -1,0 +1,150 @@
+# sbatch --time=1-0 --array=1-21 --gres=gpu:A40:1 --mem=64G -c 4 --requeue --wrap="python3 GO/preprocessing.py --task_index $SLURM_ARRAY_TASK_ID-1"
+import os
+from os.path import join as pjoin
+
+import numpy as np
+from torchdrug.data import ordered_scaffold_split
+from torchdrug.transforms import ProteinView
+from tqdm import tqdm
+
+from common.data_types import MOLECULE, PROTEIN
+from common.path_manager import data_path
+from eval_tasks.models import DataType
+from eval_tasks.tasks import Task, PrepType
+from preprocessing.seq_to_vec import Seq2Vec
+
+base_dir = f"{data_path}/torchdrug/"
+os.makedirs(base_dir, exist_ok=True)
+SIDER_LABELS = ['Hepatobiliary disorders',
+                'Metabolism and nutrition disorders',
+                'Product issues',
+                'Eye disorders',
+                'Investigations',
+                'Musculoskeletal and connective tissue disorders',
+                'Gastrointestinal disorders',
+                'Social circumstances',
+                'Immune system disorders',
+                'Reproductive system and breast disorders',
+                'Neoplasms benign, malignant and unspecified (incl cysts and polyps)',
+                'General disorders and administration site conditions',
+                'Endocrine disorders',
+                'Surgical and medical procedures',
+                'Vascular disorders',
+                'Blood and lymphatic system disorders',
+                'Skin and subcutaneous tissue disorders',
+                'Congenital, familial and genetic disorders',
+                'Infections and infestations',
+                'Respiratory, thoracic and mediastinal disorders',
+                'Psychiatric disorders',
+                'Renal and urinary disorders',
+                'Pregnancy, puerperium and perinatal conditions',
+                'Ear and labyrinth disorders',
+                'Cardiac disorders',
+                'Nervous system disorders',
+                'Injury, poisoning and procedural complications']
+
+
+def get_vec(seq2vec, x, dtype):
+    try:
+        if dtype == DataType.MOLECULE:
+            return seq2vec.to_vec(x.to_smiles(), MOLECULE)
+        elif dtype == DataType.PROTEIN:
+            return seq2vec.to_vec(x.to_sequence().replace(".G", ""), PROTEIN)
+        else:
+            raise Exception("dtype", dtype)
+    except Exception as e:
+        print(e)
+        return None
+
+
+def prep_dataset(task: Task, seq2vec, protein_emd, mol_emd):
+    output_file = pjoin(base_dir, f"{task.name}_{protein_emd}_{mol_emd}.npz")
+
+    if os.path.exists(output_file):
+        return
+
+    if task.prep_type == PrepType.drugtarget:
+        input_file = os.path.join(data_path, f"{task.name}.txt")
+        if not os.path.exists(input_file):
+            os.system(
+                f"wget https://github.com/zhaoqichang/HpyerAttentionDTI/raw/main/data/{task.name}.txt -O {input_file}")
+
+        with open(input_file) as f:
+            lines = f.read().splitlines()
+        proteins = []
+        molecules = []
+        labels = []
+        for line in tqdm(lines):
+            _, _, smiles, fasta, label = line.split(" ")
+            proteins.append(seq2vec.to_vec(fasta, PROTEIN))
+            molecules.append(seq2vec.to_vec(smiles, MOLECULE))
+            labels.append(label)
+        np.savez(output_file, x1=np.array(proteins)[:, 0, :], x2=np.array(molecules)[:, 0, :], label=np.array(labels))
+        return
+
+    if task.dtype1 == DataType.PROTEIN:
+        if task.dtype2 is None:
+            keys = ["graph"]
+        elif task.dtype2 == DataType.MOLECULE:
+            keys = ["graph1"]
+        else:
+            keys = ["graph1", "graph2"]
+
+        args = dict(transform=ProteinView(view="residue", keys=keys),
+                    atom_feature=None, bond_feature=None)
+    else:
+        args = dict()
+    dataset = task.dataset(pjoin(base_dir, task.name), **args)
+    labels_keys = getattr(task.dataset, 'target_fields')
+    if task.name == "SIDER":
+        labels_keys = SIDER_LABELS
+    if hasattr(task.dataset, "splits"):
+        splits = dataset.split()
+        if len(splits) == 3:
+            train, valid, test = splits
+        elif len(splits) > 3:
+            train, valid, test, *unused_test = splits
+        else:
+            raise Exception("splits", getattr(task.dataset, "splits"))
+
+    else:
+        train, valid, test = ordered_scaffold_split(dataset, None)
+    x1_all = dict()
+    x2_all = dict()
+    labels_all = dict()
+    for split, name in zip([train, valid, test], ["train", "valid", "test"]):
+        x1_vecs = []
+        x2_vecs = []
+        labels = []
+        for i in tqdm(range(len(split))):
+            key1 = "graph" if task.dtype2 is None else "graph1"
+            new_vec = get_vec(seq2vec, split[i][key1], task.dtype1)
+            if new_vec is None:
+                continue
+            if task.dtype2 is not None:
+                new_vec_2 = get_vec(seq2vec, split[i]["graph2"], task.dtype2)
+                if new_vec_2 is None:
+                    continue
+                x2_vecs.append(new_vec_2)
+            x1_vecs.append(new_vec)
+
+            label = [split[i][key] for key in labels_keys]
+            labels.append(label)
+        x2_vecs = np.array(x2_vecs)
+
+        x1_all[f'x1_{name}'] = np.array(x1_vecs)[:, 0, :]
+        if len(x2_vecs):
+            x2_all[f'x2_{name}'] = np.array(x2_vecs)[:, 0, :]
+        labels_all[f'label_{name}'] = np.array(labels)
+    if len(x2_all):
+        np.savez(output_file, **x1_all, **x2_all, **labels_all)
+    else:
+        np.savez(output_file, **x1_all, **labels_all)
+
+
+if __name__ == "__main__":
+    from common.args_manager import get_args
+
+    args = get_args()
+    seq2vec = Seq2Vec(args.auth_token, protein_name=args.protein_embedding, mol_name=args.molecule_embedding)
+    prep_dataset(args.task_name, seq2vec, args.protein_embedding, args.molecule_embedding)
