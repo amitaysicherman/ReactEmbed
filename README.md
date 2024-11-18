@@ -13,14 +13,14 @@ Follow these steps to set up the project environment and build the package:
 
    Using conda:
    ```bash
-   conda create -n myenv python=3.8
-   conda activate myenv
+   conda create -n reactembed python=3.8
+   conda activate reactembed
    ```
 
    Or using venv:
    ```bash
-   python3.8 -m venv myenv
-   source myenv/bin/activate  # On Windows, use myenv\Scripts\activate
+   python3.8 -m venv reactembed
+   source reactembed/bin/activate  # On Windows, use reactembed\Scripts\activate
    ```
 
 2. Install requirements
