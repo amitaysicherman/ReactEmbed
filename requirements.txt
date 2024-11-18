@@ -1,6 +1,6 @@
 huggingface_hub==0.21.4
 npy_append_array==0.9.16
-numpy==2.0.1
+numpy
 pandas==2.2.2
 pybiopax==0.1.4
 Requests==2.32.3
