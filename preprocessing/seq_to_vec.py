@@ -19,11 +19,11 @@ name_to_hf_cp = {
 
 
 def esm3_embed(seq: str, size="m"):
-    if size == "s":
+    if size == "small":
         name = "esm3-small-2024-08"
-    elif size == "m":
+    elif size == "medium":
         name = "esm3-medium-multimer-2024-09"
-    elif size == "l":
+    elif size == "large":
         name = "esm3-large-2024-03"
     else:
         raise ValueError(f"Unknown size: {size}")
