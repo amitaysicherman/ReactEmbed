@@ -28,16 +28,18 @@ def esm3_embed(seq: str, size="m"):
     else:
         raise ValueError(f"Unknown size: {size}")
     model = client(name, token="3hn8PHelb0F4FdWgrLxXKR")
+    vec = None
     for _ in range(2):
         try:
             protein = ESMProtein(sequence=seq)
             protein = model.encode(protein)
             conf = LogitsConfig(return_embeddings=True, sequence=True)
             vec = model.logits(protein, conf).embeddings[0]
+            vec = vec.mean(dim=0).numpy().flatten()
             break
         except Exception as e:
             time.sleep(60)
-    return vec.mean(dim=0).numpy().flatten()
+    return vec
 
 
 class PortBert:
