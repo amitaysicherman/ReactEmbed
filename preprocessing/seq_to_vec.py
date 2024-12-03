@@ -45,7 +45,7 @@ class PortBert:
         self.tokenizer = BertTokenizer.from_pretrained("Rostlab/prot_bert", do_lower_case=False)
         self.model = BertModel.from_pretrained("Rostlab/prot_bert").to(device).eval()
 
-    def to_seq(self, seq: str):
+    def to_vec(self, seq: str):
         if len(seq) > 1023:
             seq = seq[:1023]
         seq = [" ".join(list(re.sub(r"[UZOB]", "X", seq)))]
