@@ -4,7 +4,6 @@ import xml.etree.ElementTree as ET
 
 import pybiopax
 import requests
-from pybiopax.biopax import BiochemicalReaction
 from tqdm import tqdm
 
 from common.path_manager import data_path, reactions_file, proteins_file, molecules_file
@@ -46,11 +45,7 @@ def get_sequence(identifier, db_name):
     default_seq = ""
 
     db_handlers = {
-        "ensembl": lambda id: get_req(
-            f"https://rest.ensembl.org/sequence/id/{id}?content-type=text/plain;species=human"),
-        "embl": lambda id: from_second_line(get_req(f"https://www.ebi.ac.uk/ena/browser/api/fasta/{id}")),
         "uniprot": lambda id: from_second_line(get_req(f"https://www.uniprot.org/uniprot/{id}.fasta")),
-        "uniprot isoform": lambda id: from_second_line(get_req(f"https://www.uniprot.org/uniprot/{id}.fasta")),
         "chebi": lambda id: get_smiles_from_chebi(id, default_seq),
         "guide to pharmacology": lambda id: get_req(
             f"https://www.guidetopharmacology.org/services/ligands/{id}/structure", to_json=True).get("smiles",
@@ -71,7 +66,7 @@ MOLECULE = "molecule"
 
 
 def db_to_type(db_name):
-    proteins_data_bases = ["embl", "ensembl", "uniprot", "uniprot isoform"]
+    proteins_data_bases = ["uniprot"]
     molecules_data_bases = ["chebi", "pubchem compound", "guide to pharmacology"]
     db_name = db_name.lower()
     if db_name in proteins_data_bases:
@@ -125,14 +120,15 @@ def elements_to_prot_mols(elements, proteins_to_id, molecules_to_id):
     molecules = []
     for db, db_id in elements:
         type_ = db_to_type(db)
+        key = (db, db_id)
         if type_ == PROTEIN:
-            if db_id not in proteins_to_id:
-                proteins_to_id[(db, db_id)] = len(proteins_to_id)
-            proteins.append(proteins_to_id[(db, db_id)])
+            if key not in proteins_to_id:
+                proteins_to_id[key] = len(proteins_to_id)
+            proteins.append(proteins_to_id[key])
         elif type_ == MOLECULE:
-            if db_id not in molecules_to_id:
-                molecules_to_id[(db, db_id)] = len(molecules_to_id)
-            molecules.append(molecules_to_id[(db, db_id)])
+            if key not in molecules_to_id:
+                molecules_to_id[key] = len(molecules_to_id)
+            molecules.append(molecules_to_id[key])
     return proteins, molecules
 
 
@@ -172,10 +168,10 @@ def main():
         f.write("\n".join(reactions))
     with open(proteins_file, "w") as f:
         for k, v in proteins_to_id.items():
-            f.write(f'{k[0]} {k[1]} {v}\n')
+            f.write(f'{k[0]},{k[1]},{v}\n')
     with open(molecules_file, "w") as f:
         for k, v in molecules_to_id.items():
-            f.write(f'{k[0]} {k[1]} {v}\n')
+            f.write(f'{k[0]},{k[1]},{v}\n')
     save_all_sequences(proteins_to_id, proteins_file.replace(".txt", "_sequences.txt"))
     save_all_sequences(molecules_to_id, molecules_file.replace(".txt", "_sequences.txt"))
 
