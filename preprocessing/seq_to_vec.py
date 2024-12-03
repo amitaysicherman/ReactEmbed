@@ -43,7 +43,7 @@ def esm3_embed(seq: str, size="m"):
 class PortBert:
     def __init__(self):
         self.tokenizer = BertTokenizer.from_pretrained("Rostlab/prot_bert", do_lower_case=False)
-        self.model = BertModel.from_pretrained("Rostlab/prot_bert")
+        self.model = BertModel.from_pretrained("Rostlab/prot_bert").to(device).eval()
 
     def to_seq(self, seq: str):
         if len(seq) > 1023:
@@ -63,12 +63,13 @@ class MoLFormer:
     def __init__(self):
         self.tokenizer = AutoTokenizer.from_pretrained("ibm/MoLFormer-XL-both-10pct", trust_remote_code=True)
         self.model = AutoModel.from_pretrained("ibm/MoLFormer-XL-both-10pct", deterministic_eval=True,
-                                               trust_remote_code=True)
+                                               trust_remote_code=True).to(device).eval()
 
     def to_vec(self, seq: str):
         if len(seq) > 510:
             seq = seq[:510]
-        inputs = self.tokenizer([seq], return_tensors='pt')["input_ids"].to(device)
+        inputs = self.tokenizer([seq], return_tensors='pt')  # ["input_ids"].to(device)
+        inputs = {k: v.to(device) for k, v in inputs.items()}
         with torch.no_grad():
             outputs = self.model(**inputs)
         vec = outputs.pooler_output
@@ -78,14 +79,15 @@ class MoLFormer:
 class ChemBERTa:
     def __init__(self):
         self.tokenizer = AutoTokenizer.from_pretrained("seyonec/ChemBERTa-zinc-base-v1")
-        self.model = AutoModel.from_pretrained("seyonec/ChemBERTa-zinc-base-v1")
+        self.model = AutoModel.from_pretrained("seyonec/ChemBERTa-zinc-base-v1").to(device).eval()
 
     def to_vec(self, seq: str):
         if len(seq) > 510:
             seq = seq[:510]
-        inputs = self.tokenizer(seq, return_tensors='pt')["input_ids"].to(device)
+        inputs = self.tokenizer([seq], return_tensors='pt')
+        inputs = {k: v.to(device) for k, v in inputs.items()}
         with torch.no_grad():
-            hidden_states = self.model(inputs)[0]
+            hidden_states = self.model(**inputs)[0]
         vec = torch.mean(hidden_states[0], dim=0)
         return vec.detach().cpu().numpy().flatten()
 
