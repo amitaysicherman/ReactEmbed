@@ -134,7 +134,7 @@ def fill_none_with_zeros(vecs):
 
 if __name__ == "__main__":
     import argparse
-
+    from tqdm import tqdm
     parser = argparse.ArgumentParser(description='Convert sequence to vector')
     parser.add_argument('--model', type=str, help='Model to use', default="ChemBERTa",
                         choices=["ProtBert", "ChemBERTa", "MoLFormer", "esm3-small", "esm3-medium", "esm3-large"])
@@ -149,7 +149,7 @@ if __name__ == "__main__":
     with open(file, "r") as f:
         lines = f.readlines()
     all_vecs = []
-    for line in lines:
+    for line in tqdm(lines):
         if len(line.strip()) == 0:
             all_vecs.append(None)
         seq = line.strip()
