@@ -56,7 +56,7 @@ class PortBert:
         with torch.no_grad():
             embedding_repr = self.model(input_ids=input_ids, attention_mask=attention_mask)
         vec = embedding_repr.last_hidden_state[0].mean(dim=0)
-        return vec
+        return vec.detach().cpu().numpy().flatten()
 
 
 class MoLFormer:
