@@ -7,7 +7,7 @@ from esm.sdk import client
 from esm.sdk.api import LogitsConfig, ESMProtein
 from transformers import AutoModel, AutoTokenizer, BertModel, BertTokenizer
 
-from common.path_manager import proteins_file, molecules_file
+from common.path_manager import proteins_file, molecules_file, item_path
 
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
@@ -134,9 +134,11 @@ def fill_none_with_zeros(vecs):
             vecs[i] = zeroes
     return vecs
 
+
 if __name__ == "__main__":
     import argparse
     from tqdm import tqdm
+
     parser = argparse.ArgumentParser(description='Convert sequence to vector')
     parser.add_argument('--model', type=str, help='Model to use', default="ChemBERTa",
                         choices=["ProtBert", "ChemBERTa", "MoLFormer", "esm3-small", "esm3-medium", "esm3-large"])
@@ -160,4 +162,4 @@ if __name__ == "__main__":
     # concat the vectors list(dim) -> n,dim
     all_vecs = fill_none_with_zeros(all_vecs)
     all_vecs = np.array(all_vecs)
-    np.save(f"{model}_vectors.npy", all_vecs)
+    np.save(f"{item_path}/{model}_vectors.npy", all_vecs)
