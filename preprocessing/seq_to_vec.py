@@ -6,17 +6,29 @@ import torch
 from esm.models.esmc import ESMC
 from esm.sdk.api import ESMProtein, LogitsConfig
 from esm.sdk.forge import ESM3ForgeInferenceClient as APIClient
+from npy_append_array import NpyAppendArray
 from transformers import AutoModel, AutoTokenizer, BertModel, BertTokenizer
 
 from common.path_manager import proteins_file, molecules_file, item_path
 
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-
+ESM_L_SIZE = 2560
 name_to_hf_cp = {
     "ProtBert": 'Rostlab/prot_bert',
     "ChemBERTa": "seyonec/ChemBERTa-zinc-base-v1",
     "MoLFormer": "ibm/MoLFormer-XL-both-10pct"
 }
+
+
+def encode_and_predict_esm3(model, seq):
+    try:
+        protein = ESMProtein(sequence=seq)
+        protein = model.encode(protein)
+        conf = LogitsConfig(return_embeddings=True, sequence=True)
+        vec = model.logits(protein, conf).embeddings[0]
+        return vec.mean(dim=0).numpy().flatten()
+    except Exception as e:
+        return None
 
 
 def esm3_embed(seq: str, size="medium"):
@@ -31,21 +43,22 @@ def esm3_embed(seq: str, size="medium"):
 
     if size == "small" or size == "medium":
         model = ESMC.from_pretrained(name).to(device).eval()
+        if len(seq) > 1023:
+            seq = seq[:1023]
+        return encode_and_predict_esm3(model, seq)
+
     else:
         model = APIClient(model="esmc-6b-2024-12", url="https://forge.evolutionaryscale.ai",
                           token="3hn8PHelb0F4FdWgrLxXKR")
-    vec = None
-    for _ in range(2):
-        try:
-            protein = ESMProtein(sequence=seq)
-            protein = model.encode(protein)
-            conf = LogitsConfig(return_embeddings=True, sequence=True)
-            vec = model.logits(protein, conf).embeddings[0]
-            vec = vec.mean(dim=0).numpy().flatten()
-            break
-        except Exception as e:
+        vec = None
+        for _ in range(2):
+            vec = encode_and_predict_esm3(model, seq)
+            if vec is not None:
+                break
             time.sleep(60)
-    return vec
+        if vec is None:
+            vec = np.zeros(ESM_L_SIZE)
+        return vec
 
 
 class PortBert:
@@ -161,13 +174,22 @@ if __name__ == "__main__":
     with open(file, "r") as f:
         lines = f.readlines()
     all_vecs = []
+    output_file = f"{item_path}/{model}_vectors.npy"
+    if model == "esm3-large":
+        previous_vecs = np.load(output_file, allow_pickle=True)
+        count = len(previous_vecs)
+        lines = lines[count:]
     for line in tqdm(lines):
         if len(line.strip()) == 0:
             all_vecs.append(None)
         seq = line.strip()
         vec = seq_to_vec.to_vec(seq)
+        if model == "esm3-large":
+            with NpyAppendArray(output_file) as npy:
+                npy.append(vec)
         all_vecs.append(vec)
     # concat the vectors list(dim) -> n,dim
     all_vecs = fill_none_with_zeros(all_vecs)
     all_vecs = np.array(all_vecs)
-    np.save(f"{item_path}/{model}_vectors.npy", all_vecs)
+    if model != "esm3-large":
+        np.save(output_file, all_vecs)
