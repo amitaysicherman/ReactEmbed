@@ -46,10 +46,10 @@ class TripletsDataset(Dataset):
                     self.triples[t].add((e1, e2, e3))
             self.triples = {t: list(self.triples[t]) for t in TYPES}
             self.types = TYPES
-            self.split()
+            self.apply_split()
 
-    def split(self):
-        if self.split() == "all":
+    def apply_split(self):
+        if self.split == "all":
             return
         start, end = splits_ranges[self.split]
         for t in self.types:
