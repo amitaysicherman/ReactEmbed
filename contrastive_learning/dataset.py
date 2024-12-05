@@ -14,6 +14,13 @@ TYPES = ["P-P", "P-M"]  # Proteins anchor the triplets
 splits_ranges = {"train": (0, 0.8), "val": (0.8, 0.9), "test": (0.9, 1)}
 
 
+def prep_entity(entities, empty_list):
+    if entities == "":
+        return []
+    else:
+        return [int(x) for x in entities.split(",") if int(x) not in empty_list]
+
+
 class TripletsDataset(Dataset):
     def __init__(self, split, p_model="ProtBert", m_model="MoLFormer"):
         self.split = split
@@ -33,11 +40,8 @@ class TripletsDataset(Dataset):
                 proteins, molecules = line, ""
             else:
                 proteins, molecules = line.split()
-
-            proteins = [int(x) for x in proteins.split(",")]
-            proteins = [x for x in proteins if x not in self.empty_protein_index]
-            molecules = [int(x) for x in molecules.split(",")]
-            molecules = [x for x in molecules if x not in self.empty_molecule_index]
+            proteins = prep_entity(proteins, self.empty_protein_index)
+            molecules = prep_entity(molecules, self.empty_molecule_index)
             types = ["P"] * len(proteins) + ["M"] * len(molecules)
             elements = proteins + molecules
             for i, e1 in enumerate(elements):
