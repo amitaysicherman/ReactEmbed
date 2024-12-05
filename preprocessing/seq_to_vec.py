@@ -21,47 +21,45 @@ name_to_hf_cp = {
 }
 
 
-def encode_and_predict_esm3(model, seq):
-    try:
-        protein = ESMProtein(sequence=seq)
-        protein = model.encode(protein)
-        conf = LogitsConfig(return_embeddings=True, sequence=True)
-        vec = model.logits(protein, conf).embeddings[0]
-        return vec.mean(dim=0).numpy().flatten()
-    except Exception as e:
-        return None
+class Esm3Embedder:
+    def __init__(self, size):
+        self.size = size
+        if size == "small":
+            self.model = ESMC.from_pretrained("esmc_300m").to(device).eval()
+        elif size == "medium":
+            self.model = ESMC.from_pretrained("esmc_600m").to(device).eval()
+        elif size == "large":
+            self.model = APIClient(model="esmc-6b-2024-12", url="https://forge.evolutionaryscale.ai",
+                                   token="3hn8PHelb0F4FdWgrLxXKR")
+        else:
+            raise ValueError(f"Unknown size: {size}")
 
+    def encode_and_predict_esm3(self, seq):
+        try:
+            protein = ESMProtein(sequence=seq)
+            protein = self.model.encode(protein)
+            conf = LogitsConfig(return_embeddings=True, sequence=True)
+            vec = self.model.logits(protein, conf).embeddings[0]
+            return vec.mean(dim=0).numpy().flatten()
+        except Exception as e:
+            print(e)
+            return None
 
-def esm3_embed(seq: str, size="medium"):
-    if size == "small":
-        name = "esmc_300m"
-    elif size == "medium":
-        name = "esmc_600m"
-    elif size == "large":
-        name = "esmc-6b-2024-12"
-    else:
-        raise ValueError(f"Unknown size: {size}")
-
-    if size == "small" or size == "medium":
-        # login()  # run the login and save token localy
-
-        model = ESMC.from_pretrained(name).to(device).eval()
-        if len(seq) > 1023:
-            seq = seq[:1023]
-        return encode_and_predict_esm3(model, seq)
-
-    else:
-        model = APIClient(model=name, url="https://forge.evolutionaryscale.ai",
-                          token="3hn8PHelb0F4FdWgrLxXKR")
-        vec = None
-        for _ in range(2):
-            vec = encode_and_predict_esm3(model, seq)
-            if vec is not None:
-                break
-            time.sleep(60)
-        if vec is None:
-            vec = np.zeros(ESM_L_SIZE)
-        return vec
+    def to_vec(self, seq: str):
+        if self.size == "large":
+            vec = None
+            for _ in range(2):
+                vec = self.encode_and_predict_esm3(seq)
+                if vec is not None:
+                    break
+                time.sleep(60)
+            if vec is None:
+                vec = np.zeros(ESM_L_SIZE)
+            return vec
+        else:
+            if len(seq) > 1023:
+                seq = seq[:1023]
+            return self.encode_and_predict_esm3(seq)
 
 
 class PortBert:
@@ -125,16 +123,13 @@ class SeqToVec:
         elif model_name == "MoLFormer":
             self.model = MoLFormer()
         elif model_name in ["esm3-small", "esm3-medium", "esm3-large"]:
-            self.model = "esm3"
-            self.size = model_name.split("-")[-1]
+            size = model_name.split("-")[-1]
+            self.model = Esm3Embedder(size)
         else:
             raise ValueError(f"Unknown model: {model_name}")
 
     def to_vec(self, seq: str):
-        if self.model == "esm3":
-            return esm3_embed(seq, self.size)
-        else:
-            return self.model.to_vec(seq)
+        return self.model.to_vec(seq)
 
 
 def model_to_type(model_name):
