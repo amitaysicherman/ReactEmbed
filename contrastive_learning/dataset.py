@@ -37,16 +37,19 @@ class TripletsDataset(Dataset):
                 for j, e2 in enumerate(elements[i + 1:], start=i + 1):
                     t = types[i] + "-" + types[j]
                     self.pairs[t].add((e1, e2))
-
-            self.triples = {t: set() for t in TYPES}
-            for t in TYPES:
-                type1, type2 = t.split("-")
-                for e1, e2 in self.pairs[t]:
-                    e3 = self.sample_neg_element(e1, type1, type2)
-                    self.triples[t].add((e1, e2, e3))
-            self.triples = {t: list(self.triples[t]) for t in TYPES}
-            self.types = TYPES
-            self.apply_split()
+        print(f"Pairs: {self.pairs}")
+        self.triples = {t: set() for t in TYPES}
+        for t in TYPES:
+            type1, type2 = t.split("-")
+            for e1, e2 in self.pairs[t]:
+                e3 = self.sample_neg_element(e1, type1, type2)
+                self.triples[t].add((e1, e2, e3))
+        self.triples = {t: list(self.triples[t]) for t in TYPES}
+        print(f"Triples: {self.triples}")
+        for t in TYPES:
+            print(f"Number of {t} triples: {len(self.triples[t])}")
+        self.types = TYPES
+        self.apply_split()
 
     def apply_split(self):
         if self.split == "all":
