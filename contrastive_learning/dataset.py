@@ -43,6 +43,7 @@ class TripletsDataset(Dataset):
             proteins = prep_entity(proteins, self.empty_protein_index)
             molecules = prep_entity(molecules, self.empty_molecule_index)
             types = ["P"] * len(proteins) + ["M"] * len(molecules)
+            print(types)
             elements = proteins + molecules
             for i, e1 in enumerate(elements):
                 for j, e2 in enumerate(elements[i + 1:], start=i + 1):
