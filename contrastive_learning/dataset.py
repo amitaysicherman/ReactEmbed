@@ -4,6 +4,7 @@ from os.path import join as pjoin
 import numpy as np
 import torch
 from torch.utils.data import Dataset, Sampler
+from tqdm import tqdm
 
 from common.path_manager import item_path, reactions_file
 
@@ -25,7 +26,7 @@ class TripletsDataset(Dataset):
 
         with open(reactions_file) as f:
             lines = f.read().splitlines()
-        for line in lines:
+        for line in tqdm(lines):
             proteins, molecules = line.split()
             proteins = [int(x) for x in proteins.split(",")]
             proteins = [x for x in proteins if x not in self.empty_protein_index]
