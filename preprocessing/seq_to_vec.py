@@ -7,6 +7,7 @@ import torch
 from esm.models.esmc import ESMC
 from esm.sdk.api import ESMProtein, LogitsConfig
 from esm.sdk.forge import ESM3ForgeInferenceClient as APIClient
+from huggingface_hub import login
 from npy_append_array import NpyAppendArray
 from transformers import AutoModel, AutoTokenizer, BertModel, BertTokenizer
 
@@ -43,13 +44,15 @@ def esm3_embed(seq: str, size="medium"):
         raise ValueError(f"Unknown size: {size}")
 
     if size == "small" or size == "medium":
+        login(token="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")
+
         model = ESMC.from_pretrained(name).to(device).eval()
         if len(seq) > 1023:
             seq = seq[:1023]
         return encode_and_predict_esm3(model, seq)
 
     else:
-        model = APIClient(model="esmc-6b-2024-12", url="https://forge.evolutionaryscale.ai",
+        model = APIClient(model=name, url="https://forge.evolutionaryscale.ai",
                           token="3hn8PHelb0F4FdWgrLxXKR")
         vec = None
         for _ in range(2):
