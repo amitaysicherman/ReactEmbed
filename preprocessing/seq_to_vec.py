@@ -7,7 +7,6 @@ import torch
 from esm.models.esmc import ESMC
 from esm.sdk.api import ESMProtein, LogitsConfig
 from esm.sdk.forge import ESM3ForgeInferenceClient as APIClient
-from huggingface_hub import login
 from npy_append_array import NpyAppendArray
 from transformers import AutoModel, AutoTokenizer, BertModel, BertTokenizer
 
@@ -44,7 +43,7 @@ def esm3_embed(seq: str, size="medium"):
         raise ValueError(f"Unknown size: {size}")
 
     if size == "small" or size == "medium":
-        login()  # run the login and save token localy
+        # login()  # run the login and save token localy
 
         model = ESMC.from_pretrained(name).to(device).eval()
         if len(seq) > 1023:
