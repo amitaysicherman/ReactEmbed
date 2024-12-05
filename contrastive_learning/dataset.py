@@ -27,8 +27,12 @@ class TripletsDataset(Dataset):
         with open(reactions_file) as f:
             lines = f.read().splitlines()
         for line in tqdm(lines):
-            print(f"{line}")
-            proteins, molecules = line.split()
+            if line.startswith(" "):
+                proteins, molecules = "", line
+            elif line.endswith(" "):
+                proteins, molecules = line, ""
+            else:
+                proteins, molecules = line.split()
 
             proteins = [int(x) for x in proteins.split(",")]
             proteins = [x for x in proteins if x not in self.empty_protein_index]
