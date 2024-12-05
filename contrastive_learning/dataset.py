@@ -29,6 +29,8 @@ class TripletsDataset(Dataset):
         # all the proteins with zero vectors are empty proteins
         self.empty_protein_index = set(np.where(np.all(self.proteins == 0, axis=1) == 0)[0].tolist())
         self.empty_molecule_index = set(np.where(np.all(self.molecules == 0, axis=1) == 0)[0].tolist())
+        print(f"Empty proteins: {len(self.empty_protein_index)}")
+        print(f"Empty molecules: {len(self.empty_molecule_index)}")
         self.pairs = {t: set() for t in TYPES}
 
         with open(reactions_file) as f:
