@@ -15,7 +15,7 @@ splits_ranges = {"train": (0, 0.8), "val": (0.8, 0.9), "test": (0.9, 1)}
 
 
 def prep_entity(entities, empty_list):
-    if entities == "":
+    if entities == "" or entities == " ":
         return []
     else:
         return [int(x) for x in entities.split(",") if int(x) not in empty_list]
