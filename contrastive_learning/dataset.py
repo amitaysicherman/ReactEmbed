@@ -47,7 +47,8 @@ class TripletsDataset(Dataset):
             for i, e1 in enumerate(elements):
                 for j, e2 in enumerate(elements[i + 1:], start=i + 1):
                     t = types[i] + "-" + types[j]
-                    self.pairs[t].add((e1, e2))
+                    if t in TYPES:
+                        self.pairs[t].add((e1, e2))
         print(f"Pairs: {self.pairs}")
         self.triples = {t: set() for t in TYPES}
         for t in TYPES:
