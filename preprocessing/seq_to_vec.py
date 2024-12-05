@@ -1,3 +1,4 @@
+import os
 import re
 import time
 
@@ -176,9 +177,14 @@ if __name__ == "__main__":
     all_vecs = []
     output_file = f"{item_path}/{model}_vectors.npy"
     if model == "esm3-large":
-        previous_vecs = np.load(output_file, allow_pickle=True)
-        count = len(previous_vecs)
-        lines = lines[count:]
+        if os.path.exists(output_file):
+            previous_vecs = np.load(output_file, allow_pickle=True)
+            count = len(previous_vecs)
+            lines = lines[count:]
+    else:
+        if os.path.exists(output_file):
+            print(f"{output_file} already exists")
+            exit(0)
     for line in tqdm(lines):
         if len(line.strip()) == 0:
             all_vecs.append(None)
