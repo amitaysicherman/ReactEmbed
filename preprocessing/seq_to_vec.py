@@ -44,7 +44,7 @@ def esm3_embed(seq: str, size="medium"):
         raise ValueError(f"Unknown size: {size}")
 
     if size == "small" or size == "medium":
-        login(token="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")
+        login()  # run the login and save token localy
 
         model = ESMC.from_pretrained(name).to(device).eval()
         if len(seq) > 1023:
