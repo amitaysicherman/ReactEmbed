@@ -40,7 +40,7 @@ class Esm3Embedder:
             protein = self.model.encode(protein)
             conf = LogitsConfig(return_embeddings=True, sequence=True)
             vec = self.model.logits(protein, conf).embeddings[0]
-            return vec.mean(dim=0).numpy().flatten()
+            return vec.mean(dim=0).cpu().numpy().flatten()
         except Exception as e:
             print(e)
             return None
