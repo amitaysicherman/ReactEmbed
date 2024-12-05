@@ -3,8 +3,9 @@ import time
 
 import numpy as np
 import torch
-from esm.sdk import client
-from esm.sdk.api import LogitsConfig, ESMProtein
+from esm.models.esmc import ESMC
+from esm.sdk.api import ESMProtein, LogitsConfig
+from esm.sdk.forge import ESM3ForgeInferenceClient as APIClient
 from transformers import AutoModel, AutoTokenizer, BertModel, BertTokenizer
 
 from common.path_manager import proteins_file, molecules_file, item_path
@@ -18,16 +19,21 @@ name_to_hf_cp = {
 }
 
 
-def esm3_embed(seq: str, size="m"):
+def esm3_embed(seq: str, size="medium"):
     if size == "small":
-        name = "esm3-small-2024-08"
+        name = "esmc_300m"
     elif size == "medium":
-        name = "esm3-medium-multimer-2024-09"
+        name = "esmc_600m"
     elif size == "large":
-        name = "esm3-large-2024-03"
+        name = "esmc-6b-2024-12"
     else:
         raise ValueError(f"Unknown size: {size}")
-    model = client(name, token="3hn8PHelb0F4FdWgrLxXKR")
+
+    if size == "small" or size == "medium":
+        model = ESMC.from_pretrained(name).to(device).eval()
+    else:
+        model = APIClient(model="esmc-6b-2024-12", url="https://forge.evolutionaryscale.ai",
+                          token="3hn8PHelb0F4FdWgrLxXKR")
     vec = None
     for _ in range(2):
         try:
