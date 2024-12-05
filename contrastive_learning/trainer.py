@@ -1,143 +1,64 @@
 import os
 
-import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from sklearn.metrics import roc_auc_score
 from torch.utils.data import DataLoader
 
-from common.data_types import PRETRAINED_EMD, PROTEIN, MOLECULE
 from common.path_manager import fuse_path
-from common.utils import get_type_to_vec_dim
-from contrastive_learning.dataset import PairsDataset, SameNameBatchSampler, get_reactions
-from contrastive_learning.index_manger import NodesIndexManager
+from contrastive_learning.dataset import TripletsDataset, TripletsBatchSampler, TYPES
 from contrastive_learning.model import MultiModalLinearConfig, MiltyModalLinear
 
-EMBEDDING_DATA_TYPES = [PROTEIN, MOLECULE]
+model_to_dim = {
+    "ChemBERTa": 768,
+    "ProtBert": 1024,
+    "esm3-medium": 1152,
+    "esm3-small": 960,
+    "esm3-large": 2560,
+    "MoLFormer": 768,
+}
+
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(f"Device: {device}")
 
 
-def indexes_to_tensor(indexes, node_index_manager: NodesIndexManager, return_type=True):
-    type_ = node_index_manager.index_to_node[indexes[0].item()].type
-    array = np.stack([node_index_manager.index_to_node[i.item()].vec for i in indexes])
-    if return_type:
-        return torch.tensor(array), type_
-    return torch.tensor(array)
-
-
-def save_fuse_model(model: MiltyModalLinear, save_dir, epoch):
-    cp_to_remove = []
-    for file_name in os.listdir(save_dir):
-        if file_name.endswith(".pt"):
-            cp_to_remove.append(f"{save_dir}/{file_name}")
-
-    output_file = f"{save_dir}/fuse_{epoch}.pt"
-    if output_file in cp_to_remove:
-        cp_to_remove.remove(output_file)
-    torch.save(model.state_dict(), output_file)
-    for cp in cp_to_remove:
-        os.remove(cp)
-
-
-def run_epoch(model, node_index_manager, optimizer, loader, contrastive_loss, part="train", all_to_protein=True,
-              triples=False):
-    if len(loader) == 0:
-        return 0
-    is_train = part == "train"
+def run_epoch(model, optimizer, loader, contrastive_loss, is_train):
+    if loader is None:
+        return
     if is_train:
         model.train()
     else:
         model.eval()
     total_loss = 0
-    all_labels = []
-    all_preds = []
-
-    for i, (data) in enumerate(loader):
-        if triples:
-            idx1, idx2, idx3 = data
-            data_1, type_1 = indexes_to_tensor(idx1, node_index_manager)
-            data_2, type_2 = indexes_to_tensor(idx2, node_index_manager)
-            data_3, type_3 = indexes_to_tensor(idx3, node_index_manager)
-            data_1 = data_1.to(device).float()
-            data_2 = data_2.to(device).float()
-            data_3 = data_3.to(device).float()
-            assert type_2 == type_3
-            if all_to_protein:
-                if not model.have_type((type_2, type_1)):
-                    continue
-                out1 = data_1
-                model_type = (type_2, type_1)
-                out2 = model(data_2, model_type)
-                out3 = model(data_3, model_type)
-            else:
-                out1 = model(data_1, type_1)
-                out2 = model(data_2, type_2)
-                out3 = model(data_3, type_3)
-            step_labels = [1] * len(out1) + [0] * len(out1)
-            pos_preds = (0.5 * (1 + F.cosine_similarity(out1, out2).cpu().detach().numpy())).tolist()
-            neg_preds = (0.5 * (1 + F.cosine_similarity(out1, out3).cpu().detach().numpy())).tolist()
-            step_preds = pos_preds + neg_preds
-            cont_loss = contrastive_loss(out1, out2, out3)
-        else:
-            idx1, idx2, label = data
-            data_1, type_1 = indexes_to_tensor(idx1, node_index_manager)
-            data_2, type_2 = indexes_to_tensor(idx2, node_index_manager)
-            data_1 = data_1.to(device).float()
-            data_2 = data_2.to(device).float()
-            if all_to_protein:
-                if not model.have_type((type_1, type_2)):
-                    continue
-                out2 = data_2
-                model_type = (type_1, type_2)
-                out1 = model(data_1, model_type)
-            else:
-                out1 = model(data_1, type_1)
-                out2 = model(data_2, type_2)
-            step_labels = (label == 1).cpu().detach().numpy().astype(int).tolist()
-            step_preds = (0.5 * (1 + F.cosine_similarity(out1, out2).cpu().detach().numpy())).tolist()
-            cont_loss = contrastive_loss(out1, out2, label.to(device))
-
-        all_labels.extend(step_labels)
-        all_preds.extend(step_preds)
+    for i, (t1, t2, data_1, data_2, data_3) in enumerate(loader):
+        data1, data2, data3 = data_1.to(device), data_2.to(device), data_3.to(device)
+        model_type = f"{t1[0]}-{t2[0]}"
+        out2 = model(data_2, model_type)
+        out3 = model(data_3, model_type)
+        cont_loss = contrastive_loss(data1, out2, out3)
         total_loss += cont_loss.mean().item()
         if not is_train:
             continue
         cont_loss.backward()
         optimizer.step()
         optimizer.zero_grad()
-    if not is_train:
-        return roc_auc_score(all_labels, all_preds)
-    else:
-        return 0
+    return total_loss / len(loader)
 
 
-def get_loader(reactions, node_index_manager, batch_size, triples):
-    dataset = PairsDataset(reactions, node_index_manager, triples=triples)
-    sampler = SameNameBatchSampler(dataset, batch_size)
+def get_loader(split, batch_size, p_model, m_model):
+    dataset = TripletsDataset(p_model=p_model, m_model=m_model, split=split)
+    sampler = TripletsBatchSampler(dataset, batch_size)
     return DataLoader(dataset, batch_sampler=sampler)
 
 
-def build_models(type_to_vec_dim, all_to_protein, fuse_output_dim, fuse_n_layers, fuse_hidden_dim, fuse_dropout,
-                 save_dir):
-    if not all_to_protein:
-        names = EMBEDDING_DATA_TYPES
-        src_dims = [type_to_vec_dim[x] for x in EMBEDDING_DATA_TYPES]
-        dst_dim = [fuse_output_dim] * len(EMBEDDING_DATA_TYPES)
-    else:
-        names = []
-        src_dims = []
-        dst_dim = []
-        for src in EMBEDDING_DATA_TYPES:
-            for dst in EMBEDDING_DATA_TYPES:
-                if dst == PROTEIN:
-                    src_dims.append(type_to_vec_dim[src])
-                    names.append((src, dst))
-                    dst_dim.append(type_to_vec_dim[dst])
+def build_models(p_dim, m_dim, out_dim, n_layers, hidden_dim, dropout, save_dir):
+    embedding_dim = []
+    for t in TYPES:
+        t1, t2 = t.split("-")
+        embedding_dim.append(p_dim if t1 == "P" else m_dim)
 
-    model_config = MultiModalLinearConfig(embedding_dim=src_dims, n_layers=fuse_n_layers, names=names,
-                                          hidden_dim=fuse_hidden_dim, output_dim=dst_dim, dropout=fuse_dropout,
+    model_config = MultiModalLinearConfig(embedding_dim=embedding_dim, n_layers=n_layers, names=TYPES,
+                                          hidden_dim=hidden_dim, output_dim=out_dim, dropout=dropout,
                                           normalize_last=1)
 
     model = MiltyModalLinear(model_config).to(device)
@@ -145,62 +66,55 @@ def build_models(type_to_vec_dim, all_to_protein, fuse_output_dim, fuse_n_layers
     return model
 
 
-def main(args):
-    save_dir = f"{fuse_path}/{args.fusion_name}"
+def main(run_name, not_split, batch_size, p_model, m_model, output_dim, n_layers, hidden_dim, dropout, epochs, lr):
+    save_dir = f"{fuse_path}/{run_name}"
     os.makedirs(save_dir, exist_ok=True)
-    node_index_manager = NodesIndexManager(PRETRAINED_EMD, prot_emd_type=args.protein_embedding,
-                                           mol_emd_type=args.molecule_embedding)
-    train_reactions, validation_reactions, test_reaction = get_reactions()
-    if args.fusion_train_all:
-        train_reactions = train_reactions + validation_reactions + test_reaction
-        validation_reactions = []
-        test_reaction = []
-    train_loader = get_loader(train_reactions, node_index_manager, args.fusion_batch_size, args.use_triplet_loss)
-    valid_loader = get_loader(validation_reactions, node_index_manager, args.fusion_batch_size, args.use_triplet_loss)
-    test_loader = get_loader(test_reaction, node_index_manager, args.fusion_batch_size, args.use_triplet_loss)
-    type_to_vec_dim = get_type_to_vec_dim(args.protein_embedding)
+    if not_split:
+        train_loader = get_loader("all", batch_size, p_model, m_model)
+        valid_loader, test_loader = None, None
+    else:
+        train_loader = get_loader("train", batch_size, p_model, m_model)
+        valid_loader = get_loader("val", batch_size, p_model, m_model)
+        test_loader = get_loader("test", batch_size, p_model, m_model)
+    # p_dim, m_dim, out_dim, n_layers, hidden_dim, dropout, save_dir
+    p_dim = model_to_dim[p_model]
+    m_dim = model_to_dim[m_model]
 
-    model = build_models(type_to_vec_dim, args.fusion_all_to_protein, args.fusion_output_dim, args.fusion_num_layers,
-                         args.fusion_hidden_dim, args.fusion_dropout, save_dir)
-    optimizer = torch.optim.Adam(model.parameters(), lr=args.fusion_learning_rate)
+    model = build_models(p_dim, m_dim, output_dim, n_layers, hidden_dim, dropout, save_dir)
+    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
     print(model)
     print(sum(p.numel() for p in model.parameters() if p.requires_grad), "parameters")
 
-    if args.use_triplet_loss:
-        contrastive_loss = nn.TripletMarginWithDistanceLoss(
-            distance_function=lambda x1, x2: 1 - F.cosine_similarity(x1, x2))
-    else:
-        contrastive_loss = nn.CosineEmbeddingLoss(margin=0.0)
-
-    best_valid_auc = -1e6
-    best_test_auc = -1e6
-    running_args = {"model": model, "node_index_manager": node_index_manager, "optimizer": optimizer,
-                    "contrastive_loss": contrastive_loss, "all_to_protein": args.fusion_all_to_protein,
-                    'triples': args.use_triplet_loss}
-    no_improve_count = 0
-    for epoch in range(args.fusion_epochs):
-        _ = run_epoch(**running_args, loader=train_loader, part="train")
+    contrastive_loss = nn.TripletMarginWithDistanceLoss(
+        distance_function=lambda x1, x2: 1 - F.cosine_similarity(x1, x2))
+    best_valid_loss = float("inf")
+    for epoch in range(epochs):
+        train_loss = run_epoch(model, optimizer, train_loader, contrastive_loss, is_train=True)
         with torch.no_grad():
-            valid_auc = run_epoch(**running_args, loader=valid_loader, part="valid")
-            test_auc = run_epoch(**running_args, loader=test_loader, part="test")
-        if args.fusion_train_all or epoch == 0:
-            save_fuse_model(model, save_dir, epoch)
-            continue
-        if valid_auc > best_valid_auc:
-            best_valid_auc = valid_auc
-            best_test_auc = test_auc
-            save_fuse_model(model, save_dir, epoch)
-            no_improve_count = 0
-        else:
-            no_improve_count += 1
-            if no_improve_count >= args.fusion_max_epochs_no_improve:
-                break
-        print(f"Epoch: {epoch}, Valid AUC: {best_valid_auc}, Test AUC: {best_test_auc}")
-    return best_valid_auc
-
+            valid_loss = run_epoch(model, optimizer, valid_loader, contrastive_loss, is_train=False)
+            test_loss = run_epoch(model, optimizer, test_loader, contrastive_loss, is_train=False)
+        print(f"Epoch {epoch} Train Loss: {train_loss}, Valid Loss: {valid_loss}, Test Loss: {test_loss}")
+        if valid_loss < best_valid_loss:
+            best_valid_loss = valid_loss
+            torch.save(model.state_dict(), f"{save_dir}/model.pt")
+            print("Model saved")
 
 if __name__ == '__main__':
-    from common.args_manager import get_args
+    import argparse
 
-    args = get_args()
-    main(args)
+    parser = argparse.ArgumentParser(description='Contrastive Learning')
+    parser.add_argument('--run_name', type=str, help='Run name', required=True)
+    parser.add_argument('--not_split', action='store_true', help='Do not split the data')
+    parser.add_argument('--batch_size', type=int, help='Batch size', default=8192)
+    parser.add_argument('--p_model', type=str, help='Protein model', default="ProtBert")
+    parser.add_argument('--m_model', type=str, help='Molecule model', default="ChemBERTa")
+    parser.add_argument('--output_dim', type=int, help='Output dimension', default=1024)
+    parser.add_argument('--n_layers', type=int, help='Number of layers', default=1)
+    parser.add_argument('--hidden_dim', type=int, help='Hidden dimension', default=512)
+    parser.add_argument('--dropout', type=float, help='Dropout', default=0.3)
+    parser.add_argument('--epochs', type=int, help='Number of epochs', default=1)
+    parser.add_argument('--lr', type=float, help='Learning rate', default=0.001)
+    args = parser.parse_args()
+
+    main(args.run_name, args.not_split, args.batch_size, args.p_model, args.m_model, args.output_dim, args.n_layers,
+         args.hidden_dim, args.dropout, args.epochs, args.lr)

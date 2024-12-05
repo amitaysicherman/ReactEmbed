@@ -55,7 +55,7 @@ class Esm3Embedder:
                 time.sleep(60)
             if vec is None:
                 vec = np.zeros(ESM_L_SIZE)
-            return vec
+            return vec.reshape(-1, 1)
         else:
             if len(seq) > 1023:
                 seq = seq[:1023]

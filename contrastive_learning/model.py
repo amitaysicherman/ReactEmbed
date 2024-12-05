@@ -1,12 +1,9 @@
 import dataclasses
 from typing import List
 
-import numpy as np
 import torch
 from torch import nn as nn
 from torch.nn import functional as F
-
-from common.data_types import DNA
 
 
 @dataclasses.dataclass
@@ -59,57 +56,19 @@ def get_layers(dims, dropout=0.0):
 class MiltyModalLinear(nn.Module):
     def __init__(self, config: MultiModalLinearConfig):
         super(MiltyModalLinear, self).__init__()
-        self.names = ["_".join(x) if isinstance(x, tuple) else x for x in config.names]
+        self.names = config.names
         self.normalize_last = config.normalize_last
         if config.n_layers < 1:
             raise ValueError("n_layers must be at least 1")
         self.layers_dict = nn.ModuleDict()
         self.output_dim = config.output_dim
-        for name, input_dim, output_dim in zip(self.names, config.embedding_dim, config.output_dim):
-            dims = [input_dim] + [config.hidden_dim] * (config.n_layers - 1) + [output_dim]
+        for name, input_dim in zip(self.names, config.embedding_dim):
+            dims = [input_dim] + [config.hidden_dim] * (config.n_layers - 1) + [self.output_dim]
             self.layers_dict[name] = get_layers(dims, config.dropout)
 
-    def have_type(self, type_):
-        if isinstance(type_, tuple):
-            type_ = "_".join(type_)
-        return type_ in self.names
-
     def forward(self, x, type_):
-        if isinstance(type_, tuple):
-            type_ = "_".join(type_)
-
-        if not self.have_type(type_):
-            type_ = type_.split("_")[0]
-
-        if isinstance(x, np.ndarray):
-            x = torch.Tensor(x).float()
         x = self.layers_dict[type_](x)
         if self.normalize_last:
             return F.normalize(x, dim=-1)
         else:
             return x
-
-
-def concat_all_to_one_typs(model: MiltyModalLinear, x, src_type):
-    res = []
-    for name in model.names:
-        src_name, dst_name = name.split("_")
-        if src_name == src_type:
-            if model.have_type(name):
-                res.append(model(x, name))
-            else:
-                print(f"Warning: model does not have type {name}")
-                res.append(x)
-    return torch.cat(res, dim=-1)
-
-
-def apply_model(model: MiltyModalLinear, x, type_):
-    if type_ == DNA:
-        return torch.Tensor(x)
-    if "_" in model.names[0]:
-        return concat_all_to_one_typs(model, x, type_)
-    else:
-        if not model.have_type(type_):
-            print(f"Warning: model does not have type {type_}")
-            return torch.Tensor(x)
-        return model(x, type_)
