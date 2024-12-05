@@ -26,7 +26,7 @@ class TripletsDataset(Dataset):
         with open(reactions_file) as f:
             lines = f.read().splitlines()
         for line in lines:
-            proteins, molecules = line.strip().split()
+            proteins, molecules = line.split()
             proteins = [int(x) for x in proteins.split(",")]
             proteins = [x for x in proteins if x not in self.empty_protein_index]
             molecules = [int(x) for x in molecules.split(",")]
