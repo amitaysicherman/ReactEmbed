@@ -4,6 +4,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
+from tqdm import tqdm
 
 from common.path_manager import fuse_path
 from contrastive_learning.dataset import TripletsDataset, TripletsBatchSampler, TYPES
@@ -30,12 +31,11 @@ def run_epoch(model, optimizer, loader, contrastive_loss, is_train):
     else:
         model.eval()
     total_loss = 0
-    for i, (t1, t2, data_1, data_2, data_3) in enumerate(loader):
+    for i, (t1, t2, data_1, data_2, data_3) in tqdm(enumerate(loader), total=len(loader)):
         data1, data2, data3 = data_1.to(device), data_2.to(device), data_3.to(device)
-        model_type = f"{t1[0]}-{t2[0]}"
-        out2 = model(data_2, model_type)
-        out3 = model(data_3, model_type)
-        cont_loss = contrastive_loss(data1, out2, out3)
+        out1 = model(data_1, f"{t1[0]}-{t2[0]}")
+        out3 = model(data_3, f"{t2[0]}-{t2[0]}")
+        cont_loss = contrastive_loss(data2, out1, out3)  # M-P-P OR P-P-P
         total_loss += cont_loss.mean().item()
         if not is_train:
             continue
@@ -66,15 +66,15 @@ def build_models(p_dim, m_dim, out_dim, n_layers, hidden_dim, dropout, save_dir)
     return model
 
 
-def main(run_name, not_split, batch_size, p_model, m_model, output_dim, n_layers, hidden_dim, dropout, epochs, lr):
-    save_dir = f"{fuse_path}/{run_name}"
+def main(not_split, batch_size, p_model, m_model, output_dim, n_layers, hidden_dim, dropout, epochs, lr):
+    save_dir = f"{fuse_path}/{p_model}-{m_model}/"
     os.makedirs(save_dir, exist_ok=True)
     if not_split:
         train_loader = get_loader("all", batch_size, p_model, m_model)
         valid_loader, test_loader = None, None
     else:
         train_loader = get_loader("train", batch_size, p_model, m_model)
-        valid_loader = get_loader("val", batch_size, p_model, m_model)
+        valid_loader = get_loader("valid", batch_size, p_model, m_model)
         test_loader = get_loader("test", batch_size, p_model, m_model)
     # p_dim, m_dim, out_dim, n_layers, hidden_dim, dropout, save_dir
     p_dim = model_to_dim[p_model]
@@ -99,11 +99,12 @@ def main(run_name, not_split, batch_size, p_model, m_model, output_dim, n_layers
             torch.save(model.state_dict(), f"{save_dir}/model.pt")
             print("Model saved")
 
+
 if __name__ == '__main__':
     import argparse
 
     parser = argparse.ArgumentParser(description='Contrastive Learning')
-    parser.add_argument('--run_name', type=str, help='Run name', required=True)
+    parser.add_argument('--run_name', type=str, help='Run name', default="default")
     parser.add_argument('--not_split', action='store_true', help='Do not split the data')
     parser.add_argument('--batch_size', type=int, help='Batch size', default=8192)
     parser.add_argument('--p_model', type=str, help='Protein model', default="ProtBert")

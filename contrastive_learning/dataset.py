@@ -9,9 +9,8 @@ from tqdm import tqdm
 from common.path_manager import item_path, reactions_file
 
 # TYPES = ["P-P", "P-M", "M-P", "M-M"]
-TYPES = ["P-P", "P-M"]  # Proteins anchor the triplets
+TYPES = ["P-P", "M-P"]  # Proteins anchor the triplets
 
-splits_ranges = {"train": (0, 0.8), "val": (0.8, 0.9), "test": (0.9, 1)}
 
 
 def prep_entity(entities, empty_list):
@@ -27,8 +26,8 @@ class TripletsDataset(Dataset):
         self.proteins = np.load(pjoin(item_path, f"{p_model}_vectors.npy"))
         self.molecules = np.load(pjoin(item_path, f"{m_model}_vectors.npy"))
         # all the proteins with zero vectors are empty proteins
-        self.empty_protein_index = set(np.where(np.all(self.proteins == 0, axis=1) == 0)[0].tolist())
-        self.empty_molecule_index = set(np.where(np.all(self.molecules == 0, axis=1) == 0)[0].tolist())
+        self.empty_protein_index = set(np.where(np.all(self.proteins == 0, axis=1))[0].tolist())
+        self.empty_molecule_index = set(np.where(np.all(self.molecules == 0, axis=1))[0].tolist())
         print(f"Empty proteins: {len(self.empty_protein_index)}")
         print(f"Empty molecules: {len(self.empty_molecule_index)}")
         self.pairs = {t: set() for t in TYPES}
@@ -45,34 +44,44 @@ class TripletsDataset(Dataset):
             proteins = prep_entity(proteins, self.empty_protein_index)
             molecules = prep_entity(molecules, self.empty_molecule_index)
             types = ["P"] * len(proteins) + ["M"] * len(molecules)
-            print(types)
             elements = proteins + molecules
             for i, e1 in enumerate(elements):
                 for j, e2 in enumerate(elements[i + 1:], start=i + 1):
                     t = types[i] + "-" + types[j]
-                    print(f"t: {t}", end=" ")
-                    if t in TYPES:
+                    if t == "P-P":
                         self.pairs[t].add((e1, e2))
-        print(f"Pairs: {self.pairs}")
+                    if t == "P-M":
+                        self.pairs["M-P"].add((e2, e1))
+        self.split_pair = {}
+        for t in TYPES:
+            t_pairs = list(self.pairs[t])
+            t_pairs.sort()
+            random.seed(42)
+            random.shuffle(t_pairs)
+            if self.split == "all":
+                self.split_pair[t] = t_pairs
+            elif self.split == "train":
+                self.split_pair[t] = t_pairs[:int(len(t_pairs) * 0.8)]
+            elif self.split == "valid":
+                self.split_pair[t] = t_pairs[int(len(t_pairs) * 0.8):int(len(t_pairs) * 0.9)]
+            elif self.split == "test":
+                self.split_pair[t] = t_pairs[int(len(t_pairs) * 0.9):]
+            else:
+                raise ValueError("Unknown split")
+
+
         self.triples = {t: set() for t in TYPES}
         for t in TYPES:
             type1, type2 = t.split("-")
-            for e1, e2 in self.pairs[t]:
+            for e1, e2 in tqdm(self.split_pair[t]):
                 e3 = self.sample_neg_element(e1, type1, type2)
                 self.triples[t].add((e1, e2, e3))
         self.triples = {t: list(self.triples[t]) for t in TYPES}
-        print(f"Triples: {self.triples}")
         for t in TYPES:
             print(f"Number of {t} triples: {len(self.triples[t])}")
         self.types = TYPES
-        self.apply_split()
 
-    def apply_split(self):
-        if self.split == "all":
-            return
-        start, end = splits_ranges[self.split]
-        for t in self.types:
-            self.triples[t] = self.triples[t][int(start * len(self.triples[t])):int(end * len(self.triples[t]))]
+
 
     def sample_neg_element(self, e1, e1_type, e2_type):
         is_positive, is_empty = True, True
@@ -94,13 +103,6 @@ class TripletsDataset(Dataset):
     def type_to_start_index(self, t):
         return sum(len(self.triples[x]) for x in TYPES[:TYPES.index(t)])
 
-    def get_index_to_type(self, idx):
-        for t in TYPES:
-            if idx < len(self.triples[t]):
-                return t
-            idx -= len(self.triples[t])
-        raise ValueError("Index out of range")
-
     def idx_type_to_vec(self, idx, t):
         if t == "P":
             return torch.tensor(self.proteins[idx]).float()
@@ -109,8 +111,8 @@ class TripletsDataset(Dataset):
     def __len__(self):
         return sum(len(self.triples[t]) for t in TYPES)
 
-    def __getitem__(self, idx):
-        t = self.get_index_to_type(idx)
+    def __getitem__(self, t_idx):
+        t, idx = t_idx
         e1, e2, e3 = self.triples[t][idx]
         t1, t2 = t.split("-")
         v1, v2, v3 = self.idx_type_to_vec(e1, t1), self.idx_type_to_vec(e2, t2), self.idx_type_to_vec(e3, t2)
