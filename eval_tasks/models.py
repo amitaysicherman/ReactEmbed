@@ -9,8 +9,8 @@ from contrastive_learning.model import MultiModalLinearConfig, MiltyModalLinear
 
 
 class DataType(Enum):
-    MOLECULE = 'molecule_protein'
-    PROTEIN = 'protein_protein'
+    MOLECULE = 'M-P'
+    PROTEIN = 'P-P'
 
 
 def load_fuse_model(name):
@@ -109,22 +109,6 @@ class PairTransFuseModel(FuseModel):
 
         hidden_layers = [hidden_dim] * (n_layers - 1)
         self.layers = get_layers([self.input_dim] + hidden_layers + [output_dim], dropout=drop_out)
-        # if self.use_fuse:
-        #     self.x1_fuse_linear = torch.nn.Linear(self.fuse_dim, hidden_dim)
-        #     self.x2_fuse_linear = torch.nn.Linear(self.fuse_dim, hidden_dim)
-        # if self.use_model:
-        #     self.x1_model_linear = torch.nn.Linear(input_dim_1, hidden_dim)
-        #     self.x2_model_linear = torch.nn.Linear(input_dim_2, hidden_dim)
-        # nhead = 2
-        # encoder_layer = torch.nn.TransformerEncoderLayer(d_model=hidden_dim, nhead=nhead,
-        #                                                  dim_feedforward=hidden_dim * 2,
-        #                                                  batch_first=True, dropout=drop_out)
-        # self.trans = torch.nn.Sequential(
-        #     torch.nn.TransformerEncoder(encoder_layer, num_layers=n_layers),
-        #     torch.nn.Linear(hidden_dim, output_dim)
-        # )
-        # self.x1_type = dtpye_1
-        # self.x2_type = dtype_2
 
     def forward(self, x1, x2):
         x = []
@@ -136,18 +120,5 @@ class PairTransFuseModel(FuseModel):
         if self.use_model:
             x.append(x1)
             x.append(x2)
-        # if self.use_fuse:
-        #     x1_fuse = self.fuse_model(x1, self.x1_type.value).detach()
-        #     x.append(self.x1_fuse_linear(x1_fuse))
-        #     x2_fuse = self.fuse_model(x2, self.x2_type.value).detach()
-        #     x.append(self.x2_fuse_linear(x2_fuse))
-        # if self.use_model:
-        #     x1_model = self.x1_model_linear(x1)
-        #     x.append(x1_model)
-        #     x2_model = self.x2_model_linear(x2)
-        #     x.append(x2_model)
-
-        # x = torch.stack(x, dim=1)
         x = torch.cat(x, dim=1)
         return self.layers(x)
-        # return self.trans(x).mean(dim=1)

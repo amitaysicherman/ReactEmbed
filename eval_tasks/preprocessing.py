@@ -7,11 +7,9 @@ from torchdrug.data import ordered_scaffold_split
 from torchdrug.transforms import ProteinView
 from tqdm import tqdm
 
-from common.data_types import MOLECULE, PROTEIN
 from common.path_manager import data_path
 from eval_tasks.models import DataType
 from eval_tasks.tasks import Task, PrepType
-from preprocessing.seq_to_vec import Seq2Vec
 
 base_dir = f"{data_path}/torchdrug/"
 os.makedirs(base_dir, exist_ok=True)
@@ -143,8 +141,14 @@ def prep_dataset(task: Task, seq2vec, protein_emd, mol_emd):
 
 
 if __name__ == "__main__":
-    from common.args_manager import get_args
+    import argparse
 
-    args = get_args()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--task_name", type=str, default="SIDER")
+    parser.add_argument('--p_model', type=str, help='Protein model', default="ProtBert")
+    parser.add_argument('--m_model', type=str, help='Molecule model', default="ChemBERTa")
+    parser.add_argument("--auth_token", type=str, required=True)
+    args = parser.parse_args()
+
     seq2vec = Seq2Vec(args.auth_token, protein_name=args.protein_embedding, mol_name=args.molecule_embedding)
     prep_dataset(args.task_name, seq2vec, args.protein_embedding, args.molecule_embedding)
