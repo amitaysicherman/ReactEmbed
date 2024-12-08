@@ -67,6 +67,10 @@ class MiltyModalLinear(nn.Module):
             self.layers_dict[name] = get_layers(dims, config.dropout)
 
     def forward(self, x, type_):
+        # check the device of the input tensor
+        print(x.device)
+        # check the model device
+        print(next(self.parameters()).device)
         x = self.layers_dict[type_](x)
         if self.normalize_last:
             return F.normalize(x, dim=-1)
