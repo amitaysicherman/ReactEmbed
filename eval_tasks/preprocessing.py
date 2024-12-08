@@ -10,6 +10,7 @@ from tqdm import tqdm
 from common.path_manager import data_path
 from eval_tasks.models import DataType
 from eval_tasks.tasks import Task, PrepType
+from preprocessing.seq_to_vec import SeqToVec
 
 base_dir = f"{data_path}/torchdrug/"
 os.makedirs(base_dir, exist_ok=True)
@@ -55,7 +56,7 @@ def get_vec(seq2vec, x, dtype):
         return None
 
 
-def prep_dataset(task: Task, seq2vec, protein_emd, mol_emd):
+def prep_dataset(task: Task, p_seq2vec, m_seq2vec, protein_emd, mol_emd):
     output_file = pjoin(base_dir, f"{task.name}_{protein_emd}_{mol_emd}.npz")
 
     if os.path.exists(output_file):
@@ -74,8 +75,8 @@ def prep_dataset(task: Task, seq2vec, protein_emd, mol_emd):
         labels = []
         for line in tqdm(lines):
             _, _, smiles, fasta, label = line.split(" ")
-            proteins.append(seq2vec.to_vec(fasta, PROTEIN))
-            molecules.append(seq2vec.to_vec(smiles, MOLECULE))
+            proteins.append(p_seq2vec.to_vec(fasta))
+            molecules.append(m_seq2vec.to_vec(smiles))
             labels.append(label)
         np.savez(output_file, x1=np.array(proteins)[:, 0, :], x2=np.array(molecules)[:, 0, :], label=np.array(labels))
         return
@@ -116,11 +117,13 @@ def prep_dataset(task: Task, seq2vec, protein_emd, mol_emd):
         labels = []
         for i in tqdm(range(len(split))):
             key1 = "graph" if task.dtype2 is None else "graph1"
-            new_vec = get_vec(seq2vec, split[i][key1], task.dtype1)
+
+            new_vec = get_vec(p_seq2vec if task.dtype1 == DataType.PROTEIN else m_seq2vec, split[i][key1], task.dtype1)
             if new_vec is None:
                 continue
             if task.dtype2 is not None:
-                new_vec_2 = get_vec(seq2vec, split[i]["graph2"], task.dtype2)
+                new_vec_2 = get_vec(p_seq2vec if task.dtype2 == DataType.PROTEIN else m_seq2vec, split[i]["graph2"],
+                                    task.dtype2)
                 if new_vec_2 is None:
                     continue
                 x2_vecs.append(new_vec_2)
@@ -150,5 +153,6 @@ if __name__ == "__main__":
     parser.add_argument("--auth_token", type=str, required=True)
     args = parser.parse_args()
 
-    seq2vec = Seq2Vec(args.auth_token, protein_name=args.protein_embedding, mol_name=args.molecule_embedding)
-    prep_dataset(args.task_name, seq2vec, args.protein_embedding, args.molecule_embedding)
+    p_seq2vec = SeqToVec(args.p_model)
+    m_seq2vec = SeqToVec(args.m_model)
+    prep_dataset(args.task_name, p_seq2vec, m_seq2vec, args.protein_embedding, args.molecule_embedding)

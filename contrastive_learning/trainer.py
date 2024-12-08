@@ -117,5 +117,5 @@ if __name__ == '__main__':
     parser.add_argument('--lr', type=float, help='Learning rate', default=0.001)
     args = parser.parse_args()
 
-    main(args.run_name, args.not_split, args.batch_size, args.p_model, args.m_model, args.output_dim, args.n_layers,
+    main(args.not_split, args.batch_size, args.p_model, args.m_model, args.output_dim, args.n_layers,
          args.hidden_dim, args.dropout, args.epochs, args.lr)

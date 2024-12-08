@@ -12,7 +12,6 @@ from common.path_manager import item_path, reactions_file
 TYPES = ["P-P", "M-P"]  # Proteins anchor the triplets
 
 
-
 def prep_entity(entities, empty_list):
     if entities == "" or entities == " ":
         return []
@@ -21,7 +20,7 @@ def prep_entity(entities, empty_list):
 
 
 class TripletsDataset(Dataset):
-    def __init__(self, split, p_model="ProtBert", m_model="MoLFormer"):
+    def __init__(self, split, p_model="ProtBert", m_model="MoLFormer", n_duplicates=10):
         self.split = split
         self.proteins = np.load(pjoin(item_path, f"{p_model}_vectors.npy"))
         self.molecules = np.load(pjoin(item_path, f"{m_model}_vectors.npy"))
@@ -69,19 +68,21 @@ class TripletsDataset(Dataset):
             else:
                 raise ValueError("Unknown split")
 
-
         self.triples = {t: set() for t in TYPES}
         for t in TYPES:
             type1, type2 = t.split("-")
             for e1, e2 in tqdm(self.split_pair[t]):
-                e3 = self.sample_neg_element(e1, type1, type2)
-                self.triples[t].add((e1, e2, e3))
+                for _ in range(n_duplicates):
+                    e3 = self.sample_neg_element(e1, type1, type2)
+                    self.triples[t].add((e1, e2, e3))
         self.triples = {t: list(self.triples[t]) for t in TYPES}
+        # shuffle the triples
+        for t in TYPES:
+            random.seed(42)
+            random.shuffle(self.triples[t])
         for t in TYPES:
             print(f"Number of {t} triples: {len(self.triples[t])}")
         self.types = TYPES
-
-
 
     def sample_neg_element(self, e1, e1_type, e2_type):
         is_positive, is_empty = True, True
