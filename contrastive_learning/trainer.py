@@ -32,10 +32,10 @@ def run_epoch(model, optimizer, loader, contrastive_loss, is_train):
         model.eval()
     total_loss = 0
     for i, (t1, t2, data_1, data_2, data_3) in tqdm(enumerate(loader), total=len(loader)):
-        data1, data2, data3 = data_1.to(device), data_2.to(device), data_3.to(device)
+        data_1, data_2, data_3 = data_1.to(device), data_2.to(device), data_3.to(device)
         out1 = model(data_1, f"{t1[0]}-{t2[0]}")
         out3 = model(data_3, f"{t2[0]}-{t2[0]}")
-        cont_loss = contrastive_loss(data2, out1, out3)  # M-P-P OR P-P-P
+        cont_loss = contrastive_loss(data_2, out1, out3)  # M-P-P OR P-P-P
         total_loss += cont_loss.mean().item()
         if not is_train:
             continue
