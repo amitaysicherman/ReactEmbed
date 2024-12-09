@@ -12,7 +12,7 @@ class MultiModalLinearConfig:
     n_layers: int
     names: List[str]
     hidden_dim: int
-    output_dim: List[int]
+    output_dim: int
     dropout: float
     normalize_last: int
 
@@ -32,12 +32,12 @@ class MultiModalLinearConfig:
             for line in f:
                 k, v = line.strip().split("=")
                 if k == "names":
-                    v = [tuple(v_.split("_")) for v_ in v.split(",")]
+                    v = v.split(",")
                 data[k] = v
         return MultiModalLinearConfig(embedding_dim=[int(x) for x in data["embedding_dim"].split(",")],
                                       n_layers=int(data["n_layers"]), names=data["names"],
                                       hidden_dim=int(data["hidden_dim"]),
-                                      output_dim=[int(x) for x in data["output_dim"].split(",")],
+                                      output_dim=int(data["output_dim"]),
                                       dropout=float(data["dropout"]), normalize_last=int(data["normalize_last"]))
 
 

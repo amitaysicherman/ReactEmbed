@@ -149,7 +149,7 @@ if __name__ == "__main__":
     from eval_tasks.tasks import name_to_task
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--task_name", type=str, default="SIDER")
+    parser.add_argument("--task_name", type=str, default="BACE")
     parser.add_argument('--p_model', type=str, help='Protein model', default="ProtBert")
     parser.add_argument('--m_model', type=str, help='Molecule model', default="ChemBERTa")
     parser.add_argument("--auth_token", type=str, default="")

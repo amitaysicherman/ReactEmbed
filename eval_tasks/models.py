@@ -21,7 +21,7 @@ def load_fuse_model(name):
     cp_data = torch.load(f"{name}/{cp_name}", map_location=torch.device('cpu'))
     config_file = os.path.join(name, 'config.txt')
     config = MultiModalLinearConfig.load_from_file(config_file)
-    dim = config.output_dim[0]
+    dim = config.output_dim
     model = MiltyModalLinear(config)
     model.load_state_dict(cp_data)
     model = model.eval()

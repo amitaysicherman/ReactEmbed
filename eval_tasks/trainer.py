@@ -290,14 +290,12 @@ def train_model_with_config(config: dict, task_name: str, fuse_base: str, mol_em
     scores_manager = ScoresManager(mode=task.metric)
     # best_valid_score = -1e6
     # best_test_score = -1e6
-    for epoch in range(250):
+    for epoch in range(500):
         _ = run_epoch(model, train_loader, optimizer, criterion, task.metric, "train")
         with torch.no_grad():
             val_score = run_epoch(model, valid_loader, optimizer, criterion, task.metric, "val")
             test_score = run_epoch(model, test_loader, optimizer, criterion, task.metric, "test")
 
-        if print_output:
-            print(epoch, val_score, test_score)
         improved = scores_manager.update(val_score, test_score)
         if improved:
             no_improve = 0
@@ -331,8 +329,9 @@ def main(use_fuse, use_model, bs, lr, drop_out, hidden_dim, task_name, fuse_base
         'hidden_dim': hidden_dim,
         'drop_out': drop_out
     }
-    train_model_with_config(config, task_name, fuse_base, mol_emd, protein_emd, print_output, max_no_improve,
+    res = train_model_with_config(config, task_name, fuse_base, mol_emd, protein_emd, print_output, max_no_improve,
                             fuse_model=fuse_model, task_suffix=task_suffix)
+    print(res)
 
 
 if __name__ == '__main__':
@@ -340,19 +339,29 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--use_fuse", type=int, default=0)
-    parser.add_argument("--use_model", type=int, default=0)
-    parser.add_argument("--bs", type=int, default=256)
-    parser.add_argument("--lr", type=float, default=0.001)
-    parser.add_argument("--drop_out", type=float, default=0.3)
+    parser.add_argument("--use_model", type=int, default=1)
+    parser.add_argument("--bs", type=int, default=16)
+    parser.add_argument("--lr", type=float, default=0.01)
+    parser.add_argument("--drop_out", type=float, default=0.0)
     parser.add_argument("--hidden_dim", type=int, default=64)
-    parser.add_argument("--task_name", type=str, default="SIDER")
+    parser.add_argument("--task_name", type=str, default="BACE")
     parser.add_argument("--fusion_name", type=str, default="ProtBert-ChemBERTa")
     parser.add_argument("--molecule_embedding", type=str, default="ChemBERTa")
     parser.add_argument("--protein_embedding", type=str, default="ProtBert")
-    parser.add_argument("--print_downstream_results", type=int, default=1)
+    parser.add_argument("--print_downstream_results", type=int, default=0)
     parser.add_argument("--max_no_improve", type=int, default=15)
     args = parser.parse_args()
-    main(use_fuse=args.use_fuse, use_model=args.use_model, bs=args.bs, lr=args.lr, drop_out=args.drop_out,
+    torch.manual_seed(42)
+
+    main(use_fuse=1, use_model=0, bs=args.bs, lr=args.lr, drop_out=args.drop_out,
+         hidden_dim=args.hidden_dim, task_name=args.task_name, fuse_base=args.fusion_name,
+         mol_emd=args.molecule_embedding, protein_emd=args.protein_embedding,
+         print_output=args.print_downstream_results, max_no_improve=args.max_no_improve)
+    main(use_fuse=0, use_model=1, bs=args.bs, lr=args.lr, drop_out=args.drop_out,
+         hidden_dim=args.hidden_dim, task_name=args.task_name, fuse_base=args.fusion_name,
+         mol_emd=args.molecule_embedding, protein_emd=args.protein_embedding,
+         print_output=args.print_downstream_results, max_no_improve=args.max_no_improve)
+    main(use_fuse=1, use_model=1, bs=args.bs, lr=args.lr, drop_out=args.drop_out,
          hidden_dim=args.hidden_dim, task_name=args.task_name, fuse_base=args.fusion_name,
          mol_emd=args.molecule_embedding, protein_emd=args.protein_embedding,
          print_output=args.print_downstream_results, max_no_improve=args.max_no_improve)
