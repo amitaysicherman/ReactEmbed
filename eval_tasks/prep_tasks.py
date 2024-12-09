@@ -50,7 +50,7 @@ def get_vec(seq2vec, x):
             return seq2vec.to_vec(x.to_sequence().replace(".G", ""))
         # check if the sequence is a molecule sequence have to_sequence method:
         else:
-            seq2vec.to_vec(x.to_smiles())
+            return seq2vec.to_vec(x.to_smiles())
     except Exception as e:
         print(e)
         return None
@@ -130,11 +130,13 @@ def prep_dataset(task: Task, p_seq2vec, m_seq2vec, protein_emd, mol_emd):
 
             label = [split[i][key] for key in labels_keys]
             labels.append(label)
-        x2_vecs = np.array(x2_vecs)
 
         x1_all[f'x1_{name}'] = np.array(x1_vecs)
+
+        x2_vecs = np.array(x2_vecs)
         if len(x2_vecs):
-            x2_all[f'x2_{name}'] = np.array(x2_vecs)[:, 0, :]
+            x2_all[f'x2_{name}'] = np.array(x2_vecs)
+
         labels_all[f'label_{name}'] = np.array(labels)
     if len(x2_all):
         np.savez(output_file, **x1_all, **x2_all, **labels_all)
