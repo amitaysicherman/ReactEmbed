@@ -1,19 +1,13 @@
 import os
 import re
-import time
 
 import numpy as np
 import torch
-from esm.models.esmc import ESMC
-from esm.sdk.api import ESMProtein, LogitsConfig
-from esm.sdk.forge import ESM3ForgeInferenceClient as APIClient
-from npy_append_array import NpyAppendArray
 from transformers import AutoModel, AutoTokenizer, BertModel, BertTokenizer
 
 from common.path_manager import proteins_file, molecules_file, item_path
 
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-ESM_L_SIZE = 2560
 name_to_hf_cp = {
     "ProtBert": 'Rostlab/prot_bert',
     "ChemBERTa": "seyonec/ChemBERTa-zinc-base-v1",
@@ -28,13 +22,12 @@ class Esm3Embedder:
             self.model = ESMC.from_pretrained("esmc_300m").to(device).eval()
         elif size == "medium":
             self.model = ESMC.from_pretrained("esmc_600m").to(device).eval()
-        elif size == "large":
-            self.model = APIClient(model="esmc-6b-2024-12", url="https://forge.evolutionaryscale.ai",
-                                   token="3hn8PHelb0F4FdWgrLxXKR")
         else:
             raise ValueError(f"Unknown size: {size}")
 
-    def encode_and_predict_esm3(self, seq):
+    def to_vec(self, seq: str):
+        if len(seq) > 1023:
+            seq = seq[:1023]
         try:
             protein = ESMProtein(sequence=seq)
             protein = self.model.encode(protein)
@@ -44,22 +37,6 @@ class Esm3Embedder:
         except Exception as e:
             print(e)
             return None
-
-    def to_vec(self, seq: str):
-        if self.size == "large":
-            vec = None
-            for _ in range(2):
-                vec = self.encode_and_predict_esm3(seq)
-                if vec is not None:
-                    break
-                time.sleep(60)
-            if vec is None:
-                vec = np.zeros(ESM_L_SIZE)
-            return vec.reshape(-1, 1)
-        else:
-            if len(seq) > 1023:
-                seq = seq[:1023]
-            return self.encode_and_predict_esm3(seq)
 
 
 class PortBert:
@@ -122,7 +99,7 @@ class SeqToVec:
             self.model = ChemBERTa()
         elif model_name == "MoLFormer":
             self.model = MoLFormer()
-        elif model_name in ["esm3-small", "esm3-medium", "esm3-large"]:
+        elif model_name in ["esm3-small", "esm3-medium"]:
             size = model_name.split("-")[-1]
             self.model = Esm3Embedder(size)
         else:
@@ -135,7 +112,7 @@ class SeqToVec:
 def model_to_type(model_name):
     if model_name in ["ChemBERTa", "MoLFormer"]:
         return "molecule"
-    elif model_name in ["ProtBert", "esm3-small", "esm3-medium", "esm3-large"]:
+    elif model_name in ["ProtBert", "esm3-small", "esm3-medium"]:
         return "protein"
     else:
         raise ValueError(f"Unknown model: {model_name}")
@@ -160,8 +137,12 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='Convert sequence to vector')
     parser.add_argument('--model', type=str, help='Model to use', default="ChemBERTa",
-                        choices=["ProtBert", "ChemBERTa", "MoLFormer", "esm3-small", "esm3-medium", "esm3-large"])
+                        choices=["ProtBert", "ChemBERTa", "MoLFormer", "esm3-small", "esm3-medium"])
     args = parser.parse_args()
+    if "ems" in args.model:
+        from esm.models.esmc import ESMC
+        from esm.sdk.api import ESMProtein, LogitsConfig
+
     model = args.model
     data_types = model_to_type(model)
     seq_to_vec = SeqToVec(model)
@@ -173,26 +154,15 @@ if __name__ == "__main__":
         lines = f.readlines()
     all_vecs = []
     output_file = f"{item_path}/{model}_vectors.npy"
-    if model == "esm3-large":
-        if os.path.exists(output_file):
-            previous_vecs = np.load(output_file, allow_pickle=True)
-            count = len(previous_vecs)
-            lines = lines[count:]
-    else:
-        if os.path.exists(output_file):
-            print(f"{output_file} already exists")
-            exit(0)
+    if os.path.exists(output_file):
+        print(f"{output_file} already exists")
+        exit(0)
     for line in tqdm(lines):
         if len(line.strip()) == 0:
             all_vecs.append(None)
         seq = line.strip()
         vec = seq_to_vec.to_vec(seq)
-        if model == "esm3-large":
-            with NpyAppendArray(output_file) as npy:
-                npy.append(vec)
         all_vecs.append(vec)
-    # concat the vectors list(dim) -> n,dim
     all_vecs = fill_none_with_zeros(all_vecs)
     all_vecs = np.array(all_vecs)
-    if model != "esm3-large":
-        np.save(output_file, all_vecs)
+    np.save(output_file, all_vecs)

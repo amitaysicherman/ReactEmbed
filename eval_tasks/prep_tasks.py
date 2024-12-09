@@ -43,14 +43,14 @@ SIDER_LABELS = ['Hepatobiliary disorders',
                 'Injury, poisoning and procedural complications']
 
 
-def get_vec(seq2vec, x, dtype):
+def get_vec(seq2vec, x):
     try:
-        if dtype == DataType.MOLECULE:
-            return seq2vec.to_vec(x.to_smiles(), MOLECULE)
-        elif dtype == DataType.PROTEIN:
-            return seq2vec.to_vec(x.to_sequence().replace(".G", ""), PROTEIN)
+        # check if the sequence is a protein sequence have to_sequence method:
+        if hasattr(x, "to_sequence"):
+            return seq2vec.to_vec(x.to_sequence().replace(".G", ""))
+        # check if the sequence is a molecule sequence have to_sequence method:
         else:
-            raise Exception("dtype", dtype)
+            seq2vec.to_vec(x.to_smiles())
     except Exception as e:
         print(e)
         return None
@@ -118,12 +118,11 @@ def prep_dataset(task: Task, p_seq2vec, m_seq2vec, protein_emd, mol_emd):
         for i in tqdm(range(len(split))):
             key1 = "graph" if task.dtype2 is None else "graph1"
 
-            new_vec = get_vec(p_seq2vec if task.dtype1 == DataType.PROTEIN else m_seq2vec, split[i][key1], task.dtype1)
+            new_vec = get_vec(p_seq2vec if task.dtype1 == DataType.PROTEIN else m_seq2vec, split[i][key1])
             if new_vec is None:
                 continue
             if task.dtype2 is not None:
-                new_vec_2 = get_vec(p_seq2vec if task.dtype2 == DataType.PROTEIN else m_seq2vec, split[i]["graph2"],
-                                    task.dtype2)
+                new_vec_2 = get_vec(p_seq2vec if task.dtype2 == DataType.PROTEIN else m_seq2vec, split[i]["graph2"])
                 if new_vec_2 is None:
                     continue
                 x2_vecs.append(new_vec_2)
@@ -133,7 +132,7 @@ def prep_dataset(task: Task, p_seq2vec, m_seq2vec, protein_emd, mol_emd):
             labels.append(label)
         x2_vecs = np.array(x2_vecs)
 
-        x1_all[f'x1_{name}'] = np.array(x1_vecs)[:, 0, :]
+        x1_all[f'x1_{name}'] = np.array(x1_vecs)
         if len(x2_vecs):
             x2_all[f'x2_{name}'] = np.array(x2_vecs)[:, 0, :]
         labels_all[f'label_{name}'] = np.array(labels)
@@ -145,14 +144,15 @@ def prep_dataset(task: Task, p_seq2vec, m_seq2vec, protein_emd, mol_emd):
 
 if __name__ == "__main__":
     import argparse
+    from eval_tasks.tasks import name_to_task
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--task_name", type=str, default="SIDER")
     parser.add_argument('--p_model', type=str, help='Protein model', default="ProtBert")
     parser.add_argument('--m_model', type=str, help='Molecule model', default="ChemBERTa")
-    parser.add_argument("--auth_token", type=str, required=True)
+    parser.add_argument("--auth_token", type=str, default="")
     args = parser.parse_args()
-
+    task = name_to_task[args.task_name]
     p_seq2vec = SeqToVec(args.p_model)
     m_seq2vec = SeqToVec(args.m_model)
-    prep_dataset(args.task_name, p_seq2vec, m_seq2vec, args.protein_embedding, args.molecule_embedding)
+    prep_dataset(task, p_seq2vec, m_seq2vec, args.p_model, args.m_model)

@@ -89,7 +89,7 @@ class LinFuseModel(FuseModel):
         return self.layers(x)
 
 
-class PairTransFuseModel(FuseModel):
+class PairsFuseModel(FuseModel):
     def __init__(self, input_dim_1: int, dtpye_1: DataType, input_dim_2: int, dtype_2: DataType, output_dim: int,
                  conf: Config,
                  hidden_dim=-1, n_layers=2, drop_out=0.5, fuse_model=None,

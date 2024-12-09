@@ -6,7 +6,7 @@ from torchdrug import metrics
 from common.data_types import Config
 from common.path_manager import scores_path
 from eval_tasks.dataset import get_dataloaders
-from eval_tasks.models import LinFuseModel, PairTransFuseModel
+from eval_tasks.models import LinFuseModel, PairsFuseModel
 from eval_tasks.tasks import name_to_task, Task
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -239,7 +239,7 @@ def get_model_from_task(task: Task, dataset, conf, fuse_base, drop_out, n_layers
         return model_class(input_dim=input_dim_1, input_type=dtype_1, output_dim=output_dim, conf=conf,
                            fuse_base=fuse_base, fuse_model=fuse_model, drop_out=drop_out, n_layers=n_layers,
                            hidden_dim=hidden_dim)
-    elif task.model == PairTransFuseModel:
+    elif task.model == PairsFuseModel:
         return model_class(input_dim_1=input_dim_1, dtpye_1=dtype_1, input_dim_2=input_dim_2, dtype_2=dtype_2,
                            output_dim=output_dim, conf=conf, fuse_base=fuse_base, fuse_model=fuse_model,
                            drop_out=drop_out, n_layers=n_layers, hidden_dim=hidden_dim)
@@ -321,20 +321,38 @@ def train_model_with_config(config: dict, task_name: str, fuse_base: str, mol_em
     return scores_manager.test_scores.get_metrics()
 
 
-def main(args, fuse_model=None):
+def main(use_fuse, use_model, bs, lr, drop_out, hidden_dim, task_name, fuse_base, mol_emd, protein_emd, print_output,
+         max_no_improve, fuse_model=None, task_suffix=""):
     config = {
-        "use_fuse": args.use_fusion_for_downstream,
-        "use_model": args.use_pretrained_for_downstream,
-        "bs": args.downstream_batch_size,
-        "lr": args.downstream_learning_rate,
-        'hidden_dim': args.downstream_hidden_dim,
-        'drop_out': args.downstream_dropout
+        "use_fuse": use_fuse,
+        "use_model": use_model,
+        "bs": bs,
+        "lr": lr,
+        'hidden_dim': hidden_dim,
+        'drop_out': drop_out
     }
-    train_model_with_config(config, args.task_name, args.fusion_name, args.molecule_embedding, args.protein_embedding,
-                            args.print_downstream_results, fuse_model=fuse_model)
+    train_model_with_config(config, task_name, fuse_base, mol_emd, protein_emd, print_output, max_no_improve,
+                            fuse_model=fuse_model, task_suffix=task_suffix)
 
 
 if __name__ == '__main__':
-    from common.args_manager import get_args
+    import argparse
 
-    main(get_args())
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--use_fuse", type=int, default=0)
+    parser.add_argument("--use_model", type=int, default=0)
+    parser.add_argument("--bs", type=int, default=256)
+    parser.add_argument("--lr", type=float, default=0.001)
+    parser.add_argument("--drop_out", type=float, default=0.3)
+    parser.add_argument("--hidden_dim", type=int, default=64)
+    parser.add_argument("--task_name", type=str, default="SIDER")
+    parser.add_argument("--fusion_name", type=str, default="ProtBert-ChemBERTa")
+    parser.add_argument("--molecule_embedding", type=str, default="ChemBERTa")
+    parser.add_argument("--protein_embedding", type=str, default="ProtBert")
+    parser.add_argument("--print_downstream_results", type=int, default=1)
+    parser.add_argument("--max_no_improve", type=int, default=15)
+    args = parser.parse_args()
+    main(use_fuse=args.use_fuse, use_model=args.use_model, bs=args.bs, lr=args.lr, drop_out=args.drop_out,
+         hidden_dim=args.hidden_dim, task_name=args.task_name, fuse_base=args.fusion_name,
+         mol_emd=args.molecule_embedding, protein_emd=args.protein_embedding,
+         print_output=args.print_downstream_results, max_no_improve=args.max_no_improve)

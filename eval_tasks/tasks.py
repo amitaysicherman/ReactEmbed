@@ -5,7 +5,7 @@ import torch
 from torch import nn
 from torchdrug import datasets
 
-from eval_tasks.models import DataType, LinFuseModel, PairTransFuseModel, FuseModel
+from eval_tasks.models import DataType, LinFuseModel, PairsFuseModel
 
 
 class PrepType(enum.Enum):
@@ -17,7 +17,7 @@ class PrepType(enum.Enum):
 class Task:
     name: str
     dataset: object
-    model: FuseModel
+    model: object
     criterion: object
     metric: object
     dtype1: DataType
@@ -43,9 +43,9 @@ name_to_task = {
                          DataType.PROTEIN, 1),
     "Stability": Task("Stability", datasets.Stability, LinFuseModel, nn.MSELoss, regression,
                       DataType.PROTEIN, 1),
-    "HumanPPI": Task("HumanPPI", datasets.HumanPPI, PairTransFuseModel, nn.BCEWithLogitsLoss, classification,
+    "HumanPPI": Task("HumanPPI", datasets.HumanPPI, PairsFuseModel, nn.BCEWithLogitsLoss, classification,
                      DataType.PROTEIN, 1, DataType.PROTEIN),
-    "BindingDB": Task("BindingDB", datasets.BindingDB, PairTransFuseModel, nn.MSELoss, regression, DataType.PROTEIN, 1,
+    "BindingDB": Task("BindingDB", datasets.BindingDB, PairsFuseModel, nn.MSELoss, regression, DataType.PROTEIN, 1,
                       DataType.MOLECULE),
     "BACE": Task("BACE", datasets.BACE, LinFuseModel, nn.BCEWithLogitsLoss, classification, DataType.MOLECULE,
                  1, n_layers=3),
@@ -56,8 +56,8 @@ name_to_task = {
                     2, n_layers=3),
     "SIDER": Task("SIDER", datasets.SIDER, LinFuseModel, nn.BCEWithLogitsLoss, classification,
                   DataType.MOLECULE, 27, n_layers=3),
-    "DrugBank": Task("DrugBank", None, PairTransFuseModel, nn.BCEWithLogitsLoss, classification,
+    "DrugBank": Task("DrugBank", None, PairsFuseModel, nn.BCEWithLogitsLoss, classification,
                      DataType.PROTEIN, 1, DataType.MOLECULE, PrepType.drugtarget),
-    "Davis": Task("Davis", None, PairTransFuseModel, nn.BCEWithLogitsLoss, classification, DataType.PROTEIN,
+    "Davis": Task("Davis", None, PairsFuseModel, nn.BCEWithLogitsLoss, classification, DataType.PROTEIN,
                   1, DataType.MOLECULE, PrepType.drugtarget),
 }
