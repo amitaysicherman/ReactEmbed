@@ -20,7 +20,6 @@ model_to_dim = {
 }
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-print(f"Device: {device}")
 
 
 def run_epoch(model, optimizer, loader, contrastive_loss, is_train):
@@ -66,17 +65,12 @@ def build_models(p_dim, m_dim, out_dim, n_layers, hidden_dim, dropout, save_dir)
     return model
 
 
-def main(not_split, batch_size, p_model, m_model, output_dim, n_layers, hidden_dim, dropout, epochs, lr):
+def main(batch_size, p_model, m_model, output_dim, n_layers, hidden_dim, dropout, epochs, lr):
     save_dir = f"{fuse_path}/{p_model}-{m_model}/"
     os.makedirs(save_dir, exist_ok=True)
-    if not_split:
-        train_loader = get_loader("all", batch_size, p_model, m_model)
-        valid_loader, test_loader = None, None
-    else:
-        train_loader = get_loader("train", batch_size, p_model, m_model)
-        valid_loader = get_loader("valid", batch_size, p_model, m_model)
-        test_loader = get_loader("test", batch_size, p_model, m_model)
-    # p_dim, m_dim, out_dim, n_layers, hidden_dim, dropout, save_dir
+    train_loader = get_loader("train", batch_size, p_model, m_model)
+    valid_loader = get_loader("valid", batch_size, p_model, m_model)
+    test_loader = get_loader("test", batch_size, p_model, m_model)
     p_dim = model_to_dim[p_model]
     m_dim = model_to_dim[m_model]
 
@@ -104,8 +98,6 @@ if __name__ == '__main__':
     import argparse
 
     parser = argparse.ArgumentParser(description='Contrastive Learning')
-    parser.add_argument('--run_name', type=str, help='Run name', default="default")
-    parser.add_argument('--not_split', action='store_true', help='Do not split the data')
     parser.add_argument('--batch_size', type=int, help='Batch size', default=8192)
     parser.add_argument('--p_model', type=str, help='Protein model', default="ProtBert")
     parser.add_argument('--m_model', type=str, help='Molecule model', default="ChemBERTa")
@@ -117,5 +109,5 @@ if __name__ == '__main__':
     parser.add_argument('--lr', type=float, help='Learning rate', default=0.001)
     args = parser.parse_args()
 
-    main(args.not_split, args.batch_size, args.p_model, args.m_model, args.output_dim, args.n_layers,
+    main(args.batch_size, args.p_model, args.m_model, args.output_dim, args.n_layers,
          args.hidden_dim, args.dropout, args.epochs, args.lr)

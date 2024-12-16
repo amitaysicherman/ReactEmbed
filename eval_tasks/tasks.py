@@ -17,14 +17,12 @@ class PrepType(enum.Enum):
 class Task:
     name: str
     dataset: object
-    model: object
+    model: torch.nn.Module
     criterion: object
-    metric: object
     dtype1: DataType
     output_dim: int
     dtype2: DataType = None
     prep_type: PrepType = PrepType.torchdrug
-    n_layers: int = 1
 
 
 def mse_metric(output, target):
@@ -33,31 +31,41 @@ def mse_metric(output, target):
     return -1 * mse
 
 
-classification = "classification"
-regression = "regression"
-
 name_to_task = {
-    "BetaLactamase": Task("BetaLactamase", datasets.BetaLactamase, LinFuseModel, nn.MSELoss, regression,
-                          DataType.PROTEIN, 1),
-    "Fluorescence": Task("Fluorescence", datasets.Fluorescence, LinFuseModel, nn.MSELoss, regression,
-                         DataType.PROTEIN, 1),
-    "Stability": Task("Stability", datasets.Stability, LinFuseModel, nn.MSELoss, regression,
-                      DataType.PROTEIN, 1),
-    "HumanPPI": Task("HumanPPI", datasets.HumanPPI, PairsFuseModel, nn.BCEWithLogitsLoss, classification,
-                     DataType.PROTEIN, 1, DataType.PROTEIN),
-    "BindingDB": Task("BindingDB", datasets.BindingDB, PairsFuseModel, nn.MSELoss, regression, DataType.PROTEIN, 1,
+    # Molecule tasks
+    "BACE": Task("BACE", datasets.BACE, LinFuseModel, nn.BCEWithLogitsLoss, DataType.MOLECULE, 1),
+    "BBBP": Task("BBBP", datasets.BBBP, LinFuseModel, nn.BCEWithLogitsLoss, DataType.MOLECULE, 1),
+    "CEP": Task("CEP", datasets.CEP, LinFuseModel, nn.MSELoss, DataType.MOLECULE, 1),
+    "ClinTox": Task("ClinTox", datasets.ClinTox, LinFuseModel, nn.BCEWithLogitsLoss, DataType.MOLECULE, 2),
+    "Delaney": Task("Delaney", datasets.Delaney, LinFuseModel, nn.MSELoss, DataType.MOLECULE, 1),
+    "FreeSolv": Task("FreeSolv", datasets.FreeSolv, LinFuseModel, nn.MSELoss, DataType.MOLECULE, 1),
+    "HIV": Task("HIV", datasets.HIV, LinFuseModel, nn.BCEWithLogitsLoss, DataType.MOLECULE, 1),
+    "Lipophilicity": Task("Lipophilicity", datasets.Lipophilicity, LinFuseModel, nn.MSELoss, DataType.MOLECULE, 1),
+    "Malaria": Task("Malaria", datasets.Malaria, LinFuseModel, nn.MSELoss, DataType.MOLECULE, 1),
+    "SIDER": Task("SIDER", datasets.SIDER, LinFuseModel, nn.BCEWithLogitsLoss, DataType.MOLECULE, 27),
+    "Tox21": Task("Tox21", datasets.Tox21, LinFuseModel, nn.BCEWithLogitsLoss, DataType.MOLECULE, 12),
+
+    # Protein tasks
+    "BetaLactamase": Task("BetaLactamase", datasets.BetaLactamase, LinFuseModel, nn.MSELoss, DataType.PROTEIN, 1),
+    "Fluorescence": Task("Fluorescence", datasets.Fluorescence, LinFuseModel, nn.MSELoss, DataType.PROTEIN, 1),
+    "Stability": Task("Stability", datasets.Stability, LinFuseModel, nn.MSELoss, DataType.PROTEIN, 1),
+    "BinaryLocalization": Task("BinaryLocalization", datasets.BinaryLocalization, LinFuseModel, nn.BCEWithLogitsLoss,
+                               DataType.PROTEIN, 1),
+    # Pairs tasks
+    "HumanPPI": Task("HumanPPI", datasets.HumanPPI, PairsFuseModel, nn.BCEWithLogitsLoss, DataType.PROTEIN, 1,
+                     DataType.PROTEIN),
+    "YeastPPI": Task("YeastPPI", datasets.YeastPPI, PairsFuseModel, nn.BCEWithLogitsLoss, DataType.PROTEIN, 1,
+                     DataType.PROTEIN),
+    "PPIAffinity": Task("PPIAffinity", datasets.PPIAffinity, PairsFuseModel, nn.MSELoss, DataType.PROTEIN, 1,
+                        DataType.PROTEIN),
+    "BindingDB": Task("BindingDB", datasets.BindingDB, PairsFuseModel, nn.MSELoss, DataType.PROTEIN, 1,
                       DataType.MOLECULE),
-    "BACE": Task("BACE", datasets.BACE, LinFuseModel, nn.BCEWithLogitsLoss, classification, DataType.MOLECULE,
-                 1, n_layers=3),
-    "BBBP": Task("BBBP", datasets.BBBP, LinFuseModel, nn.BCEWithLogitsLoss, classification, DataType.MOLECULE,
-                 1, n_layers=3),
-    "ClinTox": Task("ClinTox", datasets.ClinTox, LinFuseModel, nn.BCEWithLogitsLoss, classification,
-                    DataType.MOLECULE,
-                    2, n_layers=3),
-    "SIDER": Task("SIDER", datasets.SIDER, LinFuseModel, nn.BCEWithLogitsLoss, classification,
-                  DataType.MOLECULE, 27, n_layers=3),
-    "DrugBank": Task("DrugBank", None, PairsFuseModel, nn.BCEWithLogitsLoss, classification,
-                     DataType.PROTEIN, 1, DataType.MOLECULE, PrepType.drugtarget),
-    "Davis": Task("Davis", None, PairsFuseModel, nn.BCEWithLogitsLoss, classification, DataType.PROTEIN,
-                  1, DataType.MOLECULE, PrepType.drugtarget),
+    "PDBBind": Task("PDBBind", datasets.PDBBind, PairsFuseModel, nn.MSELoss, DataType.PROTEIN, 1,
+                    DataType.MOLECULE),
+
+    # Drug target tasks
+    "DrugBank": Task("DrugBank", None, PairsFuseModel, nn.BCEWithLogitsLoss, DataType.PROTEIN, 1, DataType.MOLECULE,
+                     PrepType.drugtarget),
+    "Davis": Task("Davis", None, PairsFuseModel, nn.BCEWithLogitsLoss, DataType.PROTEIN, 1, DataType.MOLECULE,
+                  PrepType.drugtarget),
 }

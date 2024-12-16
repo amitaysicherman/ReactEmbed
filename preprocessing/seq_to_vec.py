@@ -3,6 +3,8 @@ import re
 
 import numpy as np
 import torch
+from esm.models.esmc import ESMC
+from esm.sdk.api import ESMProtein, LogitsConfig
 from transformers import AutoModel, AutoTokenizer, BertModel, BertTokenizer
 
 from common.path_manager import proteins_file, molecules_file, item_path
@@ -131,19 +133,7 @@ def fill_none_with_zeros(vecs):
     return vecs
 
 
-if __name__ == "__main__":
-    import argparse
-    from tqdm import tqdm
-
-    parser = argparse.ArgumentParser(description='Convert sequence to vector')
-    parser.add_argument('--model', type=str, help='Model to use', default="ChemBERTa",
-                        choices=["ProtBert", "ChemBERTa", "MoLFormer", "esm3-small", "esm3-medium"])
-    args = parser.parse_args()
-    if "ems" in args.model:
-        from esm.models.esmc import ESMC
-        from esm.sdk.api import ESMProtein, LogitsConfig
-
-    model = args.model
+def main(model):
     data_types = model_to_type(model)
     seq_to_vec = SeqToVec(model)
     if data_types == "protein":
@@ -156,7 +146,7 @@ if __name__ == "__main__":
     output_file = f"{item_path}/{model}_vectors.npy"
     if os.path.exists(output_file):
         print(f"{output_file} already exists")
-        exit(0)
+        return None
     for line in tqdm(lines):
         if len(line.strip()) == 0:
             all_vecs.append(None)
@@ -166,3 +156,14 @@ if __name__ == "__main__":
     all_vecs = fill_none_with_zeros(all_vecs)
     all_vecs = np.array(all_vecs)
     np.save(output_file, all_vecs)
+
+
+if __name__ == "__main__":
+    import argparse
+    from tqdm import tqdm
+
+    parser = argparse.ArgumentParser(description='Convert sequence to vector')
+    parser.add_argument('--model', type=str, help='Model to use', default="ChemBERTa",
+                        choices=["ProtBert", "ChemBERTa", "MoLFormer", "esm3-small", "esm3-medium"])
+    args = parser.parse_args()
+    main(args.model)

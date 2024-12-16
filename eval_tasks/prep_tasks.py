@@ -10,6 +10,7 @@ from tqdm import tqdm
 from common.path_manager import data_path
 from eval_tasks.models import DataType
 from eval_tasks.tasks import Task, PrepType
+from eval_tasks.tasks import name_to_task
 from preprocessing.seq_to_vec import SeqToVec
 
 base_dir = f"{data_path}/torchdrug/"
@@ -144,17 +145,19 @@ def prep_dataset(task: Task, p_seq2vec, m_seq2vec, protein_emd, mol_emd):
         np.savez(output_file, **x1_all, **labels_all)
 
 
+def main(task_name, p_model, m_model):
+    task = name_to_task[task_name]
+    p_seq2vec = SeqToVec(p_model)
+    m_seq2vec = SeqToVec(m_model)
+    prep_dataset(task, p_seq2vec, m_seq2vec, p_model, m_model)
+
+
 if __name__ == "__main__":
     import argparse
-    from eval_tasks.tasks import name_to_task
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--task_name", type=str, default="BACE")
     parser.add_argument('--p_model', type=str, help='Protein model', default="ProtBert")
     parser.add_argument('--m_model', type=str, help='Molecule model', default="ChemBERTa")
-    parser.add_argument("--auth_token", type=str, default="")
     args = parser.parse_args()
-    task = name_to_task[args.task_name]
-    p_seq2vec = SeqToVec(args.p_model)
-    m_seq2vec = SeqToVec(args.m_model)
-    prep_dataset(task, p_seq2vec, m_seq2vec, args.p_model, args.m_model)
+    main(args.task_name, args.p_model, args.m_model)

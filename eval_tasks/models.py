@@ -17,7 +17,6 @@ def load_fuse_model(name):
     name = str(os.path.join(fuse_path, name))
     cp_names = os.listdir(name)
     cp_name = [x for x in cp_names if x.endswith(".pt")][0]
-    print(f"Load model {name}/{cp_name}")
     cp_data = torch.load(f"{name}/{cp_name}", map_location=torch.device('cpu'))
     config_file = os.path.join(name, 'config.txt')
     config = MultiModalLinearConfig.load_from_file(config_file)
@@ -63,19 +62,19 @@ class FuseModel(torch.nn.Module):
 
 
 class LinFuseModel(FuseModel):
-    def __init__(self, input_dim: int, input_type: DataType, output_dim: int, conf: Config, fuse_model=None,
+    def __init__(self, input_dim_1: int, dtype_1: DataType, output_dim: int, conf: Config, fuse_model=None,
                  fuse_base="", n_layers=2, drop_out=0.0, hidden_dim=-1):
         super().__init__(conf, fuse_model, fuse_base)
         self.input_dim = 0
         if self.use_fuse:
             self.input_dim += self.fuse_dim
         if self.use_model:
-            self.input_dim += input_dim
+            self.input_dim += input_dim_1
 
         if hidden_dim == -1:
             hidden_dim = self.input_dim
 
-        self.dtype = input_type
+        self.dtype = dtype_1
         hidden_layers = [hidden_dim] * (n_layers - 1)
         self.layers = get_layers([self.input_dim] + hidden_layers + [output_dim], dropout=drop_out)
 
@@ -90,7 +89,7 @@ class LinFuseModel(FuseModel):
 
 
 class PairsFuseModel(FuseModel):
-    def __init__(self, input_dim_1: int, dtpye_1: DataType, input_dim_2: int, dtype_2: DataType, output_dim: int,
+    def __init__(self, input_dim_1: int, dtype_1: DataType, input_dim_2: int, dtype_2: DataType, output_dim: int,
                  conf: Config,
                  hidden_dim=-1, n_layers=2, drop_out=0.5, fuse_model=None,
                  fuse_base=""):
@@ -101,7 +100,7 @@ class PairsFuseModel(FuseModel):
             self.input_dim += self.fuse_dim * 2
         if self.use_model:
             self.input_dim += input_dim_1 + input_dim_2
-        self.x1_dtype = dtpye_1
+        self.x1_dtype = dtype_1
         self.x2_dtype = dtype_2
 
         if hidden_dim == -1:
