@@ -1,3 +1,4 @@
+#!/bin/sh
 #SBATCH --time=1-00
 #SBATCH --mem=16G
 #SBATCH --requeue
