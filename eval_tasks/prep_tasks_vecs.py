@@ -40,7 +40,7 @@ def prep_dataset(task: Task, p_seq2vec, m_seq2vec, protein_emd, mol_emd):
     x1_all = dict()
     x2_all = dict()
     labels_all = dict()
-    for split, name in ["train", "valid", "test"]:
+    for name in ["train", "valid", "test"]:
         with open(pjoin(task_dir, f"{name}_1.txt"), "r") as f:
             x1_lines = f.read().splitlines()
         x1_vecs = [p_seq2vec.to_vec(line) if task.dtype1 == DataType.PROTEIN else m_seq2vec.to_vec(line) for line in
