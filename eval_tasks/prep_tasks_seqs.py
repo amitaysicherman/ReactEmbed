@@ -1,4 +1,3 @@
-# sbatch --time=1-0 --array=1-21 --gres=gpu:A40:1 --mem=64G -c 4 --requeue --wrap="python3 GO/preprocessing.py --task_index $SLURM_ARRAY_TASK_ID-1"
 import os
 from os.path import join as pjoin
 
@@ -76,9 +75,9 @@ def prep_dataset(task: Task):
             prots.append(fasta)
             mols.append(smiles)
             labels.append(label)
-        with open(pjoin(output_base, "proteins.txt"), "w") as f:
+        with open(pjoin(output_base, "1.txt"), "w") as f:
             f.write("\n".join(prots))
-        with open(pjoin(output_base, "molecules.txt"), "w") as f:
+        with open(pjoin(output_base, "2.txt"), "w") as f:
             f.write("\n".join(mols))
         with open(pjoin(output_base, "labels.txt"), "w") as f:
             f.write("\n".join(labels))
@@ -115,7 +114,6 @@ def prep_dataset(task: Task):
         all_seq_2 = []
         all_labels = []
         for i in tqdm(range(len(split))):
-            texts = []
             key1 = "graph" if task.dtype2 is None else "graph1"
             seq_1 = get_seq(split[i][key1])
             if seq_1 is None:
@@ -126,7 +124,7 @@ def prep_dataset(task: Task):
                 if seq_2 is None:
                     continue
                 all_seq_2.append(seq_2)
-            all_labels.append("-".join([split[i][key] for key in labels_keys]))
+            all_labels.append(" ".join([split[i][key] for key in labels_keys]))
         with open(pjoin(output_base, f"{name}_1.txt"), "w") as f:
             f.write("\n".join(all_seq_1))
         if task.dtype2 is not None:
