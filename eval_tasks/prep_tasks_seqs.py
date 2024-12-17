@@ -124,7 +124,7 @@ def prep_dataset(task: Task):
                 if seq_2 is None:
                     continue
                 all_seq_2.append(seq_2)
-            all_labels.append(" ".join([split[i][key] for key in labels_keys]))
+            all_labels.append(" ".join([str(split[i][key]) for key in labels_keys]))
         with open(pjoin(output_base, f"{name}_1.txt"), "w") as f:
             f.write("\n".join(all_seq_1))
         if task.dtype2 is not None:
