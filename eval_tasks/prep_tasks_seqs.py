@@ -1,6 +1,7 @@
 import os
 from os.path import join as pjoin
 
+import numpy as np
 from torchdrug.data import ordered_scaffold_split
 from torchdrug.transforms import ProteinView
 from tqdm import tqdm
@@ -54,9 +55,18 @@ def get_seq(x):
         return None
 
 
+def split_train_val_test(data, val_size=0.16, test_size=0.20):
+    train_val_index = int((1 - val_size - test_size) * len(data))
+    val_test_index = int((1 - test_size) * len(data))
+    train_data = data[:train_val_index]
+    val_data = data[train_val_index:val_test_index]
+    test_data = data[val_test_index:]
+    return train_data, val_data, test_data
+
 def prep_dataset(task: Task):
     output_base = pjoin(base_dir, task.name)
-    if os.path.exists(output_base):
+    labels_file = pjoin(output_base, "train_labels.txt")
+    if os.path.exists(labels_file):
         return
 
     if task.prep_type == PrepType.drugtarget:
@@ -67,20 +77,37 @@ def prep_dataset(task: Task):
 
         with open(input_file) as f:
             lines = f.read().splitlines()
-        prots = []
-        mols = []
+        x1 = []
+        x2 = []
         labels = []
         for line in tqdm(lines):
             _, _, smiles, fasta, label = line.split(" ")
-            prots.append(fasta)
-            mols.append(smiles)
+            x1.append(fasta)
+            x2.append(smiles)
             labels.append(label)
-        with open(pjoin(output_base, "1.txt"), "w") as f:
-            f.write("\n".join(prots))
-        with open(pjoin(output_base, "2.txt"), "w") as f:
-            f.write("\n".join(mols))
-        with open(pjoin(output_base, "labels.txt"), "w") as f:
-            f.write("\n".join(labels))
+        x1 = np.array(x1)
+        x2 = np.array(x2)
+        labels = np.array(labels)
+
+        shuffle_index = np.random.permutation(len(labels))
+        x1 = x1[shuffle_index]
+        x2 = x2[shuffle_index]
+        labels = labels[shuffle_index]
+        x1_train, x1_valid, x1_test = split_train_val_test(x1)
+        x2_train, x2_valid, x2_test = split_train_val_test(x2)
+        labels_train, labels_valid, labels_test = split_train_val_test(labels)
+
+        for split, name in zip([x1_train, x1_valid, x1_test], ["train", "valid", "test"]):
+            with open(pjoin(output_base, f"{name}_1.txt"), "w") as f:
+                f.write("\n".join(split))
+        for split, name in zip([x2_train, x2_valid, x2_test], ["train", "valid", "test"]):
+            with open(pjoin(output_base, f"{name}_2.txt"), "w") as f:
+                f.write("\n".join(split))
+        for split, name in zip([labels_train, labels_valid, labels_test], ["train", "valid", "test"]):
+            with open(pjoin(output_base, f"{name}_labels.txt"), "w") as f:
+                f.write("\n".join(split))
+
+
 
     if task.dtype1 == DataType.PROTEIN:
         if task.dtype2 is None:
