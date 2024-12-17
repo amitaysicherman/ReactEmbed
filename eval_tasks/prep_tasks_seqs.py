@@ -2,6 +2,7 @@ import os
 from os.path import join as pjoin
 
 import numpy as np
+from torchdrug import datasets
 from torchdrug.data import ordered_scaffold_split
 from torchdrug.transforms import ProteinView
 from tqdm import tqdm
@@ -41,6 +42,9 @@ SIDER_LABELS = ['Hepatobiliary disorders',
                 'Nervous system disorders',
                 'Injury, poisoning and procedural complications']
 
+
+def task_name_to_dataset_class(task_name):
+    return getattr(datasets, task_name)
 
 def get_seq(x):
     try:
@@ -122,18 +126,19 @@ def prep_dataset(task: Task):
                     atom_feature=None, bond_feature=None)
     else:
         args = dict()
-    dataset = task.dataset(pjoin(base_dir, task.name), **args)
-    labels_keys = getattr(task.dataset, 'target_fields')
+    dataset_class = task_name_to_dataset_class(task.name)
+    dataset = dataset_class(pjoin(base_dir, task.name), **args)
+    labels_keys = getattr(dataset_class, 'target_fields')
     if task.name == "SIDER":
         labels_keys = SIDER_LABELS
-    if hasattr(task.dataset, "splits"):
+    if hasattr(dataset_class, "splits"):
         splits = dataset.split()
         if len(splits) == 3:
             train, valid, test = splits
         elif len(splits) > 3:
             train, valid, test, *unused_test = splits
         else:
-            raise Exception("splits", getattr(task.dataset, "splits"))
+            raise Exception("splits", getattr(dataset_class, "splits"))
 
     else:
         train, valid, test = ordered_scaffold_split(dataset, None)

@@ -6,36 +6,16 @@ from torch.utils.data import Dataset, DataLoader
 from common.path_manager import data_path
 
 
-def split_train_val_test(data, val_size=0.16, test_size=0.20):
-    train_val_index = int((1 - val_size - test_size) * len(data))
-    val_test_index = int((1 - test_size) * len(data))
-    train_data = data[:train_val_index]
-    val_data = data[train_val_index:val_test_index]
-    test_data = data[val_test_index:]
-    return train_data, val_data, test_data
-
-
 def load_data(task_name, mol_emd, protein_emd):
     base_dir = f"{data_path}/torchdrug/"
     data_file = pjoin(base_dir, f"{task_name}_{protein_emd}_{mol_emd}.npz")
     data = np.load(data_file)
-    if task_name in ["DrugBank", "Davis", "KIBA"]:
-        x1, x2, labels = [data[f"{x}"] for x in ["x1", "x2", "label"]]
-        labels = labels.astype(np.float32).reshape(-1, 1)
-        shuffle_index = np.random.permutation(len(x1))
-        x1 = x1[shuffle_index]
-        x2 = x2[shuffle_index]
-        labels = labels[shuffle_index]
-        x1_train, x1_valid, x1_test = split_train_val_test(x1)
-        x2_train, x2_valid, x2_test = split_train_val_test(x2)
-        labels_train, labels_valid, labels_test = split_train_val_test(labels)
+    x1_train, x1_valid, x1_test = [data[f"x1_{x}"] for x in ["train", "valid", "test"]]
+    if "x2_train" in data:
+        x2_train, x2_valid, x2_test = [data[f"x2_{x}"] for x in ["train", "valid", "test"]]
     else:
-        x1_train, x1_valid, x1_test = [data[f"x1_{x}"] for x in ["train", "valid", "test"]]
-        if "x2_train" in data:
-            x2_train, x2_valid, x2_test = [data[f"x2_{x}"] for x in ["train", "valid", "test"]]
-        else:
-            x2_train, x2_valid, x2_test = None, None, None
-        labels_train, labels_valid, labels_test = [data[f"label_{x}"] for x in ["train", "valid", "test"]]
+        x2_train, x2_valid, x2_test = None, None, None
+    labels_train, labels_valid, labels_test = [data[f"label_{x}"] for x in ["train", "valid", "test"]]
     return x1_train, x2_train, labels_train, x1_valid, x2_valid, labels_valid, x1_test, x2_test, labels_test
 
 
