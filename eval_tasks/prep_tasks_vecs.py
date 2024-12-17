@@ -33,7 +33,7 @@ def prep_dataset(task: Task, p_seq2vec, m_seq2vec, protein_emd, mol_emd):
         molecules = np.stack(molecules)
         with open(pjoin(task_dir, "labels.txt"), "r") as f:
             lines = f.read().splitlines()
-        labels = np.array([int(line) for line in tqdm(lines)])
+        labels = np.array([float(line) for line in tqdm(lines)])
         np.savez(output_file, x1=proteins, x2=molecules, label=labels)
         return
 
@@ -56,7 +56,7 @@ def prep_dataset(task: Task, p_seq2vec, m_seq2vec, protein_emd, mol_emd):
             x2_vecs = []
         with open(pjoin(task_dir, f"{name}_labels.txt"), "r") as f:
             labels_lines = f.read().splitlines()
-        labels = [np.array([int(x) for x in line.split()]) for line in labels_lines]
+        labels = [np.array([float(x) for x in line.split()]) for line in labels_lines]
         labels = np.stack(labels)
 
         x1_all[f'x1_{name}'] = np.array(x1_vecs)
