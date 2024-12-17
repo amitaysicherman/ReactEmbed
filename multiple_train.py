@@ -20,9 +20,9 @@ flip_prob = 0
 batch_size = args.batch_size
 m_model = args.m_model
 p_model = args.p_model
-product_list = product(output_dim_list, n_layers_list, hidden_dim_list, dropout_list, epochs_list, lr_list)
+product_list = list(product(output_dim_list, n_layers_list, hidden_dim_list, dropout_list, epochs_list, lr_list))
 print(
-    f"Start train {m_model} and {p_model} with batch size {batch_size} - {len(list(product_list))} models")
+    f"Start train {m_model} and {p_model} with batch size {batch_size} - {len(product_list)} models")
 
 train_loader = get_loader("train", batch_size, p_model, m_model, flip_prob)
 valid_loader = get_loader("valid", batch_size, p_model, m_model, flip_prob)
