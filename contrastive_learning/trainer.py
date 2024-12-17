@@ -66,15 +66,19 @@ def build_models(p_dim, m_dim, out_dim, n_layers, hidden_dim, dropout, save_dir)
     return model
 
 
-def main(batch_size, p_model, m_model, output_dim, n_layers, hidden_dim, dropout, epochs, lr, flip_prob):
+def main(batch_size, p_model, m_model, output_dim, n_layers, hidden_dim, dropout, epochs, lr, flip_prob=0,
+         datasets=None):
     name = model_args_to_name(p_model=p_model, m_model=m_model, output_dim=output_dim, n_layers=n_layers,
                               hidden_dim=hidden_dim, dropout=dropout, epochs=epochs, lr=lr, flip_prob=flip_prob)
 
     save_dir = f"{fuse_path}/{name}/"
     os.makedirs(save_dir, exist_ok=True)
-    train_loader = get_loader("train", batch_size, p_model, m_model, flip_prob)
-    valid_loader = get_loader("valid", batch_size, p_model, m_model, flip_prob)
-    test_loader = get_loader("test", batch_size, p_model, m_model, flip_prob)
+    if datasets is not None:
+        train_loader, valid_loader, test_loader = datasets
+    else:
+        train_loader = get_loader("train", batch_size, p_model, m_model, flip_prob)
+        valid_loader = get_loader("valid", batch_size, p_model, m_model, flip_prob)
+        test_loader = get_loader("test", batch_size, p_model, m_model, flip_prob)
     p_dim = model_to_dim[p_model]
     m_dim = model_to_dim[m_model]
 
