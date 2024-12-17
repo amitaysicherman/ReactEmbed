@@ -3,6 +3,8 @@ import re
 
 import numpy as np
 import torch
+from esm.models.esmc import ESMC
+from esm.sdk.api import ESMProtein, LogitsConfig
 from transformers import AutoModel, AutoTokenizer, BertModel, BertTokenizer
 
 from common.path_manager import proteins_file, molecules_file, item_path
@@ -164,8 +166,4 @@ if __name__ == "__main__":
     parser.add_argument('--model', type=str, help='Model to use', default="ChemBERTa",
                         choices=["ProtBert", "ChemBERTa", "MoLFormer", "esm3-small", "esm3-medium"])
     args = parser.parse_args()
-    if "esm3" in args.model:
-        from esm.models.esmc import ESMC
-        from esm.sdk.api import ESMProtein, LogitsConfig
-
     main(args.model)
