@@ -65,6 +65,7 @@ def split_train_val_test(data, val_size=0.16, test_size=0.20):
 
 def prep_dataset(task: Task):
     output_base = pjoin(base_dir, task.name)
+    os.makedirs(output_base, exist_ok=True)
     labels_file = pjoin(output_base, "train_labels.txt")
     if os.path.exists(labels_file):
         return
