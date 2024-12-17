@@ -7,6 +7,7 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 from common.path_manager import fuse_path
+from common.utils import model_args_to_name
 from contrastive_learning.dataset import TripletsDataset, TripletsBatchSampler, TYPES
 from contrastive_learning.model import MultiModalLinearConfig, MiltyModalLinear
 
@@ -66,7 +67,10 @@ def build_models(p_dim, m_dim, out_dim, n_layers, hidden_dim, dropout, save_dir)
 
 
 def main(batch_size, p_model, m_model, output_dim, n_layers, hidden_dim, dropout, epochs, lr, flip_prob):
-    save_dir = f"{fuse_path}/{p_model}-{m_model}/"
+    name = model_args_to_name(p_model=p_model, m_model=m_model, output_dim=output_dim, n_layers=n_layers,
+                              hidden_dim=hidden_dim, dropout=dropout, epochs=epochs, lr=lr, flip_prob=flip_prob)
+
+    save_dir = f"{fuse_path}/{name}/"
     os.makedirs(save_dir, exist_ok=True)
     train_loader = get_loader("train", batch_size, p_model, m_model, flip_prob)
     valid_loader = get_loader("valid", batch_size, p_model, m_model, flip_prob)

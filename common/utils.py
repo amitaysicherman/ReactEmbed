@@ -82,3 +82,24 @@ def load_fuse_model(name):
     model.load_state_dict(cp_data)
     model = model.eval()
     return model, dim
+
+
+def model_args_to_name(**kwargs):
+    names_to_check = ["p_model", "m_model", "output_dim", "n_layers", "hidden_dim", "dropout", "epochs", "lr",
+                      "flip_prob"]
+    for name in names_to_check:
+        if name not in kwargs:
+            raise ValueError(f"Missing argument: {name}")
+    for k in kwargs:
+        if k not in names_to_check:
+            raise ValueError(f"Extra argument: {k}")
+    p_model = kwargs["p_model"]
+    m_model = kwargs["m_model"]
+    output_dim = kwargs["output_dim"]
+    n_layers = kwargs["n_layers"]
+    hidden_dim = kwargs["hidden_dim"]
+    dropout = kwargs["dropout"]
+    epochs = kwargs["epochs"]
+    lr = kwargs["lr"]
+    flip_prob = kwargs["flip_prob"]
+    return f"{p_model}-{m_model}-{output_dim}-{n_layers}-{hidden_dim}-{dropout}-{epochs}-{lr}-{flip_prob}"

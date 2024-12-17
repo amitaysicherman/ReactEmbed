@@ -13,6 +13,7 @@ import os
 import pandas as pd
 
 from common.path_manager import data_path, reactions_file, item_path, fuse_path
+from common.utils import model_args_to_name
 from contrastive_learning.trainer import main as train_model
 from eval_tasks.prep_tasks import main as prep_tasks
 from eval_tasks.trainer import main as train_task
@@ -60,7 +61,21 @@ if not os.path.exists(proteins_file) or not os.path.exists(molecules_file):
 else:
     print("Skip preprocess sequences")
 
-cl_model_file = f"{fuse_path}/{args.p_model}-{args.m_model}/model.pt"
+print("Start train task")
+p_model = args.p_model
+m_model = args.m_model
+output_dim = args.cl_output_dim
+n_layers = args.cl_n_layers
+hidden_dim = args.cl_hidden_dim
+dropout = args.cl_dropout
+epochs = args.cl_epochs
+lr = args.cl_lr
+flip_prob = args.cl_flip_prob
+
+fuse_base = model_args_to_name(p_model=p_model, m_model=m_model, output_dim=output_dim, n_layers=n_layers,
+                               hidden_dim=hidden_dim, dropout=dropout, epochs=epochs, lr=lr, flip_prob=flip_prob)
+
+cl_model_file = f"{fuse_path}/{fuse_base}/model.pt"
 if not os.path.exists(cl_model_file):
     print("Start train contrastive learning model")
     train_model(args.cl_batch_size, args.p_model, args.m_model, args.cl_output_dim, args.cl_n_layers,
@@ -75,9 +90,9 @@ if not os.path.exists(task_prep_file):
 else:
     print("Skip prep task")
 
-print("Start train task")
+
 results = train_task(args.task_use_fuse, args.task_use_model, args.task_bs, args.task_lr, args.task_drop_out,
-                     args.task_hidden_dim, args.task_name, f"{args.p_model}-{args.m_model}", args.m_model, args.p_model,
+                     args.task_hidden_dim, args.task_name, fuse_base, args.m_model, args.p_model,
                      args.task_n_layers, args.task_metric, args.task_max_no_improve)
 
 print("Experiment finished")
