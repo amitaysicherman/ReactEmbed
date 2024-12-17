@@ -20,8 +20,9 @@ def prep_entity(entities, empty_list):
 
 
 class TripletsDataset(Dataset):
-    def __init__(self, split, p_model="ProtBert", m_model="MoLFormer", n_duplicates=10):
+    def __init__(self, split, p_model="ProtBert", m_model="MoLFormer", n_duplicates=10, flip_prob=0):
         self.split = split
+        self.flip_prob = flip_prob
         self.proteins = np.load(pjoin(item_path, f"{p_model}_vectors.npy"))
         self.molecules = np.load(pjoin(item_path, f"{m_model}_vectors.npy"))
         # all the proteins with zero vectors are empty proteins
@@ -74,7 +75,10 @@ class TripletsDataset(Dataset):
             for e1, e2 in tqdm(self.split_pair[t]):
                 for _ in range(n_duplicates):
                     e3 = self.sample_neg_element(e1, type1, type2)
-                    self.triples[t].add((e1, e2, e3))
+                    if self.flip_prob > 0 and random.random() < self.flip_prob:
+                        self.triples[t].add((e1, e3, e2))
+                    else:
+                        self.triples[t].add((e1, e2, e3))
         self.triples = {t: list(self.triples[t]) for t in TYPES}
         # shuffle the triples
         for t in TYPES:

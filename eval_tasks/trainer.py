@@ -116,7 +116,7 @@ def train_model_with_config(config: dict, task_name: str, fuse_base: str, mol_em
     no_improve = 0
     scores_manager = ScoresManager(config['metric'])
     for epoch in range(500):
-        _ = run_epoch(model, train_loader, optimizer, criterion, task.metric, "train")
+        _ = run_epoch(model, train_loader, optimizer, criterion, config['metric'], "train")
         with torch.no_grad():
             val_score = run_epoch(model, valid_loader, optimizer, criterion, config['metric'], "val")
             test_score = run_epoch(model, test_loader, optimizer, criterion, config['metric'], "test")

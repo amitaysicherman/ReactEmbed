@@ -44,8 +44,8 @@ def run_epoch(model, optimizer, loader, contrastive_loss, is_train):
     return total_loss / len(loader)
 
 
-def get_loader(split, batch_size, p_model, m_model):
-    dataset = TripletsDataset(p_model=p_model, m_model=m_model, split=split)
+def get_loader(split, batch_size, p_model, m_model, flip_prob):
+    dataset = TripletsDataset(p_model=p_model, m_model=m_model, split=split, flip_prob=flip_prob)
     sampler = TripletsBatchSampler(dataset, batch_size)
     return DataLoader(dataset, batch_sampler=sampler)
 
@@ -65,12 +65,12 @@ def build_models(p_dim, m_dim, out_dim, n_layers, hidden_dim, dropout, save_dir)
     return model
 
 
-def main(batch_size, p_model, m_model, output_dim, n_layers, hidden_dim, dropout, epochs, lr):
+def main(batch_size, p_model, m_model, output_dim, n_layers, hidden_dim, dropout, epochs, lr, flip_prob):
     save_dir = f"{fuse_path}/{p_model}-{m_model}/"
     os.makedirs(save_dir, exist_ok=True)
-    train_loader = get_loader("train", batch_size, p_model, m_model)
-    valid_loader = get_loader("valid", batch_size, p_model, m_model)
-    test_loader = get_loader("test", batch_size, p_model, m_model)
+    train_loader = get_loader("train", batch_size, p_model, m_model, flip_prob)
+    valid_loader = get_loader("valid", batch_size, p_model, m_model, flip_prob)
+    test_loader = get_loader("test", batch_size, p_model, m_model, flip_prob)
     p_dim = model_to_dim[p_model]
     m_dim = model_to_dim[m_model]
 
@@ -107,7 +107,9 @@ if __name__ == '__main__':
     parser.add_argument('--dropout', type=float, help='Dropout', default=0.3)
     parser.add_argument('--epochs', type=int, help='Number of epochs', default=1)
     parser.add_argument('--lr', type=float, help='Learning rate', default=0.001)
+    parser.add_argument('--flip_prob', type=float, help='Flip Prob', default=0.0)
+
     args = parser.parse_args()
 
     main(args.batch_size, args.p_model, args.m_model, args.output_dim, args.n_layers,
-         args.hidden_dim, args.dropout, args.epochs, args.lr)
+         args.hidden_dim, args.dropout, args.epochs, args.lr, args.flip_prob)
