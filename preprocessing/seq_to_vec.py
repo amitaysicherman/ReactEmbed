@@ -5,8 +5,6 @@ import numpy as np
 import torch
 from transformers import AutoModel
 from transformers import AutoTokenizer
-from transformers import BertModel
-from transformers import BertTokenizer
 
 from common.path_manager import proteins_file, molecules_file, item_path
 
@@ -44,8 +42,8 @@ class Esm3Embedder:
 
 class PortBert:
     def __init__(self):
-        self.tokenizer = BertTokenizer.from_pretrained("Rostlab/prot_bert", do_lower_case=False)
-        self.model = BertModel.from_pretrained("Rostlab/prot_bert").to(device).eval()
+        self.tokenizer = AutoModel.from_pretrained("Rostlab/prot_bert", do_lower_case=False)
+        self.model = AutoTokenizer.from_pretrained("Rostlab/prot_bert").to(device).eval()
 
     def to_vec(self, seq: str):
         if len(seq) > 1023:
