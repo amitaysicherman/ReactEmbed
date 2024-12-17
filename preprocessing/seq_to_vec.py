@@ -3,7 +3,10 @@ import re
 
 import numpy as np
 import torch
-from transformers import AutoModel, AutoTokenizer, BertModel, BertTokenizer
+from transformers import AutoModel
+from transformers import AutoTokenizer
+from transformers import BertModel
+from transformers import BertTokenizer
 
 from common.path_manager import proteins_file, molecules_file, item_path
 
