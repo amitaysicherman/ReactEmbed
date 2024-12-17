@@ -21,9 +21,9 @@ class Esm3Embedder:
     def __init__(self, size):
         self.size = size
         if size == "small":
-            self.model = ESMC.from_pretrained("esmc_300m").to(device).eval()
+            self.model = ESMC.from_pretrained("esmc_300m", device=device).eval()
         elif size == "medium":
-            self.model = ESMC.from_pretrained("esmc_600m").to(device).eval()
+            self.model = ESMC.from_pretrained("esmc_600m", device=device).eval()
         else:
             raise ValueError(f"Unknown size: {size}")
 
