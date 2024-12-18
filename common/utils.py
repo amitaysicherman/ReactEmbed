@@ -110,7 +110,7 @@ def name_to_model_args(name):
     names = name.split("-")
     if name.startswith("esm"):
         p_model = f"esm-{names[1]}"
-        names = names[2:]
+        names = names[1:]
     else:
         p_model = names[0]
     m_model = names[1]
