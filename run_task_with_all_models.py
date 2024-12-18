@@ -24,7 +24,7 @@ for name in model_names:
         res = train_task(use_fuse=args.use_fuse, use_model=args.use_model, bs=args.bs, lr=args.lr,
                          drop_out=args.drop_out,
                          hidden_dim=args.hidden_dim, task_name=args.task_name, fuse_base=name,
-                         mol_emd=model_args['m_model'], protein_emd=model_args['p_model'],
+                         mol_emd=model_args['m_model'], protein_emd="ProtBert",
                          max_no_improve=args.max_no_improve,
                          n_layers=args.n_layers, metric=args.metric)
         print(f"Model: {name}, Result: {res}")
