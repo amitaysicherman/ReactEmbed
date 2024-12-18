@@ -11,11 +11,12 @@ import argparse
 import os
 
 import pandas as pd
-from eval_tasks.prep_tasks import main as prep_tasks
 
 from common.path_manager import data_path, reactions_file, item_path, fuse_path
 from common.utils import model_args_to_name
 from contrastive_learning.trainer import main as train_model
+from eval_tasks.prep_tasks_seqs import main as task_seqs_main
+from eval_tasks.prep_tasks_vecs import main as tasks_vecs_main
 from eval_tasks.trainer import main as train_task
 from preprocessing.biopax_parser import main as preprocess_data
 from preprocessing.seq_to_vec import main as preprocess_sequences
@@ -26,7 +27,6 @@ parser.add_argument('--p_model', type=str, help='Protein model', default="ProtBe
 parser.add_argument('--m_model', type=str, help='Molecule model', default="ChemBERTa")
 
 parser.add_argument('--cl_batch_size', type=int, help='Batch size', default=8192)
-parser.add_argument('--cl_output_dim', type=int, help='Output dimension', default=1024)
 parser.add_argument('--cl_n_layers', type=int, help='Number of layers', default=1)
 parser.add_argument('--cl_hidden_dim', type=int, help='Hidden dimension', default=64)
 parser.add_argument('--cl_dropout', type=float, help='Dropout', default=0.3)
@@ -64,7 +64,6 @@ else:
 print("Start train task")
 p_model = args.p_model
 m_model = args.m_model
-output_dim = args.cl_output_dim
 n_layers = args.cl_n_layers
 hidden_dim = args.cl_hidden_dim
 dropout = args.cl_dropout
@@ -72,24 +71,30 @@ epochs = args.cl_epochs
 lr = args.cl_lr
 flip_prob = args.cl_flip_prob
 batch_size = args.cl_batch_size
-fuse_base = model_args_to_name(batch_size=batch_size, p_model=p_model, m_model=m_model, output_dim=output_dim,
-                               n_layers=n_layers,
+fuse_base = model_args_to_name(batch_size=batch_size, p_model=p_model, m_model=m_model, n_layers=n_layers,
                                hidden_dim=hidden_dim, dropout=dropout, epochs=epochs, lr=lr, flip_prob=flip_prob)
 
 cl_model_file = f"{fuse_path}/{fuse_base}/model.pt"
 if not os.path.exists(cl_model_file):
     print("Start train contrastive learning model")
-    train_model(args.cl_batch_size, args.p_model, args.m_model, args.cl_output_dim, args.cl_n_layers,
-                args.cl_hidden_dim, args.cl_dropout, args.cl_epochs, args.cl_lr, args.cl_flip_prob)
+    train_model(args.cl_batch_size, args.p_model, args.m_model, args.cl_n_layers, args.cl_hidden_dim, args.cl_dropout,
+                args.cl_epochs, args.cl_lr, args.cl_flip_prob)
 else:
     print("Skip train contrastive learning model")
 
+task_seq_file = f"{data_path}/torchdrug/{args.task_name}/train_labels.txt"
+if not os.path.exists(task_seq_file):
+    print("Start prep task sequences")
+    task_seqs_main(args.task_name)
+else:
+    print("Skip prep task sequences")
+
 task_prep_file = f"{data_path}/torchdrug/{args.task_name}_{args.p_model}_{args.m_model}.npz"
 if not os.path.exists(task_prep_file):
-    print("Start prep task")
-    prep_tasks(args.task_name, args.p_model, args.m_model)
+    print("Start prep task vecs")
+    tasks_vecs_main(args.task_name, args.p_model, args.m_model)
 else:
-    print("Skip prep task")
+    print("Skip prep task vecs")
 
 results = train_task(args.task_use_fuse, args.task_use_model, args.task_bs, args.task_lr, args.task_drop_out,
                      args.task_hidden_dim, args.task_name, fuse_base, args.m_model, args.p_model,

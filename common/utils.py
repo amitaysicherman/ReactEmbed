@@ -85,9 +85,8 @@ def load_fuse_model(name):
 
 
 def model_args_to_name(**kwargs):
-    names_to_check = ["batch_size", "p_model", "m_model", "output_dim", "n_layers", "hidden_dim", "dropout", "epochs",
-                      "lr",
-                      "flip_prob"]
+    names_to_check = ["batch_size", "p_model", "m_model", "n_layers", "hidden_dim", "dropout", "epochs",
+                      "lr", "flip_prob"]
     for name in names_to_check:
         if name not in kwargs:
             raise ValueError(f"Missing argument: {name}")
@@ -97,7 +96,6 @@ def model_args_to_name(**kwargs):
     batch_size = kwargs["batch_size"]
     p_model = kwargs["p_model"]
     m_model = kwargs["m_model"]
-    output_dim = kwargs["output_dim"]
     n_layers = kwargs["n_layers"]
     hidden_dim = kwargs["hidden_dim"]
     dropout = kwargs["dropout"]
@@ -105,4 +103,4 @@ def model_args_to_name(**kwargs):
     lr = kwargs["lr"]
     flip_prob = kwargs["flip_prob"]
 
-    return f"{batch_size}-{p_model}-{m_model}-{output_dim}-{n_layers}-{hidden_dim}-{dropout}-{epochs}-{lr}-{flip_prob}"
+    return f"{batch_size}-{p_model}-{m_model}-{n_layers}-{hidden_dim}-{dropout}-{epochs}-{lr}-{flip_prob}"

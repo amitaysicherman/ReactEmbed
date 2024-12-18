@@ -51,14 +51,13 @@ def get_loader(split, batch_size, p_model, m_model, flip_prob):
     return DataLoader(dataset, batch_sampler=sampler)
 
 
-def build_models(p_dim, m_dim, out_dim, n_layers, hidden_dim, dropout, save_dir):
+def build_models(p_dim, m_dim, n_layers, hidden_dim, dropout, save_dir):
     embedding_dim = []
     for t in TYPES:
         t1, t2 = t.split("-")
         embedding_dim.append(p_dim if t1 == "P" else m_dim)
-
     model_config = MultiModalLinearConfig(embedding_dim=embedding_dim, n_layers=n_layers, names=TYPES,
-                                          hidden_dim=hidden_dim, output_dim=out_dim, dropout=dropout,
+                                          hidden_dim=hidden_dim, output_dim=p_dim, dropout=dropout,
                                           normalize_last=1)
 
     model = MiltyModalLinear(model_config).to(device)
@@ -66,10 +65,9 @@ def build_models(p_dim, m_dim, out_dim, n_layers, hidden_dim, dropout, save_dir)
     return model
 
 
-def main(batch_size, p_model, m_model, output_dim, n_layers, hidden_dim, dropout, epochs, lr, flip_prob=0,
+def main(batch_size, p_model, m_model, n_layers, hidden_dim, dropout, epochs, lr, flip_prob=0,
          datasets=None):
-    name = model_args_to_name(batch_size=batch_size, p_model=p_model, m_model=m_model, output_dim=output_dim,
-                              n_layers=n_layers,
+    name = model_args_to_name(batch_size=batch_size, p_model=p_model, m_model=m_model, n_layers=n_layers,
                               hidden_dim=hidden_dim, dropout=dropout, epochs=epochs, lr=lr, flip_prob=flip_prob)
 
     save_dir = f"{fuse_path}/{name}/"
@@ -83,7 +81,7 @@ def main(batch_size, p_model, m_model, output_dim, n_layers, hidden_dim, dropout
     p_dim = model_to_dim[p_model]
     m_dim = model_to_dim[m_model]
 
-    model = build_models(p_dim, m_dim, output_dim, n_layers, hidden_dim, dropout, save_dir)
+    model = build_models(p_dim, m_dim, n_layers, hidden_dim, dropout, save_dir)
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
     print(model)
     print(sum(p.numel() for p in model.parameters() if p.requires_grad), "parameters")
@@ -101,7 +99,10 @@ def main(batch_size, p_model, m_model, output_dim, n_layers, hidden_dim, dropout
             best_valid_loss = valid_loss
             torch.save(model.state_dict(), f"{save_dir}/model.pt")
             print("Model saved")
-
+        with open(f"{save_dir}/losses.txt", "w") as f:
+            f.write(f"Train Loss: {train_loss}, Valid Loss: {valid_loss}, Test Loss: {test_loss}")
+    with open(f"{save_dir}/losses.txt", "w") as f:
+        f.write(f"Best Valid Loss: {best_valid_loss}")
 
 if __name__ == '__main__':
     import argparse
@@ -110,7 +111,6 @@ if __name__ == '__main__':
     parser.add_argument('--batch_size', type=int, help='Batch size', default=8192)
     parser.add_argument('--p_model', type=str, help='Protein model', default="ProtBert")
     parser.add_argument('--m_model', type=str, help='Molecule model', default="ChemBERTa")
-    parser.add_argument('--output_dim', type=int, help='Output dimension', default=1024)
     parser.add_argument('--n_layers', type=int, help='Number of layers', default=2)
     parser.add_argument('--hidden_dim', type=int, help='Hidden dimension', default=64)
     parser.add_argument('--dropout', type=float, help='Dropout', default=0.3)
@@ -120,5 +120,5 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    main(args.batch_size, args.p_model, args.m_model, args.output_dim, args.n_layers,
+    main(args.batch_size, args.p_model, args.m_model, args.n_layers,
          args.hidden_dim, args.dropout, args.epochs, args.lr, args.flip_prob)
