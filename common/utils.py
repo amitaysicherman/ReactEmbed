@@ -6,7 +6,7 @@ import torch
 from common.data_types import CatalystOBJ, Entity, Reaction, UNKNOWN_ENTITY_TYPE, DNA, PROTEIN, MOLECULE, TEXT, P_T5_XL, \
     P_BFD, ESM_1B, ESM_2, ESM_3
 from common.path_manager import fuse_path
-from contrastive_learning.model import MiltyModalLinear, MultiModalLinearConfig
+from contrastive_learning.model import ReactEmbedModel, ReactEmbedConfig
 
 
 def get_type_to_vec_dim(prot_emd_type=P_T5_XL):
@@ -76,9 +76,9 @@ def load_fuse_model(name):
     cp_name = [x for x in cp_names if x.endswith(".pt")][0]
     cp_data = torch.load(f"{name}/{cp_name}", map_location=torch.device('cpu'))
     config_file = os.path.join(name, 'config.txt')
-    config = MultiModalLinearConfig.load_from_file(config_file)
+    config = ReactEmbedConfig.load_from_file(config_file)
     dim = config.output_dim[0]
-    model = MiltyModalLinear(config)
+    model = ReactEmbedModel(config)
     model.load_state_dict(cp_data)
     model = model.eval()
     return model, dim

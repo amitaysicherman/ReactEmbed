@@ -161,7 +161,7 @@ if __name__ == '__main__':
     parser.add_argument("--drop_out", type=float, default=0.0)
     parser.add_argument("--hidden_dim", type=int, default=64)
     parser.add_argument("--task_name", type=str, default="BACE")
-    parser.add_argument("--fusion_name", type=str, default="ProtBert-ChemBERTa")
+    parser.add_argument("--fusion_name", type=str, default="8192-ProtBert-ChemBERTa-2-64-0.3-1-0.001-0.0")
     parser.add_argument("--molecule_embedding", type=str, default="ChemBERTa")
     parser.add_argument("--protein_embedding", type=str, default="ProtBert")
     parser.add_argument("--max_no_improve", type=int, default=15)

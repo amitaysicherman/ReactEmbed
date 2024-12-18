@@ -1,5 +1,4 @@
 import dataclasses
-from typing import List
 
 import torch
 from torch import nn as nn
@@ -7,38 +6,32 @@ from torch.nn import functional as F
 
 
 @dataclasses.dataclass
-class MultiModalLinearConfig:
-    embedding_dim: List[int]
+class ReactEmbedConfig:
+    p_dim: int
+    m_dim: int
     n_layers: int
-    names: List[str]
     hidden_dim: int
-    output_dim: int
     dropout: float
-    normalize_last: int
+    normalize_last: int = 1
 
     def save_to_file(self, file_name):
         with open(file_name, "w") as f:
-            for k, v in dataclasses.asdict(self).items():
-                if isinstance(v, list) or isinstance(v, tuple):
-                    if isinstance(v[0], tuple):
-                        v = ["_".join([str(x) for x in y]) for y in v]
-                    v = ",".join([str(x) for x in v])
-                f.write(f"{k}={v}\n")
+            f.write(f"p_dim={self.p_dim}\n")
+            f.write(f"m_dim={self.m_dim}\n")
+            f.write(f"n_layers={self.n_layers}\n")
+            f.write(f"hidden_dim={self.hidden_dim}\n")
+            f.write(f"dropout={self.dropout}\n")
+            f.write(f"normalize_last={self.normalize_last}\n")
 
     @staticmethod
     def load_from_file(file_name):
         with open(file_name) as f:
-            data = {}
-            for line in f:
-                k, v = line.strip().split("=")
-                if k == "names":
-                    v = v.split(",")
-                data[k] = v
-        return MultiModalLinearConfig(embedding_dim=[int(x) for x in data["embedding_dim"].split(",")],
-                                      n_layers=int(data["n_layers"]), names=data["names"],
-                                      hidden_dim=int(data["hidden_dim"]),
-                                      output_dim=int(data["output_dim"]),
-                                      dropout=float(data["dropout"]), normalize_last=int(data["normalize_last"]))
+            lines = f.readlines()
+        d = {}
+        for line in lines:
+            k, v = line.strip().split("=")
+            d[k] = float(v) if "." in v else int(v)
+        return ReactEmbedConfig(**d)
 
 
 def get_layers(dims, dropout=0.0):
@@ -53,23 +46,34 @@ def get_layers(dims, dropout=0.0):
     return layers
 
 
-class MiltyModalLinear(nn.Module):
-    def __init__(self, config: MultiModalLinearConfig):
-        super(MiltyModalLinear, self).__init__()
-        self.names = config.names
-        self.normalize_last = config.normalize_last
+class ReactEmbedModel(nn.Module):
+    def __init__(self, config: ReactEmbedConfig):
+        super(ReactEmbedModel, self).__init__()
+        self.config = config
         if config.n_layers < 1:
             raise ValueError("n_layers must be at least 1")
         self.layers_dict = nn.ModuleDict()
-        self.output_dim = config.output_dim
-        for name, input_dim in zip(self.names, config.embedding_dim):
-            dims = [input_dim] + [config.hidden_dim] * (config.n_layers - 1) + [self.output_dim]
-            self.layers_dict[name] = get_layers(dims, config.dropout)
+        for src_dim, src in zip([config.p_dim, config.m_dim], ["P", "M"]):
+            for dst_dim, dst in zip([config.p_dim, config.m_dim], ["P", "M"]):
+                name = f"{src}-{dst}"
+                dims = [src_dim] + [config.hidden_dim] * (config.n_layers - 1) + [dst_dim]
+                self.layers_dict[name] = get_layers(dims, config.dropout)
 
     def forward(self, x, type_):
         # check the device of the input tensor
         x = self.layers_dict[type_](x)
-        if self.normalize_last:
+        if self.config.normalize_last:
             return F.normalize(x, dim=-1)
         else:
             return x
+
+    def dual_forward(self, x, type_1):
+        if type_1 == "P":
+            y1 = self.forward(x, "P-P")
+            y2 = self.forward(x, "P-M")
+        else:
+            y1 = self.forward(x, "M-P")
+            y2 = self.forward(x, "M-M")
+        # concatenate the two outputs
+        y = torch.cat([y1, y2], dim=-1)
+        return y

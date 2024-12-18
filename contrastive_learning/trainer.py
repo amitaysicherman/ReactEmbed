@@ -8,8 +8,8 @@ from tqdm import tqdm
 
 from common.path_manager import fuse_path
 from common.utils import model_args_to_name
-from contrastive_learning.dataset import TripletsDataset, TripletsBatchSampler, TYPES
-from contrastive_learning.model import MultiModalLinearConfig, MiltyModalLinear
+from contrastive_learning.dataset import TripletsDataset, TripletsBatchSampler
+from contrastive_learning.model import ReactEmbedConfig, ReactEmbedModel
 
 model_to_dim = {
     "ChemBERTa": 768,
@@ -52,15 +52,8 @@ def get_loader(split, batch_size, p_model, m_model, flip_prob):
 
 
 def build_models(p_dim, m_dim, n_layers, hidden_dim, dropout, save_dir):
-    embedding_dim = []
-    for t in TYPES:
-        t1, t2 = t.split("-")
-        embedding_dim.append(p_dim if t1 == "P" else m_dim)
-    model_config = MultiModalLinearConfig(embedding_dim=embedding_dim, n_layers=n_layers, names=TYPES,
-                                          hidden_dim=hidden_dim, output_dim=p_dim, dropout=dropout,
-                                          normalize_last=1)
-
-    model = MiltyModalLinear(model_config).to(device)
+    model_config = ReactEmbedConfig(p_dim, m_dim, n_layers, hidden_dim, dropout)
+    model = ReactEmbedModel(model_config).to(device)
     model_config.save_to_file(f"{save_dir}/config.txt")
     return model
 

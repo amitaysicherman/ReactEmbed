@@ -8,8 +8,10 @@ from tqdm import tqdm
 
 from common.path_manager import item_path, reactions_file
 
-# TYPES = ["P-P", "P-M", "M-P", "M-M"]
-TYPES = ["P-P", "M-P"]  # Proteins anchor the triplets
+TYPES = ["P-P", "P-M", "M-P", "M-M"]
+
+
+# TYPES = ["P-P", "M-P"]  # Proteins anchor the triplets
 
 
 def prep_entity(entities, empty_list):
@@ -48,10 +50,10 @@ class TripletsDataset(Dataset):
             for i, e1 in enumerate(elements):
                 for j, e2 in enumerate(elements[i + 1:], start=i + 1):
                     t = types[i] + "-" + types[j]
-                    if t == "P-P":
-                        self.pairs[t].add((e1, e2))
+                    self.pairs[t].add((e1, e2))
                     if t == "P-M":
                         self.pairs["M-P"].add((e2, e1))
+
         self.split_pair = {}
         for t in TYPES:
             t_pairs = list(self.pairs[t])

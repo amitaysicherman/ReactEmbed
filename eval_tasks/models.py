@@ -5,12 +5,12 @@ import torch
 
 from common.data_types import Config
 from common.path_manager import fuse_path
-from contrastive_learning.model import MultiModalLinearConfig, MiltyModalLinear
+from contrastive_learning.model import ReactEmbedConfig, ReactEmbedModel
 
 
 class DataType(Enum):
-    MOLECULE = 'M-P'
-    PROTEIN = 'P-P'
+    MOLECULE = 'M'
+    PROTEIN = 'P'
 
 
 def load_fuse_model(name):
@@ -19,9 +19,9 @@ def load_fuse_model(name):
     cp_name = [x for x in cp_names if x.endswith(".pt")][0]
     cp_data = torch.load(f"{name}/{cp_name}", map_location=torch.device('cpu'))
     config_file = os.path.join(name, 'config.txt')
-    config = MultiModalLinearConfig.load_from_file(config_file)
-    dim = config.output_dim
-    model = MiltyModalLinear(config)
+    config = ReactEmbedConfig.load_from_file(config_file)
+    dim = config.p_dim + config.m_dim
+    model = ReactEmbedModel(config)
     model.load_state_dict(cp_data)
     model = model.eval()
     return model, dim
@@ -57,7 +57,7 @@ class FuseModel(torch.nn.Module):
                 self.fuse_model, dim = load_fuse_model(fuse_base)
             else:
                 self.fuse_model = fuse_model
-                dim = fuse_model.output_dim[0]
+                dim = fuse_model.config.p_dim + fuse_model.config.m_dim
             self.fuse_dim = dim
 
 
@@ -81,7 +81,7 @@ class LinFuseModel(FuseModel):
     def forward(self, data):
         x = []
         if self.use_fuse:
-            x.append(self.fuse_model(data, self.dtype.value).detach())
+            x.append(self.fuse_model.dual_forward(data, self.dtype.value).detach())
         if self.use_model:
             x.append(data)
         x = torch.concat(x, dim=1)
@@ -112,9 +112,9 @@ class PairsFuseModel(FuseModel):
     def forward(self, x1, x2):
         x = []
         if self.use_fuse:
-            x1_fuse = self.fuse_model(x1, self.x1_dtype.value).detach()
+            x1_fuse = self.fuse_model.dual_forward(x1, self.x1_dtype.value).detach()
             x.append(x1_fuse)
-            x2_fuse = self.fuse_model(x2, self.x2_dtype.value).detach()
+            x2_fuse = self.fuse_model.dual_forward(x2, self.x2_dtype.value).detach()
             x.append(x2_fuse)
         if self.use_model:
             x.append(x1)
