@@ -11,11 +11,11 @@ import argparse
 import os
 
 import pandas as pd
+from eval_tasks.prep_tasks import main as prep_tasks
 
 from common.path_manager import data_path, reactions_file, item_path, fuse_path
 from common.utils import model_args_to_name
 from contrastive_learning.trainer import main as train_model
-from eval_tasks.prep_tasks import main as prep_tasks
 from eval_tasks.trainer import main as train_task
 from preprocessing.biopax_parser import main as preprocess_data
 from preprocessing.seq_to_vec import main as preprocess_sequences
@@ -71,8 +71,9 @@ dropout = args.cl_dropout
 epochs = args.cl_epochs
 lr = args.cl_lr
 flip_prob = args.cl_flip_prob
-
-fuse_base = model_args_to_name(p_model=p_model, m_model=m_model, output_dim=output_dim, n_layers=n_layers,
+batch_size = args.cl_batch_size
+fuse_base = model_args_to_name(batch_size=batch_size, p_model=p_model, m_model=m_model, output_dim=output_dim,
+                               n_layers=n_layers,
                                hidden_dim=hidden_dim, dropout=dropout, epochs=epochs, lr=lr, flip_prob=flip_prob)
 
 cl_model_file = f"{fuse_path}/{fuse_base}/model.pt"
@@ -89,7 +90,6 @@ if not os.path.exists(task_prep_file):
     prep_tasks(args.task_name, args.p_model, args.m_model)
 else:
     print("Skip prep task")
-
 
 results = train_task(args.task_use_fuse, args.task_use_model, args.task_bs, args.task_lr, args.task_drop_out,
                      args.task_hidden_dim, args.task_name, fuse_base, args.m_model, args.p_model,

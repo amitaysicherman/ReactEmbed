@@ -68,7 +68,8 @@ def build_models(p_dim, m_dim, out_dim, n_layers, hidden_dim, dropout, save_dir)
 
 def main(batch_size, p_model, m_model, output_dim, n_layers, hidden_dim, dropout, epochs, lr, flip_prob=0,
          datasets=None):
-    name = model_args_to_name(p_model=p_model, m_model=m_model, output_dim=output_dim, n_layers=n_layers,
+    name = model_args_to_name(batch_size=batch_size, p_model=p_model, m_model=m_model, output_dim=output_dim,
+                              n_layers=n_layers,
                               hidden_dim=hidden_dim, dropout=dropout, epochs=epochs, lr=lr, flip_prob=flip_prob)
 
     save_dir = f"{fuse_path}/{name}/"
