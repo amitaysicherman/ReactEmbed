@@ -103,4 +103,4 @@ def model_args_to_name(**kwargs):
     lr = kwargs["lr"]
     flip_prob = kwargs["flip_prob"]
 
-    return f"{batch_size}-{p_model}-{m_model}-{n_layers}-{hidden_dim}-{dropout}-{epochs}-{lr}-{flip_prob}"
+    return f"{p_model}-{m_model}-{n_layers}-{hidden_dim}-{dropout}-{epochs}-{lr}-{batch_size}-{flip_prob}"
