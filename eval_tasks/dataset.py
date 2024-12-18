@@ -8,7 +8,7 @@ from common.path_manager import data_path
 
 def load_data(task_name, mol_emd, protein_emd):
     base_dir = f"{data_path}/torchdrug/"
-    data_file = pjoin(base_dir, f"{task_name}_{protein_emd}_{mol_emd}.npz")
+    data_file = pjoin(base_dir, f"{task_name}/{protein_emd}_{mol_emd}.npz")
     data = np.load(data_file)
     x1_train, x1_valid, x1_test = [data[f"x1_{x}"] for x in ["train", "valid", "test"]]
     if "x2_train" in data:
