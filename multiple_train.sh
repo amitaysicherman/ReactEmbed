@@ -1,8 +1,8 @@
 #!/bin/bash
 #SBATCH --time=1-00
-#SBATCH --mem=16G
+#SBATCH --mem=32G
 #SBATCH --requeue
-#SBATCH -c 1
+#SBATCH -c 4
 #SBATCH --array=1-27
 
 configs="--m_model ChemBERTa --p_model ProtBert --batch_size 8192 |\
