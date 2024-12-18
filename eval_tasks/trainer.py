@@ -120,8 +120,6 @@ def train_model_with_config(config: dict, task_name: str, fuse_base: str, mol_em
         with torch.no_grad():
             val_score = run_epoch(model, valid_loader, optimizer, criterion, config['metric'], "val")
             test_score = run_epoch(model, test_loader, optimizer, criterion, config['metric'], "test")
-        print(
-            f"Epoch: {epoch}, Train: {train_scores.get_value()}, Val: {val_score.get_value()}, Test: {test_score.get_value()}")
         improved = scores_manager.update(val_score, test_score)
         if improved:
             no_improve = 0
