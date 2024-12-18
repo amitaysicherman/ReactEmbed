@@ -108,7 +108,11 @@ def model_args_to_name(**kwargs):
 
 def name_to_model_args(name):
     names = name.split("-")
-    p_model = names[0]
+    if name.startswith("esm"):
+        p_model = f"esm-{names[1]}"
+        names = names[2:]
+    else:
+        p_model = names[0]
     m_model = names[1]
     n_layers = int(names[2])
     hidden_dim = int(names[3])
