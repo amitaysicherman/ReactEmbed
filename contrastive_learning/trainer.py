@@ -20,8 +20,14 @@ model_to_dim = {
     "MoLFormer": 768,
 }
 
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
+try:
+    if torch.mps.device_count() > 0:
+        device = "mps"
+    else:
+        device = 'cuda' if torch.cuda.is_available() else 'cpu'
+except:
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+print(f"Using device: {device}")
 
 def run_epoch(model, optimizer, loader, contrastive_loss, is_train):
     if loader is None:
@@ -92,9 +98,9 @@ def main(batch_size, p_model, m_model, n_layers, hidden_dim, dropout, epochs, lr
             best_valid_loss = valid_loss
             torch.save(model.state_dict(), f"{save_dir}/model.pt")
             print("Model saved")
-        with open(f"{save_dir}/losses.txt", "w") as f:
+        with open(f"{save_dir}/losses.txt", "a") as f:
             f.write(f"Train Loss: {train_loss}, Valid Loss: {valid_loss}, Test Loss: {test_loss}")
-    with open(f"{save_dir}/losses.txt", "w") as f:
+    with open(f"{save_dir}/losses.txt", "a") as f:
         f.write(f"Best Valid Loss: {best_valid_loss}")
 
 if __name__ == '__main__':

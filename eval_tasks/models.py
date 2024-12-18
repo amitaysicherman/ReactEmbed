@@ -30,12 +30,10 @@ def load_fuse_model(name):
 def get_layers(dims, dropout):
     layers = torch.nn.Sequential()
     for i in range(len(dims) - 1):
+        layers.add_module(f"dropout_{i}", torch.nn.Dropout(dropout))
         layers.add_module(f"linear_{i}", torch.nn.Linear(dims[i], dims[i + 1]))
-        # layers.add_module(f"bn_{i}", torch.nn.BatchNorm1d(dims[i + 1]))
         if i < len(dims) - 2:
             layers.add_module(f"relu_{i}", torch.nn.ReLU())
-        if dropout > 0:
-            layers.add_module(f"dropout_{i}", torch.nn.Dropout(dropout))
     return layers
 
 
@@ -51,7 +49,7 @@ class FuseModel(torch.nn.Module):
         else:
             self.use_fuse = True
             self.use_model = False
-
+        print(f"use_fuse: {self.use_fuse}, use_model: {self.use_model}")
         if self.use_fuse:
             if fuse_model is None:
                 self.fuse_model, dim = load_fuse_model(fuse_base)

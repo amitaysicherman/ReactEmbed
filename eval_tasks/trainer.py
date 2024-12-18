@@ -8,7 +8,6 @@ from eval_tasks.tasks import name_to_task, Task
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
-
 def run_epoch(model, loader, optimizer, criterion, metric_name, part):
     if part == "train":
         model.train()
@@ -39,12 +38,12 @@ def run_epoch(model, loader, optimizer, criterion, metric_name, part):
             optimizer.step()
         reals.append(labels)
         preds.append(output)
-    if part != "train":
-        reals = torch.cat(reals, dim=0)
-        preds = torch.cat(preds, dim=0)
-        return Scores(metric_name, preds, reals)
-    else:
-        return None
+    # if part != "train":
+    reals = torch.cat(reals, dim=0)
+    preds = torch.cat(preds, dim=0)
+    return Scores(metric_name, preds, reals)
+    # else:
+    #     return Scores
 
 
 def get_model_from_task(task: Task, dataset, conf, fuse_base, drop_out, n_layers, hidden_dim, fuse_model=None):
@@ -111,16 +110,18 @@ def train_model_with_config(config: dict, task_name: str, fuse_base: str, mol_em
 
     model = get_model_from_task(task, train_loader.dataset, conf, fuse_base=fuse_base, drop_out=drop_out,
                                 n_layers=n_layers, hidden_dim=hidden_dim, fuse_model=fuse_model)
+    # print(model)
     model = model.to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
     no_improve = 0
     scores_manager = ScoresManager(config['metric'])
     for epoch in range(500):
-        _ = run_epoch(model, train_loader, optimizer, criterion, config['metric'], "train")
+        train_scores = run_epoch(model, train_loader, optimizer, criterion, config['metric'], "train")
         with torch.no_grad():
             val_score = run_epoch(model, valid_loader, optimizer, criterion, config['metric'], "val")
             test_score = run_epoch(model, test_loader, optimizer, criterion, config['metric'], "test")
-
+        print(
+            f"Epoch: {epoch}, Train: {train_scores.get_value()}, Val: {val_score.get_value()}, Test: {test_score.get_value()}")
         improved = scores_manager.update(val_score, test_score)
         if improved:
             no_improve = 0
@@ -158,7 +159,7 @@ if __name__ == '__main__':
     parser.add_argument("--use_model", type=int, default=1)
     parser.add_argument("--bs", type=int, default=16)
     parser.add_argument("--lr", type=float, default=0.001)
-    parser.add_argument("--drop_out", type=float, default=0.0)
+    parser.add_argument("--drop_out", type=float, default=0.3)
     parser.add_argument("--hidden_dim", type=int, default=64)
     parser.add_argument("--task_name", type=str, default="BACE")
     parser.add_argument("--fusion_name", type=str, default="8192-ProtBert-ChemBERTa-2-64-0.3-1-0.001-0.0")

@@ -1,3 +1,4 @@
+import os
 import random
 from os.path import join as pjoin
 
@@ -32,6 +33,12 @@ class TripletsDataset(Dataset):
         self.empty_molecule_index = set(np.where(np.all(self.molecules == 0, axis=1))[0].tolist())
         print(f"Empty proteins: {len(self.empty_protein_index)}")
         print(f"Empty molecules: {len(self.empty_molecule_index)}")
+        self.types = TYPES
+
+        loaded = self.load_triples_if_exists()
+        if loaded:
+            return
+
         self.pairs = {t: set() for t in TYPES}
 
         with open(reactions_file) as f:
@@ -88,8 +95,7 @@ class TripletsDataset(Dataset):
             random.shuffle(self.triples[t])
         for t in TYPES:
             print(f"Number of {t} triples: {len(self.triples[t])}")
-        self.types = TYPES
-
+        self.save_triples()
     def sample_neg_element(self, e1, e1_type, e2_type):
         is_positive, is_empty = True, True
         e3 = None
@@ -124,6 +130,29 @@ class TripletsDataset(Dataset):
         t1, t2 = t.split("-")
         v1, v2, v3 = self.idx_type_to_vec(e1, t1), self.idx_type_to_vec(e2, t2), self.idx_type_to_vec(e3, t2)
         return t1, t2, v1, v2, v3
+
+    def save_triples(self):
+        base_dir = pjoin(item_path, "triplets")
+        os.makedirs(base_dir, exist_ok=True)
+        for t in TYPES:
+            with open(pjoin(item_path, f"{t}_{self.split}.txt"), "w") as f:
+                for e1, e2, e3 in self.triples[t]:
+                    f.write(f"{e1} {e2} {e3}\n")
+
+    def load_triples_if_exists(self):
+        base_dir = pjoin(item_path, "triplets")
+        items_file = pjoin(base_dir, f"{TYPES[0]}_{self.split}.txt")
+        if not os.path.exists(items_file):
+            return False
+        self.triples = {t: [] for t in TYPES}
+        for t in TYPES:
+            with open(pjoin(base_dir, f"{t}_{self.split}.txt")) as f:
+                for line in f:
+                    e1, e2, e3 = line.split()
+                    self.triples[t].append((int(e1), int(e2), int(e3)))
+        for t in TYPES:
+            print(f"Number of {t} triples: {len(self.triples[t])}")
+        return True
 
 
 class TripletsBatchSampler(Sampler):

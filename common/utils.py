@@ -104,3 +104,18 @@ def model_args_to_name(**kwargs):
     flip_prob = kwargs["flip_prob"]
 
     return f"{p_model}-{m_model}-{n_layers}-{hidden_dim}-{dropout}-{epochs}-{lr}-{batch_size}-{flip_prob}"
+
+
+def name_to_model_args(name):
+    names = name.split("-")
+    p_model = names[0]
+    m_model = names[1]
+    n_layers = int(names[2])
+    hidden_dim = int(names[3])
+    dropout = float(names[4])
+    epochs = int(names[5])
+    lr = float(names[6])
+    batch_size = int(names[7])
+    flip_prob = float(names[8])
+    return {"p_model": p_model, "m_model": m_model, "n_layers": n_layers, "hidden_dim": hidden_dim, "dropout": dropout,
+            "epochs": epochs, "lr": lr, "batch_size": batch_size, "flip_prob": flip_prob}
