@@ -6,7 +6,7 @@ from eval_tasks.trainer import main as train_task
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--use_fuse", type=int, default=1)
-parser.add_argument("--use_model", type=int, default=1)
+parser.add_argument("--use_model", type=int, default=0)
 parser.add_argument("--bs", type=int, default=16)
 parser.add_argument("--lr", type=float, default=0.001)
 parser.add_argument("--drop_out", type=float, default=0.3)
