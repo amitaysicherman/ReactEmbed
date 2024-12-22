@@ -9,10 +9,10 @@ from torchdrug import models, layers, data, transforms
 from torchdrug.layers import geometry
 from transformers import AutoModel, BertModel, BertTokenizer
 from transformers import AutoTokenizer, EsmForProteinFolding
-from transformers.models.esm.openfold_utils.feats import atom14_to_atom37
-from transformers.models.esm.openfold_utils.protein import to_pdb, Protein as OFProtein
 
 from common.path_manager import proteins_file, molecules_file, item_path
+from common.utils import fold_to_pdb
+from preprocessing.molCLR import GINet, smiles_to_data
 
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 name_to_hf_cp = {
@@ -22,27 +22,25 @@ name_to_hf_cp = {
 }
 
 
-def fold_to_pdb(outputs):
-    final_atom_positions = atom14_to_atom37(outputs["positions"][-1], outputs)
-    outputs = {k: v.to("cpu").numpy() for k, v in outputs.items()}
-    final_atom_positions = final_atom_positions.cpu().numpy()
-    final_atom_mask = outputs["atom37_atom_exists"]
-    pdbs = []
-    for i in range(outputs["aatype"].shape[0]):
-        aa = outputs["aatype"][i]
-        pred_pos = final_atom_positions[i]
-        mask = final_atom_mask[i]
-        resid = outputs["residue_index"][i] + 1
-        pred = OFProtein(
-            aatype=aa,
-            atom_positions=pred_pos,
-            atom_mask=mask,
-            residue_index=resid,
-            b_factors=outputs["plddt"][i],
-            chain_index=outputs["chain_index"][i] if "chain_index" in outputs else None,
-        )
-        pdbs.append(to_pdb(pred))
-    return pdbs
+class MolCLREmbedder:
+    def __init__(self, cp_file="data/models/MolCLR/model.pth"):
+
+        if not os.path.exists(cp_file):
+            os.makedirs(os.path.dirname(cp_file), exist_ok=True)
+            url = "https://github.com/yuyangw/MolCLR/blob/master/ckpt/pretrained_gin/checkpoints/model.pth"
+            os.system(f"wget {url} -O {cp_file}")
+        self.model = GINet()
+
+        self.model.load_my_state_dict(torch.load("data/models/MolCLR/model.pth", map_location="cpu"))
+        self.model.eval().to(device)
+
+    def to_vec(self, seq: str):
+        data = smiles_to_data(seq)
+        if data is None:
+            return None
+        with torch.no_grad():
+            emb, _ = self.model(data)
+        return emb.detach().cpu().numpy().flatten()
 
 
 class GearNet3Embedder:
@@ -194,6 +192,9 @@ class SeqToVec:
         elif model_name == "GearNet":
             self.model = GearNet3Embedder()
             self.dtype = "protein"
+        elif model_name == "MolCLR":
+            self.model = MolCLREmbedder()
+            self.dtype = "molecule"
         else:
             raise ValueError(f"Unknown model: {model_name}")
 
@@ -206,7 +207,7 @@ class SeqToVec:
 
 
 def model_to_type(model_name):
-    if model_name in ["ChemBERTa", "MoLFormer"]:
+    if model_name in ["ChemBERTa", "MoLFormer", "MolCLR"]:
         return "molecule"
     elif model_name in ["ProtBert", "esm3-small", "esm3-medium", "GearNet"]:
         return "protein"
@@ -261,8 +262,9 @@ if __name__ == "__main__":
     from tqdm import tqdm
 
     parser = argparse.ArgumentParser(description='Convert sequence to vector')
-    parser.add_argument('--model', type=str, help='Model to use', default="ChemBERTa",
-                        choices=["ProtBert", "ChemBERTa", "MoLFormer", "esm3-small", "esm3-medium", "GearNet"])
+    parser.add_argument('--model', type=str, help='Model to use', default="MolCLR",
+                        choices=["ProtBert", "ChemBERTa", "MoLFormer", "esm3-small", "esm3-medium", "GearNet",
+                                 "MolCLR"])
     args = parser.parse_args()
     if "esm3" in args.model:
         from esm.models.esmc import ESMC
