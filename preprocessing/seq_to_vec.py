@@ -212,7 +212,8 @@ def fill_none_with_zeros(vecs):
 
 def main(model):
     if "esm3" in model:
-        global ESMC, ESMProtein, LogitsConfig
+        from esm.models.esmc import ESMC
+        from esm.sdk.api import ESMProtein, LogitsConfig
 
     data_types = model_to_type(model)
     seq_to_vec = SeqToVec(model)
@@ -246,4 +247,8 @@ if __name__ == "__main__":
     parser.add_argument('--model', type=str, help='Model to use', default="ChemBERTa",
                         choices=["ProtBert", "ChemBERTa", "MoLFormer", "esm3-small", "esm3-medium", "GearNet"])
     args = parser.parse_args()
+    if "esm3" in args.model:
+        from esm.models.esmc import ESMC
+        from esm.sdk.api import ESMProtein, LogitsConfig
+
     main(args.model)
