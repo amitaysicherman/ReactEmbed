@@ -135,7 +135,7 @@ class TripletsDataset(Dataset):
         base_dir = pjoin(item_path, "triplets")
         os.makedirs(base_dir, exist_ok=True)
         for t in TYPES:
-            with open(pjoin(item_path, f"{t}_{self.split}.txt"), "w") as f:
+            with open(pjoin(base_dir, f"{t}_{self.split}.txt"), "w") as f:
                 for e1, e2, e3 in self.triples[t]:
                     f.write(f"{e1} {e2} {e3}\n")
 
