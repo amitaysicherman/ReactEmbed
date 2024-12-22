@@ -3,7 +3,6 @@ import torch
 import torch.nn.functional as F
 from rdkit import Chem
 from rdkit.Chem.rdchem import BondType as BT
-from rdkit.Chem.rdchem import HybridizationType
 from torch import nn
 from torch_geometric.data import Data
 from torch_geometric.nn import MessagePassing
@@ -55,6 +54,9 @@ def smiles_to_data(smiles):
         start, end = bond.GetBeginAtomIdx(), bond.GetEndAtomIdx()
         row += [start, end]
         col += [end, start]
+        if bond.GetBondType() not in BOND_LIST or bond.GetBondDir() not in BONDDIR_LIST:
+            print(f"Bond {bond.GetBondType()} not in BOND_LIST")
+            return None
         edge_feat.append([
             BOND_LIST.index(bond.GetBondType()),
             BONDDIR_LIST.index(bond.GetBondDir())
