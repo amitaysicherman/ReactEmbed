@@ -3,8 +3,6 @@ import re
 
 import numpy as np
 import torch
-from esm.models.esmc import ESMC
-from esm.sdk.api import ESMProtein, LogitsConfig
 from rdkit import Chem
 from torchdrug import models, layers, data, transforms
 from torchdrug.layers import geometry
@@ -213,6 +211,9 @@ def fill_none_with_zeros(vecs):
 
 
 def main(model):
+    if "esm3" in model:
+        global ESMC, ESMProtein, LogitsConfig
+
     data_types = model_to_type(model)
     seq_to_vec = SeqToVec(model)
     if data_types == "protein":
