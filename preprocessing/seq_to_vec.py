@@ -76,11 +76,12 @@ class GearNet3Embedder:
         if len(seq) > 550:
             seq = seq[:550]
         self.fold_seq(seq, fold_tmp_file)
+        if not os.path.exists(fold_tmp_file):
+            return None
         mol = Chem.MolFromPDBFile(fold_tmp_file, sanitize=False)
         os.remove(fold_tmp_file)
         if mol is None:
             return None
-            # raise ValueError("RDKit cannot read PDB file 'tmp.pdb'")
         protein = data.Protein.from_molecule(mol)
         truncate_transform = transforms.TruncateProtein(max_length=550, random=False)
         protein_view_transform = transforms.ProteinView(view="residue")
