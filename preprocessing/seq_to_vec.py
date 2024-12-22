@@ -243,6 +243,6 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='Convert sequence to vector')
     parser.add_argument('--model', type=str, help='Model to use', default="ChemBERTa",
-                        choices=["ProtBert", "ChemBERTa", "MoLFormer", "esm3-small", "esm3-medium"])
+                        choices=["ProtBert", "ChemBERTa", "MoLFormer", "esm3-small", "esm3-medium", "GearNet"])
     args = parser.parse_args()
     main(args.model)
