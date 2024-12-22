@@ -35,9 +35,10 @@ class MolCLREmbedder:
         self.model.eval().to(device)
 
     def to_vec(self, seq: str):
-        data = smiles_to_data(seq).to(device)
+        data = smiles_to_data(seq)
         if data is None:
             return None
+        data = data.to(device)
         with torch.no_grad():
             emb, _ = self.model(data)
         return emb.detach().cpu().numpy().flatten()
