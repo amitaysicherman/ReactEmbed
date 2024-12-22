@@ -79,7 +79,8 @@ class GearNet3Embedder:
         mol = Chem.MolFromPDBFile(fold_tmp_file, sanitize=False)
         os.remove(fold_tmp_file)
         if mol is None:
-            raise ValueError("RDKit cannot read PDB file 'tmp.pdb'")
+            return None
+            # raise ValueError("RDKit cannot read PDB file 'tmp.pdb'")
         protein = data.Protein.from_molecule(mol)
         truncate_transform = transforms.TruncateProtein(max_length=550, random=False)
         protein_view_transform = transforms.ProteinView(view="residue")
