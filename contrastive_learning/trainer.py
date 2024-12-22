@@ -18,6 +18,8 @@ model_to_dim = {
     "esm3-small": 960,
     "esm3-large": 2560,
     "MoLFormer": 768,
+    "MolCLR": 512,
+    "GearNet": "?",
 }
 
 try:
