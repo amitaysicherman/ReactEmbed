@@ -73,6 +73,8 @@ class GearNet3Embedder:
             f.write(pdbs[0])
 
     def to_vec(self, seq: str, fold_tmp_file="tmp.pdb"):
+        if len(seq) > 1023:
+            seq = seq[:1023]
         self.fold_seq(seq, fold_tmp_file)
         mol = Chem.MolFromPDBFile(fold_tmp_file, sanitize=False)
         os.remove(fold_tmp_file)
