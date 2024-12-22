@@ -1,3 +1,4 @@
+import io
 import os
 import re
 
@@ -63,23 +64,26 @@ class GearNet3Embedder:
                                                                      geometry.SequentialEdge(max_distance=2)],
                                                                  edge_feature="gearnet")
 
-    def fold_seq(self, seq: str, output_file):
+    def fold_seq(self, seq: str, output_io):
         tokenized_input = self.fold_tokenizer([seq], return_tensors="pt", add_special_tokens=False)['input_ids']
         tokenized_input = tokenized_input.to(device)
         with torch.no_grad():
             output = self.fold_model(tokenized_input)
         pdbs = fold_to_pdb(output)
-        with open(output_file, 'w') as f:
-            f.write(pdbs[0])
+        output_io.write(pdbs[0])
 
-    def to_vec(self, seq: str, fold_tmp_file="tmp.pdb"):
+    def to_vec(self, seq: str):
         if len(seq) > 550:
             seq = seq[:550]
-        self.fold_seq(seq, fold_tmp_file)
-        if not os.path.exists(fold_tmp_file):
+        fold_tmp_io = io.StringIO()
+        self.fold_seq(seq, fold_tmp_io)
+        pdb_content = fold_tmp_io.getvalue()
+        fold_tmp_io.close()
+
+        if not pdb_content:
             return None
-        mol = Chem.MolFromPDBFile(fold_tmp_file, sanitize=False)
-        os.remove(fold_tmp_file)
+
+        mol = Chem.MolFromPDBBlock(pdb_content, sanitize=False)
         if mol is None:
             return None
         protein = data.Protein.from_molecule(mol)
