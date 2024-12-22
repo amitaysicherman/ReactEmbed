@@ -193,7 +193,7 @@ class SeqToVec:
 def model_to_type(model_name):
     if model_name in ["ChemBERTa", "MoLFormer"]:
         return "molecule"
-    elif model_name in ["ProtBert", "esm3-small", "esm3-medium"]:
+    elif model_name in ["ProtBert", "esm3-small", "esm3-medium", "GearNet"]:
         return "protein"
     else:
         raise ValueError(f"Unknown model: {model_name}")
