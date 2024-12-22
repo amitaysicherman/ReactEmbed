@@ -89,7 +89,7 @@ class GearNet3Embedder:
         protein = self.graph_construction_model(protein)
         output = self.gearnet_model(protein.cuda(), protein.node_feature.float().cuda())
         output = output['node_feature'].mean(dim=0)
-        return output.cpu().numpy().flatten()
+        return output.detach().cpu().numpy().flatten()
 
 
 class Esm3Embedder:
