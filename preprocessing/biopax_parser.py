@@ -6,7 +6,7 @@ import pybiopax
 import requests
 from tqdm import tqdm
 
-from common.path_manager import data_path, reactions_file, proteins_file, molecules_file
+from common.path_manager import reactions_file, proteins_file, molecules_file
 
 
 def get_req(url: str, to_json=False):
@@ -78,8 +78,9 @@ def db_to_type(db_name):
 def element_parser(element: pybiopax.biopax.PhysicalEntity):
     if not hasattr(element, "entity_reference") or not hasattr(element.entity_reference, "xref"):
         if hasattr(element, "xref"):
+
             for xref in element.xref:
-                if "Reactome" not in xref.db:
+                if xref.db.lower() == "uniprot" or xref.db.lower() == "chebi":
                     ref_db = xref.db
                     ref_id = xref.id
                     break
@@ -144,17 +145,19 @@ def save_all_sequences(data_dict, output_file):
         f.write("\n".join(all_seq))
 
 
-def main():
+def main(input_files):
     proteins_to_id = {}
     molecules_to_id = {}
 
-    input_file = os.path.join(data_path, "biopax", "Homo_sapiens.owl")
     if os.path.exists(reactions_file):
         os.remove(reactions_file)
-    model = pybiopax.model_from_owl_file(input_file)
+    all_reactions = []
+    for input_file in input_files:
+        model = pybiopax.model_from_owl_file(input_file)
+        all_reactions.extend(model.get_objects_by_type(pybiopax.biopax.BiochemicalReaction))
     reactions = []
-    for i, reaction in tqdm(enumerate(model.get_objects_by_type(pybiopax.biopax.BiochemicalReaction))):
-        assert reaction.conversion_direction == "LEFT-TO-RIGHT"
+    for i, reaction in tqdm(enumerate(all_reactions)):
+        # assert reaction.conversion_direction == "LEFT-TO-RIGHT"
         elements = []
         for entity in reaction.left:
             elements.extend(get_all_elements(entity))
@@ -177,4 +180,8 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    # main([os.path.join(data_path, "biopax", "Homo_sapiens.owl")])
+    import glob
+
+    files = glob.glob("data/biopax/pathbank/pathbank_primary_biopax/*owl")
+    main(files)
