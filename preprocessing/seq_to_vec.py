@@ -180,19 +180,28 @@ class SeqToVec:
     def __init__(self, model_name):
         if model_name == "ProtBert":
             self.model = PortBert()
+            self.dtype = "protein"
         elif model_name == "ChemBERTa":
             self.model = ChemBERTa()
+            self.dtype = "molecule"
         elif model_name == "MoLFormer":
             self.model = MoLFormer()
+            self.dtype = "molecule"
         elif model_name in ["esm3-small", "esm3-medium"]:
             size = model_name.split("-")[-1]
             self.model = Esm3Embedder(size)
+            self.dtype = "protein"
         elif model_name == "GearNet":
             self.model = GearNet3Embedder()
+            self.dtype = "protein"
         else:
             raise ValueError(f"Unknown model: {model_name}")
 
     def to_vec(self, seq: str):
+        if len(seq) == 0:
+            return None
+        if self.dtype == "protein":
+            seq = seq.replace(".", "")
         return self.model.to_vec(seq)
 
 
