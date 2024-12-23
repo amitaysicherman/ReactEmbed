@@ -3,87 +3,128 @@
 #SBATCH --mem=64G
 #SBATCH --requeue
 #SBATCH --gres=gpu:L40:1
-#SBATCH --array=1-414
+#SBATCH --array=1-11
 
-DATA_NAMES_ARRAY=("pathbank" "reactome" "reactome_all")
-PROTEINS_MODELS_ARRAY=("GearNet" "ProtBert" "esm3-small", "esm3-medium")
-MOLECULES_MODELS_ARRAY=("MolCLR" "ChemBERTa" "MoLFormer")
-mol_task=("BACE" "BBBP" "CEP" "ClinTox" "Delaney" "FreeSolv" "HIV" "Lipophilicity" "Malaria" "SIDER" "Tox21")
-prot_task=("BetaLactamase" "Fluorescence" "Stability" "BinaryLocalization" "HumanPPI" "YeastPPI" "PPIAffinity")
-lig_task=("BindingDB" "PDBBind" "DrugBank" "Davis")
-all_tasks=("${mol_task[@]}" "${prot_task[@]}" "${lig_task[@]}")
-
-commands_array=()
-
+#DATA_NAMES_ARRAY=("pathbank" "reactome" "reactome_all")
+#PROTEINS_MODELS_ARRAY=("GearNet" "ProtBert" "esm3-small", "esm3-medium")
+#MOLECULES_MODELS_ARRAY=("MolCLR" "ChemBERTa" "MoLFormer")
+#mol_task=("BACE" "BBBP" "CEP" "ClinTox" "Delaney" "FreeSolv" "HIV" "Lipophilicity" "Malaria" "SIDER" "Tox21")
+#prot_task=("BetaLactamase" "Fluorescence" "Stability" "BinaryLocalization" "HumanPPI" "YeastPPI" "PPIAffinity")
+#lig_task=("BindingDB" "PDBBind" "DrugBank" "Davis")
+#all_tasks=("${mol_task[@]}" "${prot_task[@]}" "${lig_task[@]}")
+#
+#
+##for data_name in "${DATA_NAMES_ARRAY[@]}" ; do
+##  echo python preprocessing/biopax_parser.py --data_name $data_name
+##done
+#
+##for task in "${all_tasks[@]}"; do
+##    python eval_tasks/prep_tasks_seqs.py --task "$task"
+##done
+#
+#
 #for data_name in "${DATA_NAMES_ARRAY[@]}" ; do
-#  echo python preprocessing/biopax_parser.py --data_name $data_name
+#  for p_model in "${PROTEINS_MODELS_ARRAY[@]}" ;do
+#    echo python preprocessing/seq_to_vec.py --data_name $data_name --model $p_model
+#  done
+#  for m_model in "${MOLECULES_MODELS_ARRAY[@]}" ;do
+#    echo python preprocessing/seq_to_vec.py --data_name $data_name --model $m_model
+#  done
+#  for p_model in "${PROTEINS_MODELS_ARRAY[@]}" ; do
+#    for m_model in "${MOLECULES_MODELS_ARRAY[@]}" ; do
+#      echo python contrastive_learning/trainer.py --data_name $data_name --p_model $p_model --m_model $m_model
+#    done
+#  done
+#done
+#
+#
+#for m_model in "${molecule_models[@]}"; do
+#    echo python preprocessing/seq_to_vec.py --model "$m_model"
+#done
+#for p_model in "${protein_models[@]}"; do
+#    echo python preprocessing/seq_to_vec.py --model "$p_model"
+#done
+#
+#for m_task in "${mol_task[@]}"; do
+#  for m_model in "${molecule_models[@]}"; do
+#    echo python eval_tasks/prep_tasks_vecs.py --task "$m_task" --m_model "$m_model"
+#  done
+#done
+#
+#for p_task in "${prot_task[@]}"; do
+#  for p_model in "${protein_models[@]}"; do
+#    echo python eval_tasks/prep_tasks_vecs.py --task "$p_task" --p_model "$p_model"
+#  done
+#done
+#
+#for l_task in "${lig_task[@]}"; do
+#  for p_model in "${protein_models[@]}"; do
+#    for m_model in "${molecule_models[@]}"; do
+#      echo python eval_tasks/prep_tasks_vecs.py --task "$l_task" --p_model "$p_model" --m_model "$m_model"
+#    done
+#  done
 #done
 
-#for task in "${all_tasks[@]}"; do
-#    python eval_tasks/prep_tasks_seqs.py --task "$task"
-#done
+commands="python preprocessing/seq_to_vec.py --data_name pathbank --model GearNet|\
+python preprocessing/seq_to_vec.py --data_name pathbank --model ProtBert|\
+python preprocessing/seq_to_vec.py --data_name pathbank --model esm3-small,|\
+python preprocessing/seq_to_vec.py --data_name pathbank --model esm3-medium|\
+python preprocessing/seq_to_vec.py --data_name pathbank --model MolCLR|\
+python preprocessing/seq_to_vec.py --data_name pathbank --model ChemBERTa|\
+python preprocessing/seq_to_vec.py --data_name pathbank --model MoLFormer|\
+python contrastive_learning/trainer.py --data_name pathbank --p_model GearNet --m_model MolCLR|\
+python contrastive_learning/trainer.py --data_name pathbank --p_model GearNet --m_model ChemBERTa|\
+python contrastive_learning/trainer.py --data_name pathbank --p_model GearNet --m_model MoLFormer|\
+python contrastive_learning/trainer.py --data_name pathbank --p_model ProtBert --m_model MolCLR|\
+python contrastive_learning/trainer.py --data_name pathbank --p_model ProtBert --m_model ChemBERTa|\
+python contrastive_learning/trainer.py --data_name pathbank --p_model ProtBert --m_model MoLFormer|\
+python contrastive_learning/trainer.py --data_name pathbank --p_model esm3-small, --m_model MolCLR|\
+python contrastive_learning/trainer.py --data_name pathbank --p_model esm3-small, --m_model ChemBERTa|\
+python contrastive_learning/trainer.py --data_name pathbank --p_model esm3-small, --m_model MoLFormer|\
+python contrastive_learning/trainer.py --data_name pathbank --p_model esm3-medium --m_model MolCLR|\
+python contrastive_learning/trainer.py --data_name pathbank --p_model esm3-medium --m_model ChemBERTa|\
+python contrastive_learning/trainer.py --data_name pathbank --p_model esm3-medium --m_model MoLFormer|\
+python preprocessing/seq_to_vec.py --data_name reactome --model GearNet|\
+python preprocessing/seq_to_vec.py --data_name reactome --model ProtBert|\
+python preprocessing/seq_to_vec.py --data_name reactome --model esm3-small,|\
+python preprocessing/seq_to_vec.py --data_name reactome --model esm3-medium|\
+python preprocessing/seq_to_vec.py --data_name reactome --model MolCLR|\
+python preprocessing/seq_to_vec.py --data_name reactome --model ChemBERTa|\
+python preprocessing/seq_to_vec.py --data_name reactome --model MoLFormer|\
+python contrastive_learning/trainer.py --data_name reactome --p_model GearNet --m_model MolCLR|\
+python contrastive_learning/trainer.py --data_name reactome --p_model GearNet --m_model ChemBERTa|\
+python contrastive_learning/trainer.py --data_name reactome --p_model GearNet --m_model MoLFormer|\
+python contrastive_learning/trainer.py --data_name reactome --p_model ProtBert --m_model MolCLR|\
+python contrastive_learning/trainer.py --data_name reactome --p_model ProtBert --m_model ChemBERTa|\
+python contrastive_learning/trainer.py --data_name reactome --p_model ProtBert --m_model MoLFormer|\
+python contrastive_learning/trainer.py --data_name reactome --p_model esm3-small, --m_model MolCLR|\
+python contrastive_learning/trainer.py --data_name reactome --p_model esm3-small, --m_model ChemBERTa|\
+python contrastive_learning/trainer.py --data_name reactome --p_model esm3-small, --m_model MoLFormer|\
+python contrastive_learning/trainer.py --data_name reactome --p_model esm3-medium --m_model MolCLR|\
+python contrastive_learning/trainer.py --data_name reactome --p_model esm3-medium --m_model ChemBERTa|\
+python contrastive_learning/trainer.py --data_name reactome --p_model esm3-medium --m_model MoLFormer|\
+python preprocessing/seq_to_vec.py --data_name reactome_all --model GearNet|\
+python preprocessing/seq_to_vec.py --data_name reactome_all --model ProtBert|\
+python preprocessing/seq_to_vec.py --data_name reactome_all --model esm3-small,|\
+python preprocessing/seq_to_vec.py --data_name reactome_all --model esm3-medium|\
+python preprocessing/seq_to_vec.py --data_name reactome_all --model MolCLR|\
+python preprocessing/seq_to_vec.py --data_name reactome_all --model ChemBERTa|\
+python preprocessing/seq_to_vec.py --data_name reactome_all --model MoLFormer|\
+python contrastive_learning/trainer.py --data_name reactome_all --p_model GearNet --m_model MolCLR|\
+python contrastive_learning/trainer.py --data_name reactome_all --p_model GearNet --m_model ChemBERTa|\
+python contrastive_learning/trainer.py --data_name reactome_all --p_model GearNet --m_model MoLFormer|\
+python contrastive_learning/trainer.py --data_name reactome_all --p_model ProtBert --m_model MolCLR|\
+python contrastive_learning/trainer.py --data_name reactome_all --p_model ProtBert --m_model ChemBERTa|\
+python contrastive_learning/trainer.py --data_name reactome_all --p_model ProtBert --m_model MoLFormer|\
+python contrastive_learning/trainer.py --data_name reactome_all --p_model esm3-small, --m_model MolCLR|\
+python contrastive_learning/trainer.py --data_name reactome_all --p_model esm3-small, --m_model ChemBERTa|\
+python contrastive_learning/trainer.py --data_name reactome_all --p_model esm3-small, --m_model MoLFormer|\
+python contrastive_learning/trainer.py --data_name reactome_all --p_model esm3-medium --m_model MolCLR|\
+python contrastive_learning/trainer.py --data_name reactome_all --p_model esm3-medium --m_model ChemBERTa"
 
 
-for data_name in "${DATA_NAMES_ARRAY[@]}" ; do
-  for p_model in "${PROTEINS_MODELS_ARRAY[@]}" ;do
-    cmd="python preprocessing/seq_to_vec.py --data_name $data_name --model $p_model"
-    commands_array+=($cmd)
-  done
-  for m_model in "${MOLECULES_MODELS_ARRAY[@]}" ;do
-    cmd="python preprocessing/seq_to_vec.py --data_name $data_name --model $m_model"
-    commands_array+=($cmd)
-  done
-  for p_model in "${PROTEINS_MODELS_ARRAY[@]}" ; do
-    for m_model in "${MOLECULES_MODELS_ARRAY[@]}" ; do
-      cmd="python contrastive_learning/trainer.py --data_name $data_name --p_model $p_model --m_model $m_model"
-      commands_array+=($cmd)
-    done
-  done
-done
-
-
-for m_model in "${molecule_models[@]}"; do
-    cmd="python preprocessing/seq_to_vec.py --model $m_model"
-    commands_array+=($cmd)
-done
-for p_model in "${protein_models[@]}"; do
-    cmd="python preprocessing/seq_to_vec.py --model $p_model"
-    commands_array+=($cmd)
-done
-
-for m_task in "${mol_task[@]}"; do
-  for m_model in "${molecule_models[@]}"; do
-    cmd="python eval_tasks/prep_tasks_vecs.py --task $m_task --m_model $m_model"
-    commands_array+=($cmd)
-  done
-done
-
-for p_task in "${prot_task[@]}"; do
-  for p_model in "${protein_models[@]}"; do
-    cmd="python eval_tasks/prep_tasks_vecs.py --task $p_task --p_model $p_model"
-    commands_array+=($cmd)
-  done
-done
-
-for l_task in "${lig_task[@]}"; do
-  for p_model in "${protein_models[@]}"; do
-    for m_model in "${molecule_models[@]}"; do
-      cmd="python eval_tasks/prep_tasks_vecs.py --task $l_task --p_model $p_model --m_model $m_model"
-      commands_array+=($cmd)
-    done
-  done
-done
-
-# print number of commands
-echo "Number of commands: ${#commands_array[@]}"
-# run the command based on the $SLURM_ARRAY_TASK_ID-1
-cmd_to_run=${commands_array[$SLURM_ARRAY_TASK_ID-1]}
-echo "Running command: $cmd_to_run"
-
-# if the cmd contain "esm3" change conda environment to ReactEmbedESM, otherwise use ReactEmbedTorchDrug
-if [[ $cmd_to_run == *"esm3"* ]]; then
-  conda activate ReactEmbedESM
-else
-  conda activate ReactEmbedTorchDrug
-fi
-eval $cmd_to_run
+IFS='|' read -r -a array <<< "$commands"
+cmd=${array[$((SLURM_ARRAY_TASK_ID - 1))]}
+#run the command
+echo $cmd
+eval $cmd
