@@ -79,4 +79,9 @@ echo "Number of commands: ${#commands_array[@]}"
 # run the command based on the $SLURM_ARRAY_TASK_ID-1
 cmd_to_run=${commands_array[$SLURM_ARRAY_TASK_ID-1]}
 echo "Running command: $cmd_to_run"
+
+# if the cmd contain "esm3" change conda environment to ReactEmbedESM
+if [[ $cmd_to_run == *"esm3"* ]]; then
+  conda activate ReactEmbedESM
+fi
 eval $cmd_to_run
