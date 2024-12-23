@@ -6,7 +6,7 @@
 #SBATCH --array=1-11
 
 #DATA_NAMES_ARRAY=("pathbank" "reactome" "reactome_all")
-#PROTEINS_MODELS_ARRAY=("GearNet" "ProtBert" "esm3-small", "esm3-medium")
+#PROTEINS_MODELS_ARRAY=("GearNet" "ProtBert" "esm3-small" "esm3-medium")
 #MOLECULES_MODELS_ARRAY=("MolCLR" "ChemBERTa" "MoLFormer")
 #mol_task=("BACE" "BBBP" "CEP" "ClinTox" "Delaney" "FreeSolv" "HIV" "Lipophilicity" "Malaria" "SIDER" "Tox21")
 #prot_task=("BetaLactamase" "Fluorescence" "Stability" "BinaryLocalization" "HumanPPI" "YeastPPI" "PPIAffinity")
@@ -67,7 +67,7 @@
 
 commands="python preprocessing/seq_to_vec.py --data_name pathbank --model GearNet|\
 python preprocessing/seq_to_vec.py --data_name pathbank --model ProtBert|\
-python preprocessing/seq_to_vec.py --data_name pathbank --model esm3-small,|\
+python preprocessing/seq_to_vec.py --data_name pathbank --model esm3-small|\
 python preprocessing/seq_to_vec.py --data_name pathbank --model esm3-medium|\
 python preprocessing/seq_to_vec.py --data_name pathbank --model MolCLR|\
 python preprocessing/seq_to_vec.py --data_name pathbank --model ChemBERTa|\
@@ -78,15 +78,15 @@ python contrastive_learning/trainer.py --data_name pathbank --p_model GearNet --
 python contrastive_learning/trainer.py --data_name pathbank --p_model ProtBert --m_model MolCLR|\
 python contrastive_learning/trainer.py --data_name pathbank --p_model ProtBert --m_model ChemBERTa|\
 python contrastive_learning/trainer.py --data_name pathbank --p_model ProtBert --m_model MoLFormer|\
-python contrastive_learning/trainer.py --data_name pathbank --p_model esm3-small, --m_model MolCLR|\
-python contrastive_learning/trainer.py --data_name pathbank --p_model esm3-small, --m_model ChemBERTa|\
-python contrastive_learning/trainer.py --data_name pathbank --p_model esm3-small, --m_model MoLFormer|\
+python contrastive_learning/trainer.py --data_name pathbank --p_model esm3-small --m_model MolCLR|\
+python contrastive_learning/trainer.py --data_name pathbank --p_model esm3-small --m_model ChemBERTa|\
+python contrastive_learning/trainer.py --data_name pathbank --p_model esm3-small --m_model MoLFormer|\
 python contrastive_learning/trainer.py --data_name pathbank --p_model esm3-medium --m_model MolCLR|\
 python contrastive_learning/trainer.py --data_name pathbank --p_model esm3-medium --m_model ChemBERTa|\
 python contrastive_learning/trainer.py --data_name pathbank --p_model esm3-medium --m_model MoLFormer|\
 python preprocessing/seq_to_vec.py --data_name reactome --model GearNet|\
 python preprocessing/seq_to_vec.py --data_name reactome --model ProtBert|\
-python preprocessing/seq_to_vec.py --data_name reactome --model esm3-small,|\
+python preprocessing/seq_to_vec.py --data_name reactome --model esm3-small|\
 python preprocessing/seq_to_vec.py --data_name reactome --model esm3-medium|\
 python preprocessing/seq_to_vec.py --data_name reactome --model MolCLR|\
 python preprocessing/seq_to_vec.py --data_name reactome --model ChemBERTa|\
@@ -97,15 +97,15 @@ python contrastive_learning/trainer.py --data_name reactome --p_model GearNet --
 python contrastive_learning/trainer.py --data_name reactome --p_model ProtBert --m_model MolCLR|\
 python contrastive_learning/trainer.py --data_name reactome --p_model ProtBert --m_model ChemBERTa|\
 python contrastive_learning/trainer.py --data_name reactome --p_model ProtBert --m_model MoLFormer|\
-python contrastive_learning/trainer.py --data_name reactome --p_model esm3-small, --m_model MolCLR|\
-python contrastive_learning/trainer.py --data_name reactome --p_model esm3-small, --m_model ChemBERTa|\
-python contrastive_learning/trainer.py --data_name reactome --p_model esm3-small, --m_model MoLFormer|\
+python contrastive_learning/trainer.py --data_name reactome --p_model esm3-small --m_model MolCLR|\
+python contrastive_learning/trainer.py --data_name reactome --p_model esm3-small --m_model ChemBERTa|\
+python contrastive_learning/trainer.py --data_name reactome --p_model esm3-small --m_model MoLFormer|\
 python contrastive_learning/trainer.py --data_name reactome --p_model esm3-medium --m_model MolCLR|\
 python contrastive_learning/trainer.py --data_name reactome --p_model esm3-medium --m_model ChemBERTa|\
 python contrastive_learning/trainer.py --data_name reactome --p_model esm3-medium --m_model MoLFormer|\
 python preprocessing/seq_to_vec.py --data_name reactome_all --model GearNet|\
 python preprocessing/seq_to_vec.py --data_name reactome_all --model ProtBert|\
-python preprocessing/seq_to_vec.py --data_name reactome_all --model esm3-small,|\
+python preprocessing/seq_to_vec.py --data_name reactome_all --model esm3-small|\
 python preprocessing/seq_to_vec.py --data_name reactome_all --model esm3-medium|\
 python preprocessing/seq_to_vec.py --data_name reactome_all --model MolCLR|\
 python preprocessing/seq_to_vec.py --data_name reactome_all --model ChemBERTa|\
@@ -116,9 +116,9 @@ python contrastive_learning/trainer.py --data_name reactome_all --p_model GearNe
 python contrastive_learning/trainer.py --data_name reactome_all --p_model ProtBert --m_model MolCLR|\
 python contrastive_learning/trainer.py --data_name reactome_all --p_model ProtBert --m_model ChemBERTa|\
 python contrastive_learning/trainer.py --data_name reactome_all --p_model ProtBert --m_model MoLFormer|\
-python contrastive_learning/trainer.py --data_name reactome_all --p_model esm3-small, --m_model MolCLR|\
-python contrastive_learning/trainer.py --data_name reactome_all --p_model esm3-small, --m_model ChemBERTa|\
-python contrastive_learning/trainer.py --data_name reactome_all --p_model esm3-small, --m_model MoLFormer|\
+python contrastive_learning/trainer.py --data_name reactome_all --p_model esm3-small --m_model MolCLR|\
+python contrastive_learning/trainer.py --data_name reactome_all --p_model esm3-small --m_model ChemBERTa|\
+python contrastive_learning/trainer.py --data_name reactome_all --p_model esm3-small --m_model MoLFormer|\
 python contrastive_learning/trainer.py --data_name reactome_all --p_model esm3-medium --m_model MolCLR|\
 python contrastive_learning/trainer.py --data_name reactome_all --p_model esm3-medium --m_model ChemBERTa"
 
