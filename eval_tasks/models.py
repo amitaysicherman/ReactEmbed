@@ -13,9 +13,7 @@ class DataType(Enum):
 
 
 def load_fuse_model(name):
-    cp_names = os.listdir(name)
-    cp_name = [x for x in cp_names if x.endswith(".pt")][0]
-    cp_data = torch.load(f"{name}/{cp_name}", map_location=torch.device('cpu'))
+    cp_data = torch.load(f"{name}/model.pt", map_location=torch.device('cpu'))
     config_file = os.path.join(name, 'config.txt')
     config = ReactEmbedConfig.load_from_file(config_file)
     dim = config.p_dim + config.m_dim

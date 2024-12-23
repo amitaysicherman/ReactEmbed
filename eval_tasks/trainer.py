@@ -8,6 +8,7 @@ from eval_tasks.tasks import name_to_task, Task
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
+
 def run_epoch(model, loader, optimizer, criterion, metric_name, part):
     if part == "train":
         model.train()
@@ -153,16 +154,17 @@ if __name__ == '__main__':
     import argparse
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--use_fuse", type=int, default=0)
+    parser.add_argument("--use_fuse", type=int, default=1)
     parser.add_argument("--use_model", type=int, default=1)
     parser.add_argument("--bs", type=int, default=16)
     parser.add_argument("--lr", type=float, default=0.001)
     parser.add_argument("--drop_out", type=float, default=0.3)
     parser.add_argument("--hidden_dim", type=int, default=64)
     parser.add_argument("--task_name", type=str, default="BACE")
-    parser.add_argument("--fusion_name", type=str, default="8192-ProtBert-ChemBERTa-2-64-0.3-1-0.001-0.0")
-    parser.add_argument("--molecule_embedding", type=str, default="ChemBERTa")
-    parser.add_argument("--protein_embedding", type=str, default="ProtBert")
+    parser.add_argument("--fusion_name", type=str,
+                        default="data/pathbank/model/ProtBert-MolCLR-2-64-0.3-10-0.001-8192-0.0/")
+    parser.add_argument("--m_model", type=str, default="ChemBERTa")
+    parser.add_argument("--p_model", type=str, default="ProtBert")
     parser.add_argument("--max_no_improve", type=int, default=15)
     parser.add_argument("--n_layers", type=int, default=1)
     parser.add_argument("--metric", type=str, default="f1_max")
@@ -171,18 +173,18 @@ if __name__ == '__main__':
 
     r_fuse = main(use_fuse=1, use_model=0, bs=args.bs, lr=args.lr, drop_out=args.drop_out,
                   hidden_dim=args.hidden_dim, task_name=args.task_name, fuse_base=args.fusion_name,
-                  mol_emd=args.molecule_embedding, protein_emd=args.protein_embedding,
+                  mol_emd=args.m_model, protein_emd=args.p_model,
                   max_no_improve=args.max_no_improve,
                   n_layers=args.n_layers, metric=args.metric)
     r_model = main(use_fuse=0, use_model=1, bs=args.bs, lr=args.lr, drop_out=args.drop_out,
                    hidden_dim=args.hidden_dim, task_name=args.task_name, fuse_base=args.fusion_name,
-                   mol_emd=args.molecule_embedding, protein_emd=args.protein_embedding,
+                   mol_emd=args.m_model, protein_emd=args.p_model,
                    max_no_improve=args.max_no_improve,
                    n_layers=args.n_layers, metric=args.metric)
 
     r_both = main(use_fuse=1, use_model=1, bs=args.bs, lr=args.lr, drop_out=args.drop_out,
                   hidden_dim=args.hidden_dim, task_name=args.task_name, fuse_base=args.fusion_name,
-                  mol_emd=args.molecule_embedding, protein_emd=args.protein_embedding,
+                  mol_emd=args.m_model, protein_emd=args.p_model,
                   max_no_improve=args.max_no_improve,
                   n_layers=args.n_layers, metric=args.metric)
     print(f"Fuse: {r_fuse}, Model: {r_model}, Both: {r_both}")
