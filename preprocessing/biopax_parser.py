@@ -206,5 +206,9 @@ def main(name=DEFAULT_NAME):
 
 if __name__ == "__main__":
     import glob
+    import argparse
 
-    main("pathbank")
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--name", type=str, default="reactome")
+    args = parser.parse_args()
+    main(args.name)
