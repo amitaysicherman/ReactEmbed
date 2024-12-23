@@ -127,9 +127,9 @@ IFS='|' read -r -a array <<< "$commands"
 cmd=${array[$((SLURM_ARRAY_TASK_ID - 1))]}
 # if esm in cmd active cond env ReactEmbedESM else ReactEmbedTorchDrug
 if [[ $cmd == *"esm"* ]]; then
-    echo "conda activate ReactEmbedESM"
+    conda activate ReactEmbedESM
 else
-    echo "conda activate ReactEmbedTorchDrug"
+    conda activate ReactEmbedTorchDrug
 fi
 echo $cmd
 export PYTHONPATH=$PYTHONPATH:$(pwd)
