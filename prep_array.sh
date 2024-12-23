@@ -3,7 +3,7 @@
 #SBATCH --mem=64G
 #SBATCH --requeue
 #SBATCH --gres=gpu:L40:1
-#SBATCH --array=1-11
+#SBATCH --array=1-56
 
 #DATA_NAMES_ARRAY=("pathbank" "reactome" "reactome_all")
 #PROTEINS_MODELS_ARRAY=("GearNet" "ProtBert" "esm3-small" "esm3-medium")
