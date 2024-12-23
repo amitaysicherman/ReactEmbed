@@ -21,7 +21,7 @@ def name_to_file(name):
                  'Xenopus_tropicalis.owl']
         return [f"data/biopax{x}" for x in files]
     elif name == "pathbank":
-        return glob.glob(f"data/biopax/pathbank/pathbank_primary_biopax/*owl")
+        return glob.glob(f"data/biopax/pathbank/*owl")
     else:
         raise Exception("Not know name")
 
