@@ -10,9 +10,6 @@ os.makedirs(item_path, exist_ok=True)
 model_path = os.path.join(data_path, "models")
 os.makedirs(model_path, exist_ok=True)
 
-scores_path = os.path.join(data_path, "scores")
-os.makedirs(scores_path, exist_ok=True)
-
 reactions_file = os.path.join(item_path, "reaction.txt")
 proteins_file = os.path.join(item_path, "proteins.txt")
 molecules_file = os.path.join(item_path, "molecules.txt")

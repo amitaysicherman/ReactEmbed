@@ -12,7 +12,7 @@ import os
 
 import pandas as pd
 
-from common.path_manager import data_path, reactions_file, item_path, fuse_path
+from common.path_manager import data_path
 from common.utils import model_args_to_name
 from contrastive_learning.trainer import main as train_model
 from eval_tasks.prep_tasks_seqs import main as task_seqs_main
@@ -44,6 +44,11 @@ parser.add_argument("--task_n_layers", type=int, default=2)
 parser.add_argument("--task_metric", type=str, default="auc")
 
 args = parser.parse_args()
+item_path = f"data/{args.data_name}"
+os.makedirs(item_path, exist_ok=True)
+reactions_file = f"{item_path}/reaction.txt"
+proteins_file = f"{item_path}/proteins.txt"
+molecules_file = f"{item_path}/molecules.txt"
 if not os.path.exists(reactions_file):
     print(f"Start preprocess data")
     preprocess_data()
@@ -54,8 +59,8 @@ proteins_file = f'{item_path}/{args.p_model}_vectors.npy'
 molecules_file = f'{item_path}/{args.m_model}_vectors.npy'
 if not os.path.exists(proteins_file) or not os.path.exists(molecules_file):
     print(f"Start preprocess sequences")
-    preprocess_sequences(args.p_model)
-    preprocess_sequences(args.m_model)
+    preprocess_sequences(args.p_model, args.data_name)
+    preprocess_sequences(args.m_model, args.data_name)
 else:
     print("Skip preprocess sequences")
 
@@ -72,7 +77,7 @@ batch_size = args.cl_batch_size
 fuse_base = model_args_to_name(batch_size=batch_size, p_model=p_model, m_model=m_model, n_layers=n_layers,
                                hidden_dim=hidden_dim, dropout=dropout, epochs=epochs, lr=lr, flip_prob=flip_prob)
 fuse_base = f"data/{args.data_name}/model/{fuse_base}"
-cl_model_file = f"{fuse_path}/{fuse_base}/model.pt"
+cl_model_file = f"{fuse_base}/model.pt"
 if not os.path.exists(cl_model_file):
     print("Start train contrastive learning model")
     train_model(args.cl_batch_size, args.p_model, args.m_model, args.cl_n_layers, args.cl_hidden_dim, args.cl_dropout,
@@ -93,7 +98,6 @@ if not os.path.exists(task_prep_file):
     tasks_vecs_main(args.task_name, args.p_model, args.m_model)
 else:
     print("Skip prep task vecs")
-
 
 print("Experiment finished")
 print(f"Protein model: {args.p_model}, Molecule model: {args.m_model}")

@@ -6,6 +6,9 @@ import pybiopax
 import requests
 from tqdm import tqdm
 
+DEFAULT_FILES = ["data/biopax/Homo_sapiens.owl"]
+DEFAULT_NAME = "reactome"
+
 
 def get_req(url: str, to_json=False):
     for i in range(3):
@@ -146,7 +149,7 @@ def save_all_sequences(data_dict, output_file):
         f.write("\n".join(all_seq))
 
 
-def main(input_files, name):
+def main(input_files=DEFAULT_FILES, name=DEFAULT_NAME):
     proteins_to_id = {}
     molecules_to_id = {}
     output_base = f"data/{name}"
@@ -186,5 +189,6 @@ def main(input_files, name):
 
 if __name__ == "__main__":
     import glob
+
     files = glob.glob("data/biopax/pathbank/pathbank_primary_biopax/*owl")
     main(files, "pathbank")

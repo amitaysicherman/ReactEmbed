@@ -3,7 +3,7 @@ from enum import Enum
 
 import torch
 
-from common.data_types import Config
+from common.utils import Config
 from contrastive_learning.model import ReactEmbedConfig, ReactEmbedModel
 
 

@@ -1,6 +1,6 @@
 import torch
 
-from common.data_types import Config
+from common.utils import Config
 from eval_tasks.dataset import get_dataloaders
 from eval_tasks.models import LinFuseModel, PairsFuseModel
 from eval_tasks.scores import Scores, ScoresManager
