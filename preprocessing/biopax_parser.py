@@ -19,7 +19,7 @@ def name_to_file(name):
                  'Homo_sapiens.owl', 'Rattus_norvegicus.owl', 'Sus_scrofa.owl', 'Canis_familiaris.owl',
                  'Drosophila_melanogaster.owl', 'Mus_musculus.owl', 'Saccharomyces_cerevisiae.owl',
                  'Xenopus_tropicalis.owl']
-        return [f"data/biopax{x}" for x in files]
+        return [f"data/biopax/{x}" for x in files]
     elif name == "pathbank":
         return glob.glob(f"data/biopax/pathbank/*owl")
     else:
