@@ -23,11 +23,12 @@ def prep_entity(entities, empty_list):
 class TripletsDataset(Dataset):
     def __init__(self, data_name, split, p_model="ProtBert", m_model="MoLFormer", n_duplicates=10, flip_prob=0):
         self.split = split
+
         self.flip_prob = flip_prob
-        item_path = f"data/{data_name}"
-        reactions_file = pjoin(item_path, "reaction.txt")
-        self.proteins = np.load(pjoin(item_path, f"{p_model}_vectors.npy"))
-        self.molecules = np.load(pjoin(item_path, f"{m_model}_vectors.npy"))
+        self.item_path = f"data/{data_name}"
+        reactions_file = pjoin(self.item_path, "reaction.txt")
+        self.proteins = np.load(pjoin(self.item_path, f"{p_model}_vectors.npy"))
+        self.molecules = np.load(pjoin(self.item_path, f"{m_model}_vectors.npy"))
         # all the proteins with zero vectors are empty proteins
         self.empty_protein_index = set(np.where(np.all(self.proteins == 0, axis=1))[0].tolist())
         self.empty_molecule_index = set(np.where(np.all(self.molecules == 0, axis=1))[0].tolist())
@@ -132,7 +133,7 @@ class TripletsDataset(Dataset):
         return t1, t2, v1, v2, v3
 
     def save_triples(self):
-        base_dir = pjoin(item_path, "triplets")
+        base_dir = pjoin(self.item_path, "triplets")
         os.makedirs(base_dir, exist_ok=True)
         for t in TYPES:
             with open(pjoin(base_dir, f"{t}_{self.split}.txt"), "w") as f:
@@ -140,7 +141,7 @@ class TripletsDataset(Dataset):
                     f.write(f"{e1} {e2} {e3}\n")
 
     def load_triples_if_exists(self):
-        base_dir = pjoin(item_path, "triplets")
+        base_dir = pjoin(self.item_path, "triplets")
         items_file = pjoin(base_dir, f"{TYPES[0]}_{self.split}.txt")
         if not os.path.exists(items_file):
             return False
