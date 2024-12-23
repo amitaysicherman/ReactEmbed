@@ -10,6 +10,22 @@ DEFAULT_FILES = ["data/biopax/Homo_sapiens.owl"]
 DEFAULT_NAME = "reactome"
 
 
+def name_to_file(name):
+    if name == "reactome":
+        return ["data/biopax/Homo_sapiens.owl"]
+    elif name == "reactome_all":
+        files = ['Bos_taurus.owl', 'Danio_rerio.owl', 'Gallus_gallus.owl', 'Plasmodium_falciparum.owl',
+                 'Schizosaccharomyces_pombe.owl', 'Caenorhabditis_elegans.owl', 'Dictyostelium_discoideum.owl',
+                 'Homo_sapiens.owl', 'Rattus_norvegicus.owl', 'Sus_scrofa.owl', 'Canis_familiaris.owl',
+                 'Drosophila_melanogaster.owl', 'Mus_musculus.owl', 'Saccharomyces_cerevisiae.owl',
+                 'Xenopus_tropicalis.owl']
+        return [f"data/biopax{x}" for x in files]
+    elif name == "pathbank":
+        return glob.glob(f"data/biopax/pathbank/pathbank_primary_biopax/*owl")
+    else:
+        raise Exception("Not know name")
+
+
 def get_req(url: str, to_json=False):
     for i in range(3):
         response = requests.get(url)
@@ -149,7 +165,8 @@ def save_all_sequences(data_dict, output_file):
         f.write("\n".join(all_seq))
 
 
-def main(input_files=DEFAULT_FILES, name=DEFAULT_NAME):
+def main(name=DEFAULT_NAME):
+    input_files = name_to_file(name)
     proteins_to_id = {}
     molecules_to_id = {}
     output_base = f"data/{name}"
@@ -190,5 +207,4 @@ def main(input_files=DEFAULT_FILES, name=DEFAULT_NAME):
 if __name__ == "__main__":
     import glob
 
-    files = glob.glob("data/biopax/pathbank/pathbank_primary_biopax/*owl")
-    main(files, "pathbank")
+    main("pathbank")
