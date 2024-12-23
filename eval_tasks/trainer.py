@@ -80,7 +80,8 @@ def get_model_from_task(task: Task, dataset, conf, fuse_base, drop_out, n_layers
 
 
 def train_model_with_config(config: dict, task_name: str, fuse_base: str, mol_emd: str, protein_emd: str,
-                            max_no_improve=15, fuse_model=None, return_valid=False, task_suffix=""):
+                            max_no_improve=15, fuse_model=None, return_valid=False, task_suffix="",
+                            return_model=False):
     use_fuse = config["use_fuse"]
     use_model = config["use_model"]
     bs = config["bs"]
@@ -130,11 +131,13 @@ def train_model_with_config(config: dict, task_name: str, fuse_base: str, mol_em
                 break
     if return_valid:
         return scores_manager.test_scores.get_value(), scores_manager.valid_scores.get_value()
+    if return_model:
+        return scores_manager.test_scores.get_value(), model
     return scores_manager.test_scores.get_value()
 
 
 def main(use_fuse, use_model, bs, lr, drop_out, hidden_dim, task_name, fuse_base, mol_emd, protein_emd, n_layers,
-         metric, max_no_improve, fuse_model=None, task_suffix=""):
+         metric, max_no_improve, fuse_model=None, task_suffix="", return_model=False):
     config = {
         "use_fuse": use_fuse,
         "use_model": use_model,
@@ -146,7 +149,7 @@ def main(use_fuse, use_model, bs, lr, drop_out, hidden_dim, task_name, fuse_base
         'metric': metric
     }
     res = train_model_with_config(config, task_name, fuse_base, mol_emd, protein_emd, max_no_improve,
-                                  fuse_model=fuse_model, task_suffix=task_suffix)
+                                  fuse_model=fuse_model, task_suffix=task_suffix, return_valid=return_model)
     return res
 
 
