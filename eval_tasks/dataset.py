@@ -1,21 +1,30 @@
-from os.path import join as pjoin
+import os
 
 import numpy as np
 from torch.utils.data import Dataset, DataLoader
 
 from common.path_manager import data_path
+from eval_tasks.models import DataType
+from eval_tasks.tasks import name_to_task
 
 
 def load_data(task_name, mol_emd, protein_emd):
     base_dir = f"{data_path}/torchdrug/"
-    data_file = pjoin(base_dir, f"{task_name}/{protein_emd}_{mol_emd}.npz")
-    data = np.load(data_file)
-    x1_train, x1_valid, x1_test = [data[f"x1_{x}"] for x in ["train", "valid", "test"]]
-    if "x2_train" in data:
-        x2_train, x2_valid, x2_test = [data[f"x2_{x}"] for x in ["train", "valid", "test"]]
-    else:
-        x2_train, x2_valid, x2_test = None, None, None
-    labels_train, labels_valid, labels_test = [data[f"label_{x}"] for x in ["train", "valid", "test"]]
+    task_dir = os.path.join(base_dir, task_name)
+
+    def load_split(split, emb_name1, emb_name2=None):
+        x1 = np.load(f"{task_dir}/{split}_{emb_name1}_1.npy")
+        x2 = np.load(f"{task_dir}/{split}_{emb_name2}_2.npy") if emb_name2 else None
+        labels = np.load(f"{task_dir}/{split}_labels.npy")
+        return x1, x2, labels
+
+    task = name_to_task[task_name]
+    emb1 = protein_emd if task.dtype1 == DataType.PROTEIN else mol_emd
+    emb2 = protein_emd if task.dtype2 == DataType.PROTEIN else mol_emd if task.dtype2 else None
+
+    x1_train, x2_train, labels_train = load_split('train', emb1, emb2)
+    x1_valid, x2_valid, labels_valid = load_split('valid', emb1, emb2)
+    x1_test, x2_test, labels_test = load_split('test', emb1, emb2)
     return x1_train, x2_train, labels_train, x1_valid, x2_valid, labels_valid, x1_test, x2_test, labels_test
 
 

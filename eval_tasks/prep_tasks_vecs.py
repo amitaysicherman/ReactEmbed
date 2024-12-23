@@ -1,13 +1,11 @@
 # sbatch --time=1-0 --array=1-21 --gres=gpu:A40:1 --mem=64G -c 4 --requeue --wrap="python3 GO/preprocessing.py --task_index $SLURM_ARRAY_TASK_ID-1"
 import os
-from os.path import join as pjoin
 
 import numpy as np
 from tqdm import tqdm
 
 from common.path_manager import data_path
 from eval_tasks.models import DataType
-from eval_tasks.tasks import Task, PrepType
 from eval_tasks.tasks import name_to_task
 from preprocessing.seq_to_vec import SeqToVec
 
@@ -15,58 +13,38 @@ base_dir = f"{data_path}/torchdrug/"
 os.makedirs(base_dir, exist_ok=True)
 
 
-def prep_dataset(task: Task, p_seq2vec, m_seq2vec, protein_emd, mol_emd):
-    task_dir = pjoin(base_dir, task.name)
-    output_file = pjoin(task_dir, f"{protein_emd}_{mol_emd}.npz")
+def save_vectors(input_file, output_file, converter):
     if os.path.exists(output_file):
         return
+    with open(input_file, 'r') as f:
+        lines = f.read().splitlines()
+    vectors = np.stack([converter.to_vec(line) for line in tqdm(lines)])
+    np.save(output_file, vectors)
 
-    if task.prep_type == PrepType.drugtarget:
-        with open(pjoin(task_dir, "1.txt"), "r") as f:
-            lines = f.read().splitlines()
-        proteins = [p_seq2vec.to_vec(line) for line in tqdm(lines)]
-        proteins = np.stack(proteins)
 
-        with open(pjoin(task_dir, "2.txt"), "r") as f:
-            lines = f.read().splitlines()
-        molecules = [m_seq2vec.to_vec(line) for line in tqdm(lines)]
-        molecules = np.stack(molecules)
-        with open(pjoin(task_dir, "labels.txt"), "r") as f:
-            lines = f.read().splitlines()
-        labels = np.array([float(line) for line in tqdm(lines)])
-        np.savez(output_file, x1=proteins, x2=molecules, label=labels)
+def save_labels(input_file, output_file):
+    if os.path.exists(output_file):
         return
+    with open(input_file, 'r') as f:
+        lines = f.read().splitlines()
+    labels = np.array([float(x) for x in lines])
+    np.save(output_file, labels)
 
-    x1_all = dict()
-    x2_all = dict()
-    labels_all = dict()
-    for name in ["train", "valid", "test"]:
-        with open(pjoin(task_dir, f"{name}_1.txt"), "r") as f:
-            x1_lines = f.read().splitlines()
-        x1_vecs = [p_seq2vec.to_vec(line) if task.dtype1 == DataType.PROTEIN else m_seq2vec.to_vec(line) for line in
-                   tqdm(x1_lines)]
-        x1_vecs = np.stack(x1_vecs)
-        if task.dtype2 is not None:
-            with open(pjoin(task_dir, f"{name}_2.txt"), "r") as f:
-                x2_lines = f.read().splitlines()
-            x2_vecs = [p_seq2vec.to_vec(line) if task.dtype2 == DataType.PROTEIN else m_seq2vec.to_vec(line) for line in
-                       tqdm(x2_lines)]
-            x2_vecs = np.stack(x2_vecs)
-        else:
-            x2_vecs = []
-        with open(pjoin(task_dir, f"{name}_labels.txt"), "r") as f:
-            labels_lines = f.read().splitlines()
-        labels = [np.array([float(x) for x in line.split()]) for line in labels_lines]
-        labels = np.stack(labels)
 
-        x1_all[f'x1_{name}'] = np.array(x1_vecs)
-        if len(x2_vecs):
-            x2_all[f'x2_{name}'] = np.array(x2_vecs)
-        labels_all[f'label_{name}'] = np.array(labels)
-    if len(x2_all):
-        np.savez(output_file, **x1_all, **x2_all, **labels_all)
-    else:
-        np.savez(output_file, **x1_all, **labels_all)
+def prep_dataset(task, p_seq2vec, m_seq2vec, protein_emd, mol_emd):
+    task_dir = os.path.join(base_dir, task.name)
+    converter = p_seq2vec if task.dtype1 == DataType.PROTEIN else m_seq2vec
+    emb_name = protein_emd if task.dtype1 == DataType.PROTEIN else mol_emd
+
+    for split in ['train', 'valid', 'test']:
+        save_vectors(f"{task_dir}/{split}_1.txt", f"{task_dir}/{split}_{emb_name}_1.npy", converter)
+
+        if task.dtype2:
+            converter2 = p_seq2vec if task.dtype2 == DataType.PROTEIN else m_seq2vec
+            emb_name2 = protein_emd if task.dtype2 == DataType.PROTEIN else mol_emd
+            save_vectors(f"{task_dir}/{split}_2.txt", f"{task_dir}/{split}_{emb_name2}_2.npy", converter2)
+
+        save_labels(f"{task_dir}/{split}_labels.txt", f"{task_dir}/{split}_labels.npy")
 
 
 def main(task_name, p_model, m_model):

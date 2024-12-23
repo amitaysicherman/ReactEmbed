@@ -111,6 +111,7 @@ def prep_dataset(task: Task):
         for split, name in zip([labels_train, labels_valid, labels_test], ["train", "valid", "test"]):
             with open(pjoin(output_base, f"{name}_labels.txt"), "w") as f:
                 f.write("\n".join(split))
+        return
 
 
 
