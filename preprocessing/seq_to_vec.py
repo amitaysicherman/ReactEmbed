@@ -100,6 +100,8 @@ class GearNet3Embedder:
 
 class Esm3Embedder:
     def __init__(self, size):
+        from esm.models.esmc import ESMC
+
         self.size = size
         if size == "small":
             self.model = ESMC.from_pretrained("esmc_300m", device=device).eval()
