@@ -16,6 +16,8 @@ def load_data(task_name, mol_emd, protein_emd):
         x1 = np.load(f"{task_dir}/{split}_{emb_name1}_1.npy")
         x2 = np.load(f"{task_dir}/{split}_{emb_name2}_2.npy") if emb_name2 else None
         labels = np.load(f"{task_dir}/{split}_labels.npy")
+        if len(labels.shape) == 1:
+            labels = labels[:, None]
         return x1, x2, labels
 
     task = name_to_task[task_name]
