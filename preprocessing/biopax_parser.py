@@ -209,6 +209,6 @@ if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--name", type=str, default="reactome")
+    parser.add_argument("--data_name", type=str, default="reactome")
     args = parser.parse_args()
-    main(args.name)
+    main(args.data_name)
