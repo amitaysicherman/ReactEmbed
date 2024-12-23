@@ -6,7 +6,6 @@ import torch.nn.functional as F
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-from common.path_manager import fuse_path
 from common.utils import model_args_to_name
 from contrastive_learning.dataset import TripletsDataset, TripletsBatchSampler
 from contrastive_learning.model import ReactEmbedConfig, ReactEmbedModel
@@ -31,6 +30,7 @@ except:
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
 print(f"Using device: {device}")
 
+
 def run_epoch(model, optimizer, loader, contrastive_loss, is_train):
     if loader is None:
         return
@@ -53,8 +53,8 @@ def run_epoch(model, optimizer, loader, contrastive_loss, is_train):
     return total_loss / len(loader)
 
 
-def get_loader(split, batch_size, p_model, m_model, flip_prob):
-    dataset = TripletsDataset(p_model=p_model, m_model=m_model, split=split, flip_prob=flip_prob)
+def get_loader(data_name, split, batch_size, p_model, m_model, flip_prob):
+    dataset = TripletsDataset(data_name=data_name, p_model=p_model, m_model=m_model, split=split, flip_prob=flip_prob)
     sampler = TripletsBatchSampler(dataset, batch_size)
     return DataLoader(dataset, batch_sampler=sampler)
 
@@ -66,19 +66,19 @@ def build_models(p_dim, m_dim, n_layers, hidden_dim, dropout, save_dir):
     return model
 
 
-def main(batch_size, p_model, m_model, n_layers, hidden_dim, dropout, epochs, lr, flip_prob=0,
+def main(data_name, batch_size, p_model, m_model, n_layers, hidden_dim, dropout, epochs, lr, flip_prob=0,
          datasets=None):
     name = model_args_to_name(batch_size=batch_size, p_model=p_model, m_model=m_model, n_layers=n_layers,
                               hidden_dim=hidden_dim, dropout=dropout, epochs=epochs, lr=lr, flip_prob=flip_prob)
 
-    save_dir = f"{fuse_path}/{name}/"
+    save_dir = f"data/{data_name}/model/{name}/"
     os.makedirs(save_dir, exist_ok=True)
     if datasets is not None:
         train_loader, valid_loader, test_loader = datasets
     else:
-        train_loader = get_loader("train", batch_size, p_model, m_model, flip_prob)
-        valid_loader = get_loader("valid", batch_size, p_model, m_model, flip_prob)
-        test_loader = get_loader("test", batch_size, p_model, m_model, flip_prob)
+        train_loader = get_loader(data_name, "train", batch_size, p_model, m_model, flip_prob)
+        valid_loader = get_loader(data_name, "valid", batch_size, p_model, m_model, flip_prob)
+        test_loader = get_loader(data_name, "test", batch_size, p_model, m_model, flip_prob)
     p_dim = model_to_dim[p_model]
     m_dim = model_to_dim[m_model]
 
@@ -105,6 +105,7 @@ def main(batch_size, p_model, m_model, n_layers, hidden_dim, dropout, epochs, lr
     with open(f"{save_dir}/losses.txt", "a") as f:
         f.write(f"Best Valid Loss: {best_valid_loss}")
 
+
 if __name__ == '__main__':
     import argparse
 
@@ -118,8 +119,8 @@ if __name__ == '__main__':
     parser.add_argument('--epochs', type=int, help='Number of epochs', default=1)
     parser.add_argument('--lr', type=float, help='Learning rate', default=0.001)
     parser.add_argument('--flip_prob', type=float, help='Flip Prob', default=0.0)
-
+    parser.add_argument('--data_name', type=str, help='Data name', default="reactome")
     args = parser.parse_args()
 
-    main(args.batch_size, args.p_model, args.m_model, args.n_layers,
+    main(args.data_name, args.batch_size, args.p_model, args.m_model, args.n_layers,
          args.hidden_dim, args.dropout, args.epochs, args.lr, args.flip_prob)

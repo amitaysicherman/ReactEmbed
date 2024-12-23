@@ -8,6 +8,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--m_model", type=str, default="ChemBERTa")
 parser.add_argument("--p_model", type=str, default="ProtBert")
 parser.add_argument("--batch_size", type=int, default=8192)
+parser.add_argument("--data_name", type=str, default="reactome")
 args = parser.parse_args()
 
 n_layers_list = [1, 3]
@@ -23,9 +24,9 @@ product_list = list(product(n_layers_list, hidden_dim_list, dropout_list, epochs
 print(
     f"Start train {m_model} and {p_model} with batch size {batch_size} - {len(product_list)} models")
 
-train_loader = get_loader("train", batch_size, p_model, m_model, flip_prob)
-valid_loader = get_loader("valid", batch_size, p_model, m_model, flip_prob)
-test_loader = get_loader("test", batch_size, p_model, m_model, flip_prob)
+train_loader = get_loader(args.data_name, "train", batch_size, p_model, m_model, flip_prob)
+valid_loader = get_loader(args.data_name, "valid", batch_size, p_model, m_model, flip_prob)
+test_loader = get_loader(args.data_name, "test", batch_size, p_model, m_model, flip_prob)
 datasets = (train_loader, valid_loader, test_loader)
 for (n_layers, hidden_dim, dropout, epochs, lr) in product_list:
     train_model(batch_size, p_model, m_model, n_layers, hidden_dim, dropout, epochs, lr,

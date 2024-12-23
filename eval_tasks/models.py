@@ -4,7 +4,6 @@ from enum import Enum
 import torch
 
 from common.data_types import Config
-from common.path_manager import fuse_path
 from contrastive_learning.model import ReactEmbedConfig, ReactEmbedModel
 
 
@@ -14,7 +13,6 @@ class DataType(Enum):
 
 
 def load_fuse_model(name):
-    name = str(os.path.join(fuse_path, name))
     cp_names = os.listdir(name)
     cp_name = [x for x in cp_names if x.endswith(".pt")][0]
     cp_data = torch.load(f"{name}/{cp_name}", map_location=torch.device('cpu'))

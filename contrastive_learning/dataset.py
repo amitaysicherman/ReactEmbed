@@ -7,8 +7,6 @@ import torch
 from torch.utils.data import Dataset, Sampler
 from tqdm import tqdm
 
-from common.path_manager import item_path, reactions_file
-
 TYPES = ["P-P", "P-M", "M-P", "M-M"]
 
 
@@ -23,9 +21,11 @@ def prep_entity(entities, empty_list):
 
 
 class TripletsDataset(Dataset):
-    def __init__(self, split, p_model="ProtBert", m_model="MoLFormer", n_duplicates=10, flip_prob=0):
+    def __init__(self, data_name, split, p_model="ProtBert", m_model="MoLFormer", n_duplicates=10, flip_prob=0):
         self.split = split
         self.flip_prob = flip_prob
+        item_path = f"data/{data_name}"
+        reactions_file = pjoin(item_path, "reaction.txt")
         self.proteins = np.load(pjoin(item_path, f"{p_model}_vectors.npy"))
         self.molecules = np.load(pjoin(item_path, f"{m_model}_vectors.npy"))
         # all the proteins with zero vectors are empty proteins

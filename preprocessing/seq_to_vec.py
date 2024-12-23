@@ -10,7 +10,6 @@ from torchdrug.layers import geometry
 from transformers import AutoModel, BertModel, BertTokenizer
 from transformers import AutoTokenizer, EsmForProteinFolding
 
-from common.path_manager import proteins_file, molecules_file, item_path
 from common.utils import fold_to_pdb
 from preprocessing.molCLR import GINet, smiles_to_data
 
@@ -38,7 +37,7 @@ class MolCLREmbedder:
         data = smiles_to_data(seq)
         if data is None:
             return None
-        data = data  #.to(device)
+        data = data  # `.to(device)
         with torch.no_grad():
             emb, _ = self.model(data)
         return emb.detach().cpu().numpy().flatten()
@@ -177,6 +176,7 @@ class ChemBERTa:
 
 class SeqToVec:
     def __init__(self, model_name):
+        self.mem = dict()
         if model_name == "ProtBert":
             self.model = PortBert()
             self.dtype = "protein"
@@ -200,11 +200,16 @@ class SeqToVec:
             raise ValueError(f"Unknown model: {model_name}")
 
     def to_vec(self, seq: str):
+
         if len(seq) == 0:
             return None
         if self.dtype == "protein":
             seq = seq.replace(".", "")
-        return self.model.to_vec(seq)
+        if seq in self.mem:
+            return self.mem[seq]
+        vec = self.model.to_vec(seq)
+        self.mem[seq] = vec
+        return vec
 
 
 def model_to_type(model_name):
@@ -229,11 +234,12 @@ def fill_none_with_zeros(vecs):
     return vecs
 
 
-def main(model):
+def main(model, data_name):
     if "esm3" in model:
         from esm.models.esmc import ESMC
         from esm.sdk.api import ESMProtein, LogitsConfig
-
+    proteins_file = f'data/{data_name}/proteins.txt'
+    molecules_file = f'data/{data_name}/molecules.txt'
     data_types = model_to_type(model)
     seq_to_vec = SeqToVec(model)
     if data_types == "protein":
@@ -243,7 +249,7 @@ def main(model):
     with open(file, "r") as f:
         lines = f.readlines()
     all_vecs = []
-    output_file = f"{item_path}/{model}_vectors.npy"
+    output_file = f"data/{data_name}/{model}_vectors.npy"
     if os.path.exists(output_file):
         print(f"{output_file} already exists")
         return None
@@ -266,9 +272,10 @@ if __name__ == "__main__":
     parser.add_argument('--model', type=str, help='Model to use', default="MolCLR",
                         choices=["ProtBert", "ChemBERTa", "MoLFormer", "esm3-small", "esm3-medium", "GearNet",
                                  "MolCLR"])
+    parser.add_argument('--data_name', type=str, help='Data name', default="reactome")
     args = parser.parse_args()
     if "esm3" in args.model:
         from esm.models.esmc import ESMC
         from esm.sdk.api import ESMProtein, LogitsConfig
 
-    main(args.model)
+    main(args.model, args.data_name)

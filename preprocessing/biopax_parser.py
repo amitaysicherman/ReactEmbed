@@ -6,8 +6,6 @@ import pybiopax
 import requests
 from tqdm import tqdm
 
-from common.path_manager import reactions_file, proteins_file, molecules_file
-
 
 def get_req(url: str, to_json=False):
     for i in range(3):
@@ -95,9 +93,12 @@ def element_parser(element: pybiopax.biopax.PhysicalEntity):
         print(len(element.entity_reference.xref), "xrefs")
         ref_db = element.entity_reference.xref[0].db
         ref_id = element.entity_reference.xref[0].id
-    else:
+    elif len(element.entity_reference.xref) == 1:
         ref_db = element.entity_reference.xref[0].db
         ref_id = element.entity_reference.xref[0].id
+    else:
+        ref_db = "0"
+        ref_id = element.display_name
     return ref_db, ref_id
 
 
@@ -145,10 +146,14 @@ def save_all_sequences(data_dict, output_file):
         f.write("\n".join(all_seq))
 
 
-def main(input_files):
+def main(input_files, name):
     proteins_to_id = {}
     molecules_to_id = {}
-
+    output_base = f"data/{name}"
+    os.makedirs(output_base, exist_ok=True)
+    reactions_file = f"{output_base}/reaction.txt"
+    proteins_file = f"{output_base}/proteins.txt"
+    molecules_file = f"{output_base}/molecules.txt"
     if os.path.exists(reactions_file):
         os.remove(reactions_file)
     all_reactions = []
@@ -180,8 +185,6 @@ def main(input_files):
 
 
 if __name__ == "__main__":
-    # main([os.path.join(data_path, "biopax", "Homo_sapiens.owl")])
     import glob
-
     files = glob.glob("data/biopax/pathbank/pathbank_primary_biopax/*owl")
-    main(files)
+    main(files, "pathbank")

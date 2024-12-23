@@ -25,7 +25,7 @@ parser = argparse.ArgumentParser()
 
 parser.add_argument('--p_model', type=str, help='Protein model', default="ProtBert")
 parser.add_argument('--m_model', type=str, help='Molecule model', default="ChemBERTa")
-
+parser.add_argument('--data_name', type=str, help='Data name', default="reactome")
 parser.add_argument('--cl_batch_size', type=int, help='Batch size', default=8192)
 parser.add_argument('--cl_n_layers', type=int, help='Number of layers', default=1)
 parser.add_argument('--cl_hidden_dim', type=int, help='Hidden dimension', default=64)
@@ -71,7 +71,7 @@ flip_prob = args.cl_flip_prob
 batch_size = args.cl_batch_size
 fuse_base = model_args_to_name(batch_size=batch_size, p_model=p_model, m_model=m_model, n_layers=n_layers,
                                hidden_dim=hidden_dim, dropout=dropout, epochs=epochs, lr=lr, flip_prob=flip_prob)
-
+fuse_base = f"data/{args.data_name}/model/{fuse_base}"
 cl_model_file = f"{fuse_path}/{fuse_base}/model.pt"
 if not os.path.exists(cl_model_file):
     print("Start train contrastive learning model")
