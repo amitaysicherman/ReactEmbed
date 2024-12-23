@@ -132,4 +132,5 @@ else
     echo "conda activate ReactEmbedTorchDrug"
 fi
 echo $cmd
+export PYTHONPATH=$PYTHONPATH:$(pwd)
 eval $cmd
