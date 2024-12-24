@@ -227,6 +227,7 @@ class SeqToVec:
         for line in tqdm(lines):
             if len(line.strip()) == 0:
                 all_vecs.append(None)
+                continue
             seq = line.strip()
             vec = self.to_vec(seq)
             all_vecs.append(vec)
