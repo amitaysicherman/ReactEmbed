@@ -43,9 +43,11 @@ class MolCLREmbedder:
 
 class GearNet3Embedder:
     def __init__(self, gearnet_cp_file="data/models/gearnet/mc_gearnet_edge.pth"):
-        from torchdrug import models, layers
-        from torchdrug.layers import geometry
 
+        from torchdrug import models, layers, data, transforms
+        from torchdrug.layers import geometry
+        self.data = data
+        self.transforms = transforms
         self.fold_tokenizer = AutoTokenizer.from_pretrained("facebook/esmfold_v1")
         self.fold_model = EsmForProteinFolding.from_pretrained("facebook/esmfold_v1")
         self.fold_model = self.fold_model.to(device).eval()
@@ -85,14 +87,14 @@ class GearNet3Embedder:
         mol = Chem.MolFromPDBBlock(pdb_content, sanitize=False)
         if mol is None:
             return None
-        protein = data.Protein.from_molecule(mol)
-        truncate_transform = transforms.TruncateProtein(max_length=550, random=False)
-        protein_view_transform = transforms.ProteinView(view="residue")
-        transform = transforms.Compose([truncate_transform, protein_view_transform])
+        protein = self.data.Protein.from_molecule(mol)
+        truncate_transform = self.transforms.TruncateProtein(max_length=550, random=False)
+        protein_view_transform = self.transforms.ProteinView(view="residue")
+        transform = self.transforms.Compose([truncate_transform, protein_view_transform])
         protein = {"graph": protein}
         protein = transform(protein)
         protein = protein["graph"]
-        protein = data.Protein.pack([protein])
+        protein = self.data.Protein.pack([protein])
         protein = self.graph_construction_model(protein)
         output = self.gearnet_model(protein.cuda(), protein.node_feature.float().cuda())
         output = output['node_feature'].mean(dim=0)
@@ -102,7 +104,9 @@ class GearNet3Embedder:
 class Esm3Embedder:
     def __init__(self, size):
         from esm.models.esmc import ESMC
-
+        from esm.sdk.api import ESMProtein, LogitsConfig
+        self.ESMProtein = ESMProtein
+        self.LogitsConfig = LogitsConfig
         self.size = size
         if size == "small":
             self.model = ESMC.from_pretrained("esmc_300m", device=device).eval()
@@ -115,9 +119,9 @@ class Esm3Embedder:
         if len(seq) > 1023:
             seq = seq[:1023]
         try:
-            protein = ESMProtein(sequence=seq)
+            protein = self.ESMProtein(sequence=seq)
             protein = self.model.encode(protein)
-            conf = LogitsConfig(return_embeddings=True, sequence=True)
+            conf = self.LogitsConfig(return_embeddings=True, sequence=True)
             vec = self.model.logits(protein, conf).embeddings[0]
             return vec.mean(dim=0).cpu().numpy().flatten()
         except Exception as e:
@@ -277,12 +281,4 @@ if __name__ == "__main__":
                                  "MolCLR"])
     parser.add_argument('--data_name', type=str, help='Data name', default="reactome")
     args = parser.parse_args()
-    if "esm3" in args.model:
-        from esm.models.esmc import ESMC
-        from esm.sdk.api import ESMProtein, LogitsConfig
-    if "GearNet" in args.model:
-        from torchdrug import models, layers, data, transforms
-        from torchdrug.layers import geometry
-    if args.model == "MolCLR":
-        from preprocessing.molCLR import GINet, smiles_to_data
     main(args.model, args.data_name)
