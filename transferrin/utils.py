@@ -167,7 +167,7 @@ def get_go_ancestors_cached(term):
 
         if response.status_code == 200:
             ancestors = response.json()
-            return {ancestor['id'] for ancestor in ancestors['results']}
+            return ancestors['results'][0]['ancestors']
     except Exception as e:
         print(f"Error fetching ancestors for {term}: {str(e)}")
 
