@@ -20,6 +20,7 @@ name_to_hf_cp = {
 
 class MolCLREmbedder:
     def __init__(self, cp_file="data/models/MolCLR/model.pth"):
+
         from preprocessing.molCLR import GINet
 
         if not os.path.exists(cp_file):
