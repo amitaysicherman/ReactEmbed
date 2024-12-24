@@ -5,7 +5,7 @@
 #SBATCH -c 4
 #SBATCH --gres=gpu:1
 #SBATCH --requeue
-NAMES=("ProtBert" "ChemBERTa" "MoLFormer" "esm3-small" "esm3-medium" "esm3-large")
+NAMES=("ProtBert" "ChemBERTa" "MoLFormer" "esm3-small" "esm3-medium" "esm3-large" "GearNet" "MolCLR")
 
 
 NAME=${NAMES[$SLURM_ARRAY_TASK_ID - 1]}
