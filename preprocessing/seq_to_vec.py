@@ -20,20 +20,19 @@ name_to_hf_cp = {
 
 class MolCLREmbedder:
     def __init__(self, cp_file="data/models/MolCLR/model.pth"):
-
-        from preprocessing.molCLR import GINet
-
         if not os.path.exists(cp_file):
             os.makedirs(os.path.dirname(cp_file), exist_ok=True)
             url = "https://github.com/yuyangw/MolCLR/blob/master/ckpt/pretrained_gin/checkpoints/model.pth"
             os.system(f"wget {url} -O {cp_file}")
+        from preprocessing.molCLR import GINet, smiles_to_data
+        self.smiles_to_data = smiles_to_data
         self.model = GINet()
 
         self.model.load_my_state_dict(torch.load("data/models/MolCLR/model.pth", map_location="cpu"))
         self.model.eval()  # .to(device)
 
     def to_vec(self, seq: str):
-        data = smiles_to_data(seq)
+        data = self.smiles_to_data(seq)
         if data is None:
             return None
         data = data  # `.to(device)
