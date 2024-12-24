@@ -27,7 +27,7 @@ def get_reactome_vecs():
 
 
 def save_reactome_go_terms():
-    with open("ReactEmbed/data/reactome/proteins.txt") as f:
+    with open("data/reactome/proteins.txt") as f:
         proteins = f.read().splitlines()
     proteins = [protein.split(",")[1] for protein in proteins]
     n_cores = max(1, os.cpu_count() - 1)
