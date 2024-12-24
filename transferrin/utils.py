@@ -131,10 +131,10 @@ def find_optimal_filter_columns(df, index=0, min_samples=500, binary_cols=None, 
         return [], 0, 0
 
     # Sort by rank_ratio (primary) and number of columns (secondary)
-    top_10 = sorted(valid_results, key=lambda x: (x['rank_ratio'], len(x['columns'])))[0:10]
+    top_50 = sorted(valid_results, key=lambda x: (x['rank_ratio'], len(x['columns'])))[0:50]
 
     # for each one from the top 10 , print the columns and the indexes with lower rank
-    for r in top_10:
+    for r in top_50:
         print(r['columns'])
         filter_df = df[df[r['columns']].eq(1).all(axis=1)]
         filter_df_lower_rank = filter_df[filter_df['R'] < SELECTED_R]
@@ -144,7 +144,7 @@ def find_optimal_filter_columns(df, index=0, min_samples=500, binary_cols=None, 
         print("new_rank", r['new_rank'])
         print("")
 
-    return top_10
+    return top_50
 
 
 def save_human_enzyme_binding_proteins():
