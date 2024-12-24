@@ -5,8 +5,6 @@ import re
 import numpy as np
 import torch
 from rdkit import Chem
-from torchdrug import models, layers, data, transforms
-from torchdrug.layers import geometry
 from transformers import AutoModel, BertModel, BertTokenizer
 from transformers import AutoTokenizer, EsmForProteinFolding
 
@@ -45,6 +43,9 @@ class MolCLREmbedder:
 
 class GearNet3Embedder:
     def __init__(self, gearnet_cp_file="data/models/gearnet/mc_gearnet_edge.pth"):
+        from torchdrug import models, layers
+        from torchdrug.layers import geometry
+
         self.fold_tokenizer = AutoTokenizer.from_pretrained("facebook/esmfold_v1")
         self.fold_model = EsmForProteinFolding.from_pretrained("facebook/esmfold_v1")
         self.fold_model = self.fold_model.to(device).eval()
@@ -279,5 +280,8 @@ if __name__ == "__main__":
     if "esm3" in args.model:
         from esm.models.esmc import ESMC
         from esm.sdk.api import ESMProtein, LogitsConfig
+    if "GearNet" in args.model:
+        from torchdrug import models, layers, data, transforms
+        from torchdrug.layers import geometry
 
     main(args.model, args.data_name)
