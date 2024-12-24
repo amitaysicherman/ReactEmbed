@@ -3,7 +3,7 @@
 #SBATCH --mem=64G
 #SBATCH --requeue
 #SBATCH --gres=gpu:L40:1
-#SBATCH --array=1-116
+#SBATCH --array=109
 
 # Define molecule and protein models
 #molecule_models=("ChemBERTa" "MoLFormer" "MolCLR")
@@ -39,14 +39,7 @@
 #    done
 #  done
 #done
-commands="python preprocessing/seq_to_vec.py --model ChemBERTa|\
-python preprocessing/seq_to_vec.py --model MoLFormer|\
-python preprocessing/seq_to_vec.py --model MolCLR|\
-python preprocessing/seq_to_vec.py --model ProtBert|\
-python preprocessing/seq_to_vec.py --model esm3-small|\
-python preprocessing/seq_to_vec.py --model esm3-medium|\
-python preprocessing/seq_to_vec.py --model GearNet|\
-python eval_tasks/prep_tasks_vecs.py --task BACE --m_model ChemBERTa|\
+commands="python eval_tasks/prep_tasks_vecs.py --task BACE --m_model ChemBERTa|\
 python eval_tasks/prep_tasks_vecs.py --task BACE --m_model MoLFormer|\
 python eval_tasks/prep_tasks_vecs.py --task BACE --m_model MolCLR|\
 python eval_tasks/prep_tasks_vecs.py --task BBBP --m_model ChemBERTa|\
