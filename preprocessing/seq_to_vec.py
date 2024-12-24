@@ -91,7 +91,11 @@ class GearNet3Embedder:
         mol = Chem.MolFromPDBBlock(pdb_content, sanitize=False)
         if mol is None:
             return None
-        protein = self.data.Protein.from_molecule(mol)
+        try:
+            protein = self.data.Protein.from_molecule(mol)
+        except Exception as e:
+            print(e)
+            return None
         truncate_transform = self.transforms.TruncateProtein(max_length=550, random=False)
         protein_view_transform = self.transforms.ProteinView(view="residue")
         transform = self.transforms.Compose([truncate_transform, protein_view_transform])
