@@ -27,7 +27,8 @@ def save_labels(input_file, output_file):
         return
     with open(input_file, 'r') as f:
         lines = f.read().splitlines()
-    labels = np.array([float(x) for x in lines])
+    lines = [line.split() for line in lines]
+    labels = np.stack([np.array([float(label) for label in line]) for line in tqdm(lines)])
     np.save(output_file, labels)
 
 
