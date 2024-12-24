@@ -14,7 +14,7 @@ from preprocessing.seq_to_vec import SeqToVec
 
 IDS_FILE = "transferrin/human_enzyme_binding_proteins.txt"
 SEQ_FILE = "transferrin/all_sequences.txt"
-VEC_FILE = "transferrin/esm3-medium_vecs.npy"
+VEC_FILE = "transferrin/ProtBERT_vecs.npy"
 GO_FILE = "transferrin/go.csv"
 GO_ANCESTORS_FIRE = "transferrin/go_ancestors.txt"
 
