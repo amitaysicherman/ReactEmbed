@@ -3,7 +3,7 @@
 #SBATCH --mem=64G
 #SBATCH --requeue
 #SBATCH --gres=gpu:L40:1
-#SBATCH --array=1-14
+#SBATCH --array=1-15
 
 commands="python preprocessing/seq_to_vec.py --model ChemBERTa --data_name pathbank|\
 python preprocessing/seq_to_vec.py --model ChemBERTa --data_name reactome|\
