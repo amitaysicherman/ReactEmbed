@@ -3,8 +3,7 @@ import torch
 from contrastive_learning.model import ReactEmbedModel
 from eval_tasks.models import LinFuseModel
 from eval_tasks.trainer import main as trainer_task_main
-from transferrin.utils import get_vecs, find_optimal_filter_columns, get_go_matrix, \
-    load_transferrin
+from transferrin.utils import find_optimal_filter_columns, get_reactome_go_matrix, get_reactome_vecs
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 p_model = "esm3-medium"
@@ -17,7 +16,8 @@ score, model = trainer_task_main(use_fuse=True, use_model=False, bs=32, lr=1e-4,
 
 print("Model loaded")
 print("score", score)
-vecs = get_vecs()
+# vecs = get_vecs()
+vecs = get_reactome_vecs()
 proteins = torch.tensor(vecs).to(device)
 fuse_model: ReactEmbedModel = model.fuse_model
 fuse_model.eval()
@@ -27,18 +27,19 @@ res = torch.sigmoid(pred).detach().cpu().numpy()
 print("Predictions done")
 
 transferrin_id = "P02787"
-transferrin_vec, t_go_terms = load_transferrin()
-transferrin_vec = torch.Tensor(transferrin_vec).to(device)
-transferrin_vec = transferrin_vec.unsqueeze(0)
-t_x = fuse_model.dual_forward(transferrin_vec, "P")
-t_pred = model.layers(t_x)
-t_res = torch.sigmoid(t_pred).detach().cpu().numpy()
-print(t_go_terms)
-go_matrix = get_go_matrix()
+# transferrin_vec, t_go_terms = load_transferrin()
+# transferrin_vec = torch.Tensor(transferrin_vec).to(device)
+# transferrin_vec = transferrin_vec.unsqueeze(0)
+# t_x = fuse_model.dual_forward(transferrin_vec, "P")
+# t_pred = model.layers(t_x)
+# t_res = torch.sigmoid(t_pred).detach().cpu().numpy()
+# print(t_go_terms)
+# go_matrix = get_go_matrix()
+go_matrix = get_reactome_go_matrix()
 go_matrix["score"] = res.flatten()
-go_matrix.loc[transferrin_id] = 0
-go_matrix.loc[transferrin_id, t_go_terms] = 1
-go_matrix.loc[transferrin_id, "score"] = t_res.flatten()[0]
+# go_matrix.loc[transferrin_id] = 0
+# go_matrix.loc[transferrin_id, t_go_terms] = 1
+# go_matrix.loc[transferrin_id, "score"] = t_res.flatten()[0]
 transferrin_index = go_matrix.index.get_loc(transferrin_id)
 go_matrix['R'] = go_matrix['score'].rank(ascending=False, method='min')
 del go_matrix['score']
