@@ -79,7 +79,6 @@ def process_combination(cols, df, SELECTED_R, min_samples):
 
     # If we don't meet minimum samples, return None
     if filtered_size < min_samples:
-        print(cols, "filtered_size", filtered_size)
         return None
 
     # Calculate new rank (0-based) in filtered dataset
