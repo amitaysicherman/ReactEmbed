@@ -77,11 +77,14 @@ class GearNet3Embedder:
     def to_vec(self, seq: str):
         if len(seq) > 550:
             seq = seq[:550]
-        fold_tmp_io = io.StringIO()
-        self.fold_seq(seq, fold_tmp_io)
-        pdb_content = fold_tmp_io.getvalue()
-        fold_tmp_io.close()
-
+        try:
+            fold_tmp_io = io.StringIO()
+            self.fold_seq(seq, fold_tmp_io)
+            pdb_content = fold_tmp_io.getvalue()
+            fold_tmp_io.close()
+        except Exception as e:
+            print(e)
+            return None
         if not pdb_content:
             return None
 
