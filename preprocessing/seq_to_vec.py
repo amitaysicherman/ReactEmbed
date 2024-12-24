@@ -9,7 +9,6 @@ from transformers import AutoModel, BertModel, BertTokenizer
 from transformers import AutoTokenizer, EsmForProteinFolding
 
 from common.utils import fold_to_pdb
-from preprocessing.molCLR import GINet, smiles_to_data
 
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 name_to_hf_cp = {
@@ -21,6 +20,7 @@ name_to_hf_cp = {
 
 class MolCLREmbedder:
     def __init__(self, cp_file="data/models/MolCLR/model.pth"):
+        from preprocessing.molCLR import GINet
 
         if not os.path.exists(cp_file):
             os.makedirs(os.path.dirname(cp_file), exist_ok=True)
@@ -283,5 +283,6 @@ if __name__ == "__main__":
     if "GearNet" in args.model:
         from torchdrug import models, layers, data, transforms
         from torchdrug.layers import geometry
-
+    if args.model == "MolCLR":
+        from preprocessing.molCLR import GINet, smiles_to_data
     main(args.model, args.data_name)
