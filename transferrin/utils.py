@@ -118,7 +118,7 @@ def find_optimal_filter_columns(df, index=0, min_samples=500, binary_cols=None, 
 
     # Use all available CPUs except one
     num_cpus = max(1, cpu_count() - 1)
-
+    num_cpus = min(num_cpus, 16)
     # Process combinations in parallel
     with Pool(num_cpus) as pool:
         results = list(tqdm(
