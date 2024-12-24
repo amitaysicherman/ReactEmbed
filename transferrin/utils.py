@@ -79,6 +79,7 @@ def process_combination(cols, df, SELECTED_R, min_samples):
 
     # If we don't meet minimum samples, return None
     if filtered_size < min_samples:
+        print(cols, "filtered_size", filtered_size)
         return None
 
     # Calculate new rank (0-based) in filtered dataset
@@ -86,7 +87,7 @@ def process_combination(cols, df, SELECTED_R, min_samples):
 
     # Calculate rank ratio (lower is better)
     rank_ratio = new_rank / filtered_size
-
+    print(cols, rank_ratio, new_rank, filtered_size)
     return {
         'columns': list(cols),
         'rank_ratio': rank_ratio,
@@ -342,6 +343,7 @@ def get_reactome_go_matrix():
         go_matrix.loc[protein, list(go_term)] = 1
     go_matrix.fillna(0, inplace=True)
     return go_matrix
+
 
 def save_transferrin():
     transferrin_id = "P02787"
