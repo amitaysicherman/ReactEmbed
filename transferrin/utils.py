@@ -14,7 +14,7 @@ from preprocessing.seq_to_vec import SeqToVec
 
 IDS_FILE = "transferrin/human_enzyme_binding_proteins.txt"
 SEQ_FILE = "transferrin/all_sequences.txt"
-VEC_FILE = "transferrin/ProtBERT_vecs.npy"
+VEC_FILE = "transferrin/ProtBert_vecs.npy"
 GO_FILE = "transferrin/go.csv"
 GO_ANCESTORS_FIRE = "transferrin/go_ancestors.txt"
 
@@ -144,7 +144,7 @@ def get_all_sequences():
 
 
 def save_vecs():
-    seq_to_vec = SeqToVec(model_name="ProtBERT")
+    seq_to_vec = SeqToVec(model_name="ProtBert")
     all_seq = get_all_sequences()
     vecs = seq_to_vec.lines_to_vecs(all_seq)
     np.save(VEC_FILE, vecs)
