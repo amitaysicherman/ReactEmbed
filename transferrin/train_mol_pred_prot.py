@@ -8,7 +8,7 @@ from transferrin.utils import get_go_terms, get_vecs, find_optimal_filter_column
     get_go_ancestors_cached
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
-p_model = "esm3-medium"
+p_model = "ProtBERT"
 m_model = "ChemBERTa"
 fuse_base = "data/reactome/model/esm3-medium-ChemBERTa-2-256-0.3-10-0.001-8192-0.0"
 model: LinFuseModel = None

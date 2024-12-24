@@ -144,7 +144,7 @@ def get_all_sequences():
 
 
 def save_vecs():
-    seq_to_vec = SeqToVec(model_name="esm3-medium")
+    seq_to_vec = SeqToVec(model_name="ProtBERT")
     all_seq = get_all_sequences()
     vecs = seq_to_vec.lines_to_vecs(all_seq)
     np.save(VEC_FILE, vecs)
