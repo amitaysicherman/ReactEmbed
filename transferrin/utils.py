@@ -76,7 +76,7 @@ def find_optimal_filter_columns(df, index=0, min_samples=500, binary_cols=None, 
 
                 # Calculate rank ratio (lower is better)
                 rank_ratio = new_rank / filtered_size
-
+                print(f"Cols: {cols}, Rank: {new_rank}, Size: {filtered_size}, Ratio: {rank_ratio}")
                 # Update best result if this is better
                 if rank_ratio < best_rank_ratio:
                     best_rank_ratio = rank_ratio

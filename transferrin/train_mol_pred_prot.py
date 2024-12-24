@@ -16,6 +16,8 @@ score, model = trainer_task_main(use_fuse=True, use_model=False, bs=32, lr=1e-4,
                                  task_name="BBBP", fuse_base=fuse_base, mol_emd=m_model, protein_emd=p_model,
                                  n_layers=2, metric="auc", max_no_improve=15, return_model=True)
 
+print("Model loaded")
+print("score", score)
 vecs = get_vecs()
 proteins = torch.tensor(vecs).to(device)
 fuse_model: ReactEmbedModel = model.fuse_model
@@ -23,7 +25,8 @@ fuse_model.eval()
 x = fuse_model.dual_forward(proteins, "P")
 pred = model.layers(x)
 res = torch.sigmoid(pred).detach().cpu().numpy()
-
+print("Predictions done")
+print(res)
 transferrin_id = "P02787"
 transferrin_seq = "MRLAVGALLVCAVLGLCLAVPDKTVRWCAVSEHEATKCQSFRDHMKSVIPSDGPSVACVKKASYLDCIRAIAANEADAVTLDAGLVYDAYLAPNNLKPVVAEFYGSKEDPQTFYYAVAVVKKDSGFQMNQLRGKKSCHTGLGRSAGWNIPIGLLYCDLPEPRKPLEKAVANFFSGSCAPCADGTDFPQLCQLCPGCGCSTLNQYFGYSGAFKCLKDGAGDVAFVKHSTIFENLANKADRDQYELLCLDNTRKPVDEYKDCHLAQVPSHTVVARSMGGKEDLIWELLNQAQEHFGKDKSKEFQLFSSPHGKDLLFKDSAHGFLKVPPRMDAKMYLGYEYVTAIRNLREGTCPEAPTDECKPVKWCALSHHERLKCDEWSVNSVGKIECVSAETTEDCIAKIMNGEADAMSLDGGFVYIAGKCGLVPVLAENYNKSDNCEDTPEAGYFAIAVVKKSASDLTWDNLKGKKSCHTAVGRTAGWNIPMGLLYNKINHCRFDEFFSEGCAPGSKKDSSLCKLCMGSGLNLCEPNNKEGYYGYTGAFRCLVEKGDVAFVKHQTVPQNTGGKNPDPWAKNLNEKDYELLCLDGTRKPVEEYANCHLARAPNHAVVTRKDKEACVHKILRQQQHLFGSNVTDCSGNFCLFRSETKDLLFRDDTVCLAKLHDRNTYEKYLGEEYVKAVGNLRKCSTSSLLEACTFRRP"
 seq_to_vec = SeqToVec(p_model)
@@ -33,12 +36,13 @@ transferrin_vec = transferrin_vec.unsqueeze(0)
 t_x = fuse_model.dual_forward(transferrin_vec, "P")
 t_pred = model.layers(t_x)
 t_res = torch.sigmoid(t_pred).detach().cpu().numpy()
-
+print("Transferrin prediction done")
+print(t_res)
 t_go_terms = list(get_go_terms(transferrin_id))
 t_go_terms_with_ans = sum([get_go_ancestors_cached(go_term) for go_term in t_go_terms], [])
 t_go_terms.extend(t_go_terms_with_ans)
 t_go_terms = list(set(t_go_terms))
-
+print(t_go_terms)
 go_matrix = get_go_matrix()
 go_matrix["score"] = res.flatten()
 
