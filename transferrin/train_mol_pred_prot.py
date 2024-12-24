@@ -3,9 +3,8 @@ import torch
 from contrastive_learning.model import ReactEmbedModel
 from eval_tasks.models import LinFuseModel
 from eval_tasks.trainer import main as trainer_task_main
-from preprocessing.seq_to_vec import SeqToVec
-from transferrin.utils import get_go_terms, get_vecs, find_optimal_filter_columns, get_go_matrix, \
-    get_go_ancestors_cached
+from transferrin.utils import get_vecs, find_optimal_filter_columns, get_go_matrix, \
+    load_transferrin
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 p_model = "esm3-medium"
@@ -26,26 +25,17 @@ x = fuse_model.dual_forward(proteins, "P")
 pred = model.layers(x)
 res = torch.sigmoid(pred).detach().cpu().numpy()
 print("Predictions done")
-print(res)
+
 transferrin_id = "P02787"
-transferrin_seq = "MRLAVGALLVCAVLGLCLAVPDKTVRWCAVSEHEATKCQSFRDHMKSVIPSDGPSVACVKKASYLDCIRAIAANEADAVTLDAGLVYDAYLAPNNLKPVVAEFYGSKEDPQTFYYAVAVVKKDSGFQMNQLRGKKSCHTGLGRSAGWNIPIGLLYCDLPEPRKPLEKAVANFFSGSCAPCADGTDFPQLCQLCPGCGCSTLNQYFGYSGAFKCLKDGAGDVAFVKHSTIFENLANKADRDQYELLCLDNTRKPVDEYKDCHLAQVPSHTVVARSMGGKEDLIWELLNQAQEHFGKDKSKEFQLFSSPHGKDLLFKDSAHGFLKVPPRMDAKMYLGYEYVTAIRNLREGTCPEAPTDECKPVKWCALSHHERLKCDEWSVNSVGKIECVSAETTEDCIAKIMNGEADAMSLDGGFVYIAGKCGLVPVLAENYNKSDNCEDTPEAGYFAIAVVKKSASDLTWDNLKGKKSCHTAVGRTAGWNIPMGLLYNKINHCRFDEFFSEGCAPGSKKDSSLCKLCMGSGLNLCEPNNKEGYYGYTGAFRCLVEKGDVAFVKHQTVPQNTGGKNPDPWAKNLNEKDYELLCLDGTRKPVEEYANCHLARAPNHAVVTRKDKEACVHKILRQQQHLFGSNVTDCSGNFCLFRSETKDLLFRDDTVCLAKLHDRNTYEKYLGEEYVKAVGNLRKCSTSSLLEACTFRRP"
-seq_to_vec = SeqToVec(p_model)
-transferrin_vec = seq_to_vec.to_vec(transferrin_seq)
+transferrin_vec, t_go_terms = load_transferrin()
 transferrin_vec = torch.Tensor(transferrin_vec).to(device)
 transferrin_vec = transferrin_vec.unsqueeze(0)
 t_x = fuse_model.dual_forward(transferrin_vec, "P")
 t_pred = model.layers(t_x)
 t_res = torch.sigmoid(t_pred).detach().cpu().numpy()
-print("Transferrin prediction done")
-print(t_res)
-t_go_terms = list(get_go_terms(transferrin_id))
-t_go_terms_with_ans = sum([get_go_ancestors_cached(go_term) for go_term in t_go_terms], [])
-t_go_terms.extend(t_go_terms_with_ans)
-t_go_terms = list(set(t_go_terms))
 print(t_go_terms)
 go_matrix = get_go_matrix()
 go_matrix["score"] = res.flatten()
-
 go_matrix.loc[transferrin_id] = 0
 go_matrix.loc[transferrin_id, t_go_terms] = 1
 go_matrix.loc[transferrin_id, "score"] = t_res.flatten()[0]
