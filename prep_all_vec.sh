@@ -161,6 +161,8 @@ python eval_tasks/prep_tasks_vecs.py --task Davis --p_model GearNet --m_model Mo
 IFS='|' read -r -a array <<< "$commands"
 cmd=${array[$((SLURM_ARRAY_TASK_ID - 1))]}
 # if esm in cmd active cond env ReactEmbedESM else ReactEmbedTorchDrug
+eval "$(conda shell.bash hook)"
+
 if [[ $cmd == *"esm"* ]]; then
     conda activate ReactEmbedESM
 else
