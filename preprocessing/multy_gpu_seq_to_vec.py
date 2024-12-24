@@ -1,3 +1,4 @@
+# sbatch --gres=gpu:L40:8 --mem=256G -c16 --time=0-01:00 --wrap="python preprocessing/multy_gpu_seq_to_vec.py --model GearNet"
 import os
 from functools import partial
 
