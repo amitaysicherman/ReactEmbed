@@ -286,6 +286,36 @@ def get_go_matrix():
     return go_matrix
 
 
+def get_reactome_go_matrix():
+    with open("data/reactome/proteins.txt") as f:
+        proteins = f.read().splitlines()
+    proteins = [protein.split(",")[1] for protein in proteins]
+    with open(GO_REACTOME) as f:
+        go_terms = f.read().splitlines()
+    go_terms = [go_term.split() for go_term in go_terms]
+
+    mapping = {}
+    with open(GO_REACTOME_ANCESTORS) as f:
+        for line in f:
+            go_term, ancestors = line.strip().split("|")
+            mapping[go_term] = ancestors.split()
+    full_go_terms = []
+    for go_term in go_terms:
+        full_list = set()
+        for term in go_term:
+            full_list.add(term)
+            full_list.update(mapping[term])
+        full_go_terms.append(full_list)
+    all_goes = set()
+    for go_term in full_go_terms:
+        all_goes.update(go_term)
+    all_goes = list(all_goes)
+    go_matrix = pd.DataFrame(index=proteins, columns=all_goes)
+    for protein, go_term in zip(proteins, full_go_terms):
+        go_matrix.loc[protein, list(go_term)] = 1
+    go_matrix.fillna(0, inplace=True)
+    return go_matrix
+
 def save_transferrin():
     transferrin_id = "P02787"
     transferrin_seq = "MRLAVGALLVCAVLGLCLAVPDKTVRWCAVSEHEATKCQSFRDHMKSVIPSDGPSVACVKKASYLDCIRAIAANEADAVTLDAGLVYDAYLAPNNLKPVVAEFYGSKEDPQTFYYAVAVVKKDSGFQMNQLRGKKSCHTGLGRSAGWNIPIGLLYCDLPEPRKPLEKAVANFFSGSCAPCADGTDFPQLCQLCPGCGCSTLNQYFGYSGAFKCLKDGAGDVAFVKHSTIFENLANKADRDQYELLCLDNTRKPVDEYKDCHLAQVPSHTVVARSMGGKEDLIWELLNQAQEHFGKDKSKEFQLFSSPHGKDLLFKDSAHGFLKVPPRMDAKMYLGYEYVTAIRNLREGTCPEAPTDECKPVKWCALSHHERLKCDEWSVNSVGKIECVSAETTEDCIAKIMNGEADAMSLDGGFVYIAGKCGLVPVLAENYNKSDNCEDTPEAGYFAIAVVKKSASDLTWDNLKGKKSCHTAVGRTAGWNIPMGLLYNKINHCRFDEFFSEGCAPGSKKDSSLCKLCMGSGLNLCEPNNKEGYYGYTGAFRCLVEKGDVAFVKHQTVPQNTGGKNPDPWAKNLNEKDYELLCLDGTRKPVEEYANCHLARAPNHAVVTRKDKEACVHKILRQQQHLFGSNVTDCSGNFCLFRSETKDLLFRDDTVCLAKLHDRNTYEKYLGEEYVKAVGNLRKCSTSSLLEACTFRRP"
