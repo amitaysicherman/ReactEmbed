@@ -95,4 +95,11 @@ if __name__ == "__main__":
     parser.add_argument('--batch_size', type=int, help='Batch size per GPU', default=150)
 
     args = parser.parse_args()
+    if "esm3" in args.model:
+        pass
+    if "GearNet" in args.model:
+        pass
+    if args.model == "MolCLR":
+        pass
+
     parallel_main(args.model, args.data_name, args.batch_size)
