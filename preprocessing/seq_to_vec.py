@@ -5,6 +5,7 @@ import re
 import numpy as np
 import torch
 from rdkit import Chem
+from tqdm import tqdm
 from transformers import AutoModel, BertModel, BertTokenizer
 from transformers import AutoTokenizer, EsmForProteinFolding
 
@@ -277,7 +278,6 @@ def main(model, data_name):
 
 if __name__ == "__main__":
     import argparse
-    from tqdm import tqdm
 
     parser = argparse.ArgumentParser(description='Convert sequence to vector')
     parser.add_argument('--model', type=str, help='Model to use', default="MolCLR",
