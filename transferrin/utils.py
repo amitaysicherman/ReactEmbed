@@ -1,9 +1,13 @@
 import os
 from concurrent.futures import ProcessPoolExecutor
 from functools import lru_cache
+from itertools import combinations
 
+import numpy as np
+import pandas as pd
 import requests
 from joblib import Parallel, delayed
+from tqdm import tqdm
 
 from preprocessing.biopax_parser import get_req, from_second_line
 from preprocessing.seq_to_vec import SeqToVec
@@ -61,105 +65,60 @@ def save_reactome_go_ancestors():
         f.writelines(mapping_lines)
 
 
-from functools import partial
-from itertools import combinations
-from multiprocessing import Pool, cpu_count
-from tqdm import tqdm
-import pandas as pd
-import numpy as np
-
-
-def process_combination_vectorized(cols, df, SELECTED_R, min_samples):
-    """Helper function to process a single combination of columns using vectorized operations"""
-    # Create filter mask using numpy operations
-    mask = df[cols].values.all(axis=1)
-    filtered_size = mask.sum()
-
-    if filtered_size < min_samples:
-        return None
-
-    # Calculate new rank using boolean indexing
-    filtered_ranks = df.loc[mask, 'R'].values
-    new_rank = (filtered_ranks >= SELECTED_R).sum() - 1
-
-    return {
-        'columns': list(cols),
-        'rank_ratio': new_rank / filtered_size,
-        'filtered_size': int(filtered_size),
-        'new_rank': int(new_rank)
-    }
-
-
 def find_optimal_filter_columns(df, index=0, min_samples=500, binary_cols=None, n=3):
-    """Find optimal filter columns using vectorized operations and parallel processing"""
     SELECTED_R = float(df.iloc[index]["R"])
-
     if binary_cols is None:
         binary_cols = [col for col in df.columns if col != 'R']
 
-    # Pre-filter columns where target row has value 1
     target_row = df.iloc[index]
+
+    # Only consider columns where target row has value 1
     candidate_cols = [col for col in binary_cols if target_row[col] == 1]
 
-    # Early exit if not enough candidate columns
-    if len(candidate_cols) == 0:
-        return []
+    best_rank_ratio = float('inf')  # We want to minimize this
+    best_columns = []
+    best_filtered_size = 0
+    best_new_rank = 0
 
-    # Pre-compute column sums to eliminate combinations that can't meet min_samples
-    col_sums = df[candidate_cols].sum()
-    valid_cols = [col for col in candidate_cols if col_sums[col] >= min_samples]
+    # Try all possible combinations of columns
+    for length in range(n):
+        for cols in combinations(candidate_cols, length):
+            # Create filter mask - all selected columns must be 1
+            mask = pd.Series(True, index=df.index)
+            for col in cols:
+                mask &= (df[col] == 1)
 
-    # Generate combinations only for valid columns
-    all_combinations = []
-    for length in range(1, min(n + 1, len(valid_cols) + 1)):
-        all_combinations.extend(combinations(valid_cols, length))
+            filtered_df = df[mask]
+            filtered_size = len(filtered_df)
 
-    if not all_combinations:
-        return []
+            # Check if we meet minimum samples requirement
+            if filtered_size >= min_samples:
+                # Calculate new rank (0-based) in filtered dataset
+                new_rank = (filtered_df['R'] >= SELECTED_R).sum() - 1
 
-    # Create partial function with fixed parameters
-    process_func = partial(process_combination_vectorized,
-                           df=df,
-                           SELECTED_R=SELECTED_R,
-                           min_samples=min_samples)
+                # Calculate rank ratio (lower is better)
+                rank_ratio = new_rank / filtered_size
+                # Update best result if this is better
+                if rank_ratio < best_rank_ratio:
+                    best_rank_ratio = rank_ratio
+                    best_columns = list(cols)
+                    best_filtered_size = filtered_size
+                    best_new_rank = new_rank
+                    print(f"New best: {best_rank_ratio} with {best_columns} , {best_filtered_size}, {best_new_rank}")
+                    print(filtered_df[filtered_df["R"] < SELECTED_R].index)
 
-    # Use multiprocessing for parallel computation
-    num_cpus = min(max(1, cpu_count() - 1), 16)
-    chunk_size = max(1, len(all_combinations) // (num_cpus * 4))  # Optimize chunk size
+                # If rank ratios are equal, prefer fewer columns
+                elif rank_ratio == best_rank_ratio and len(cols) < len(best_columns):
+                    best_columns = list(cols)
+                    best_filtered_size = filtered_size
+                    best_new_rank = new_rank
+                    print(f"New best: {best_rank_ratio} with {best_columns} , {best_filtered_size}, {best_new_rank}")
+                    # print the index of the protein with lower rank then the selected protein
+                    print(filtered_df[filtered_df["R"] < SELECTED_R].index)
 
-    with Pool(num_cpus) as pool:
-        results = list(tqdm(
-            pool.imap(process_func, all_combinations, chunksize=chunk_size),
-            total=len(all_combinations),
-            desc="Processing combinations"
-        ))
+    return best_columns, best_new_rank, best_filtered_size
 
-    # Filter out None results and find the best combinations
-    valid_results = [r for r in results if r is not None]
 
-    if not valid_results:
-        return []
-
-    # Sort by rank_ratio (primary) and number of columns (secondary)
-    top_50 = sorted(valid_results,
-                    key=lambda x: (x['rank_ratio'], len(x['columns'])))[:50]
-
-    # Print detailed results for top combinations
-    for r in top_50:
-        cols = r['columns']
-        print(f"\nColumns: {cols}")
-
-        # Vectorized filtering for lower ranks
-        filter_mask = df[cols].values.all(axis=1)
-        lower_rank_mask = (df['R'] < SELECTED_R).values
-        combined_mask = filter_mask & lower_rank_mask
-
-        print(f"Lower rank indices: {df.index[combined_mask].tolist()}")
-        print(f"Rank ratio: {r['rank_ratio']:.4f}")
-        print(f"Filtered size: {r['filtered_size']}")
-        print(f"New rank: {r['new_rank']}")
-
-    return top_50
 def save_human_enzyme_binding_proteins():
     url = f"https://rest.uniprot.org/uniprotkb/stream?fields=accession&format=tsv&query=%28%2A%29%20AND%20%28organism_id%3A9606%29%20AND%20%28go%3A0019899%29"
 
@@ -361,7 +320,6 @@ def get_reactome_go_matrix():
         go_matrix.loc[protein, list(go_term)] = 1
     go_matrix.fillna(0, inplace=True)
     return go_matrix
-
 
 def save_transferrin():
     transferrin_id = "P02787"
