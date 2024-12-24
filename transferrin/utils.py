@@ -146,7 +146,11 @@ def get_all_sequences():
 def save_vecs():
     seq_to_vec = SeqToVec(model_name="ProtBert")
     all_seq = get_all_sequences()
+    print("Converting sequences to vectors")
+    print(f"Total sequences: {len(all_seq)}")
     vecs = seq_to_vec.lines_to_vecs(all_seq)
+    print("Saving vectors")
+    print(f"Total vectors: {len(vecs)}")
     np.save(VEC_FILE, vecs)
 
 
