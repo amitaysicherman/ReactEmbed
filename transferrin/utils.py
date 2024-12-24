@@ -18,33 +18,54 @@ VEC_FILE = "transferrin/esm3-medium_vecs.npy"
 GO_FILE = "transferrin/go.csv"
 GO_ANCESTORS_FIRE = "transferrin/go_ancestors.txt"
 TRANSFERRIN_FILE = "transferrin/transferrin.txt"
+GO_REACTOME = "transferrin/go_reactome.txt"
+GO_REACTOME_ANCESTORS = "transferrin/go_reactome_ancestors.txt"
+
+
+def get_reactome_vecs():
+    return np.load("data/reactome/esm3-medium_vectors.npy")
+
+
+def save_reactome_go_terms():
+    with open("ReactEmbed/data/reactome/proteins.txt") as f:
+        proteins = f.read().splitlines()
+    proteins = [protein.split(",")[1] for protein in proteins]
+    n_cores = max(1, os.cpu_count() - 1)
+    n_cores = min(n_cores, 32)
+    all_goes = []
+    with ProcessPoolExecutor(max_workers=n_cores) as executor:
+        # Map the process_protein function across all proteins
+        results = executor.map(process_protein, proteins)
+        for protein, go_terms in results:
+            go_terms = " ".join(go_terms)
+            all_goes.append(go_terms)
+    with open(GO_REACTOME, "w") as f:
+        f.write("\n".join(all_goes))
+
+
+def save_reactome_go_ancestors():
+    with open(GO_REACTOME) as f:
+        go_terms = f.read().splitlines()
+    go_terms = [go_term.split() for go_term in go_terms]
+    all_goes = set()
+    for go_term in go_terms:
+        all_goes.update(go_term)
+    all_goes = list(all_goes)
+    n_cores = max(1, os.cpu_count() - 1)
+    n_cores = min(n_cores, 32)
+    mapping_lines = []
+    with ProcessPoolExecutor(max_workers=n_cores) as executor:
+        # Map the process_protein function across all proteins
+        results = executor.map(get_go_ancestors_cached, all_goes)
+        for go_term, ancestors in zip(all_goes, results):
+            print(f"Processed {go_term}")
+            line = f"{go_term}|{' '.join(ancestors)}\n"
+            mapping_lines.append(line)
+    with open(GO_REACTOME_ANCESTORS, "w") as f:
+        f.writelines(mapping_lines)
+
 
 def find_optimal_filter_columns(df, index=0, min_samples=500, binary_cols=None, n=3):
-    """
-    Find the optimal subset of binary columns to filter by to maximize the rank of a specific index
-    while maintaining a minimum number of samples after filtering.
-    Only considers columns where the target row has value 1.
-
-    Parameters:
-    -----------
-    df : pandas.DataFrame
-        Input dataframe with binary columns and a rank column 'R'
-    index : int
-        Index of the target row
-    min_samples : int
-        Minimum number of samples that must remain after filtering
-    binary_cols : list, optional
-        List of binary column names. If None, assumes all columns except 'R' are binary
-
-    Returns:
-    --------
-    tuple
-        (optimal_columns, new_rank, filtered_size)
-        - optimal_columns: list of column names that give the best result
-        - new_rank: the rank achieved with this filtering
-        - filtered_size: number of samples after filtering
-    """
-    # If binary columns not specified, use all columns except 'R'
     SELECTED_R = float(df.iloc[index]["R"])
     if binary_cols is None:
         binary_cols = [col for col in df.columns if col != 'R']
@@ -92,16 +113,8 @@ def find_optimal_filter_columns(df, index=0, min_samples=500, binary_cols=None, 
 
     return best_columns, best_new_rank, best_filtered_size
 
+
 def save_human_enzyme_binding_proteins():
-    """
-    Retrieves the UniProt IDs of human proteins annotated with 'enzyme binding' GO term.
-
-    Args:
-        limit (int): The maximum number of UniProt IDs to retrieve (default: 10).
-
-    Returns:
-        list: A list of strings containing the UniProt IDs of human enzyme binding proteins.
-    """
     url = f"https://rest.uniprot.org/uniprotkb/stream?fields=accession&format=tsv&query=%28%2A%29%20AND%20%28organism_id%3A9606%29%20AND%20%28go%3A0019899%29"
 
     response = requests.get(url)
@@ -296,7 +309,6 @@ def load_transferrin():
     return transferrin_vec, t_go_terms
 
 
-
 def prep_all():
     if not os.path.exists(IDS_FILE):
         save_human_enzyme_binding_proteins()
@@ -311,6 +323,10 @@ def prep_all():
         save_go_ancestors()
     if not os.path.exists(TRANSFERRIN_FILE):
         save_transferrin()
+    if not os.path.exists(GO_REACTOME):
+        save_reactome_go_terms()
+    if not os.path.exists(GO_REACTOME_ANCESTORS):
+        save_reactome_go_ancestors()
 
 
 if __name__ == "__main__":
