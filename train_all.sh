@@ -32,6 +32,9 @@ configs="--m_model MolCLR --p_model GearNet --n_layers 1 --epochs 1 |\
 
 IFS='|' read -ra config_array <<< "$configs"
 config=${config_array[$((SLURM_ARRAY_TASK_ID - 1))]}
+
+eval "$(conda shell.bash hook)"
+
 if [[ $cmd == *"esm"* ]]; then
     conda activate ReactEmbedESM
 else
