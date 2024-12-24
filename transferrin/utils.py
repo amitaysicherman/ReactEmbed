@@ -158,7 +158,11 @@ def get_go_ancestors_cached(term):
     """Cached function to get GO term ancestors"""
     try:
         url = f"https://www.ebi.ac.uk/QuickGO/services/ontology/go/terms/{term}/ancestors"
-        response = requests.get(url, headers={"Accept": "application/json"})
+        try:
+            response = requests.get(url, headers={"Accept": "application/json"})
+        except Exception as e:
+            print(f"Error fetching ancestors for {term}: {str(e)}")
+            return set()
 
         if response.status_code == 200:
             ancestors = response.json()
@@ -173,7 +177,11 @@ def get_go_terms(uniprot_id):
     """Get GO terms for a UniProt ID with cached ancestry lookup"""
     print(f"Processing {uniprot_id}")
     uniprot_url = f"https://rest.uniprot.org/uniprotkb/{uniprot_id}?format=json"
-    response = requests.get(uniprot_url)
+    try:
+        response = requests.get(uniprot_url)
+    except Exception as e:
+        print(f"Error fetching UniProt data: {str(e)}")
+        return set()
     if response.status_code != 200:
         print(f"Error fetching UniProt data: {response.status_code}")
         return set()
@@ -243,12 +251,7 @@ def get_go_matrix():
     return pd.read_csv(GO_FILE, index_col=0)
 
 
-if __name__ == "__main__":
-    # transferrin_id="P02787"
-    # go_terms = get_go_terms(transferrin_id)
-    # print(go_terms)
-    # print(len(go_terms))
-    p_model = "esm3-medium"
+def prep_all():
     if not os.path.exists(IDS_FILE):
         save_human_enzyme_binding_proteins()
     human_enzyme_binding_proteins = get_human_enzyme_binding_proteins()
@@ -258,3 +261,7 @@ if __name__ == "__main__":
         save_vecs()
     if not os.path.exists(GO_FILE):
         build_go_matrix()
+
+
+if __name__ == "__main__":
+    prep_all()
