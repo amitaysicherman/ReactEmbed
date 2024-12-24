@@ -122,7 +122,11 @@ def find_optimal_filter_columns(df, index=0, min_samples=500, binary_cols=None, 
 
     # Process combinations in parallel
     with Pool(num_cpus) as pool:
-        results = pool.map(process_func, all_combinations)
+        results = list(tqdm(
+            pool.imap(process_func, all_combinations),
+            total=len(all_combinations),
+            desc="Processing combinations"
+        ))
 
     # Filter out None results and find the best combination
     valid_results = [r for r in results if r is not None]
