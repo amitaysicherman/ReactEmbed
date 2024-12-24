@@ -1,7 +1,9 @@
 import os
 from concurrent.futures import ProcessPoolExecutor
 from functools import lru_cache
+from functools import partial
 from itertools import combinations
+from multiprocessing import Pool, cpu_count
 
 import numpy as np
 import pandas as pd
@@ -65,7 +67,36 @@ def save_reactome_go_ancestors():
         f.writelines(mapping_lines)
 
 
+def process_combination(cols, df, SELECTED_R, min_samples):
+    """Helper function to process a single combination of columns"""
+    # Create filter mask - all selected columns must be 1
+    mask = pd.Series(True, index=df.index)
+    for col in cols:
+        mask &= (df[col] == 1)
+
+    filtered_df = df[mask]
+    filtered_size = len(filtered_df)
+
+    # If we don't meet minimum samples, return None
+    if filtered_size < min_samples:
+        return None
+
+    # Calculate new rank (0-based) in filtered dataset
+    new_rank = (filtered_df['R'] >= SELECTED_R).sum() - 1
+
+    # Calculate rank ratio (lower is better)
+    rank_ratio = new_rank / filtered_size
+
+    return {
+        'columns': list(cols),
+        'rank_ratio': rank_ratio,
+        'filtered_size': filtered_size,
+        'new_rank': new_rank
+    }
+
+
 def find_optimal_filter_columns(df, index=0, min_samples=500, binary_cols=None, n=3):
+    """Find optimal filter columns using parallel processing"""
     SELECTED_R = float(df.iloc[index]["R"])
     if binary_cols is None:
         binary_cols = [col for col in df.columns if col != 'R']
@@ -75,43 +106,39 @@ def find_optimal_filter_columns(df, index=0, min_samples=500, binary_cols=None, 
     # Only consider columns where target row has value 1
     candidate_cols = [col for col in binary_cols if target_row[col] == 1]
 
-    best_rank_ratio = float('inf')  # We want to minimize this
-    best_columns = []
-    best_filtered_size = 0
-    best_new_rank = 0
+    # Generate all possible combinations
+    all_combinations = []
+    for length in range(1, n + 1):
+        all_combinations.extend(combinations(candidate_cols, length))
 
-    # Try all possible combinations of columns
-    for length in range(n):
-        for cols in combinations(candidate_cols, length):
-            # Create filter mask - all selected columns must be 1
-            mask = pd.Series(True, index=df.index)
-            for col in cols:
-                mask &= (df[col] == 1)
+    # Create partial function with fixed parameters
+    process_func = partial(process_combination,
+                           df=df,
+                           SELECTED_R=SELECTED_R,
+                           min_samples=min_samples)
 
-            filtered_df = df[mask]
-            filtered_size = len(filtered_df)
+    # Use all available CPUs except one
+    num_cpus = max(1, cpu_count() - 1)
 
-            # Check if we meet minimum samples requirement
-            if filtered_size >= min_samples:
-                # Calculate new rank (0-based) in filtered dataset
-                new_rank = (filtered_df['R'] >= SELECTED_R).sum() - 1
+    # Process combinations in parallel
+    with Pool(num_cpus) as pool:
+        results = pool.map(process_func, all_combinations)
 
-                # Calculate rank ratio (lower is better)
-                rank_ratio = new_rank / filtered_size
-                print(f"Cols: {cols}, Rank: {new_rank}, Size: {filtered_size}, Ratio: {rank_ratio}")
-                # Update best result if this is better
-                if rank_ratio < best_rank_ratio:
-                    best_rank_ratio = rank_ratio
-                    best_columns = list(cols)
-                    best_filtered_size = filtered_size
-                    best_new_rank = new_rank
-                # If rank ratios are equal, prefer fewer columns
-                elif rank_ratio == best_rank_ratio and len(cols) < len(best_columns):
-                    best_columns = list(cols)
-                    best_filtered_size = filtered_size
-                    best_new_rank = new_rank
+    # Filter out None results and find the best combination
+    valid_results = [r for r in results if r is not None]
 
-    return best_columns, best_new_rank, best_filtered_size
+    if not valid_results:
+        return [], 0, 0
+
+    # Sort by rank_ratio (primary) and number of columns (secondary)
+    best_result = min(valid_results,
+                      key=lambda x: (x['rank_ratio'], len(x['columns'])))
+
+    return (
+        best_result['columns'],
+        best_result['new_rank'],
+        best_result['filtered_size']
+    )
 
 
 def save_human_enzyme_binding_proteins():
