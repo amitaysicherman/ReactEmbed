@@ -45,6 +45,7 @@ def find_optimal_filter_columns(df, index=0, min_samples=500, binary_cols=None, 
         - filtered_size: number of samples after filtering
     """
     # If binary columns not specified, use all columns except 'R'
+    SELECTED_R = float(df.iloc[index]["R"])
     if binary_cols is None:
         binary_cols = [col for col in df.columns if col != 'R']
 
@@ -72,7 +73,7 @@ def find_optimal_filter_columns(df, index=0, min_samples=500, binary_cols=None, 
             # Check if we meet minimum samples requirement
             if filtered_size >= min_samples:
                 # Calculate new rank (0-based) in filtered dataset
-                new_rank = (filtered_df['R'] >= filtered_df.loc[index, 'R']).sum() - 1
+                new_rank = (filtered_df['R'] >= SELECTED_R).sum() - 1
 
                 # Calculate rank ratio (lower is better)
                 rank_ratio = new_rank / filtered_size
@@ -90,7 +91,6 @@ def find_optimal_filter_columns(df, index=0, min_samples=500, binary_cols=None, 
                     best_new_rank = new_rank
 
     return best_columns, best_new_rank, best_filtered_size
-
 
 def save_human_enzyme_binding_proteins():
     """
