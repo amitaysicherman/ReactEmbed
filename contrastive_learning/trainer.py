@@ -110,14 +110,14 @@ if __name__ == '__main__':
     import argparse
 
     parser = argparse.ArgumentParser(description='Contrastive Learning')
-    parser.add_argument('--batch_size', type=int, help='Batch size', default=8192)
+    parser.add_argument('--batch_size', type=int, help='Batch size', default=256)
     parser.add_argument('--p_model', type=str, help='Protein model', default="ProtBert")
     parser.add_argument('--m_model', type=str, help='Molecule model', default="ChemBERTa")
     parser.add_argument('--n_layers', type=int, help='Number of layers', default=2)
     parser.add_argument('--hidden_dim', type=int, help='Hidden dimension', default=256)
     parser.add_argument('--dropout', type=float, help='Dropout', default=0.3)
     parser.add_argument('--epochs', type=int, help='Number of epochs', default=10)
-    parser.add_argument('--lr', type=float, help='Learning rate', default=0.001)
+    parser.add_argument('--lr', type=float, help='Learning rate', default=0.00005)
     parser.add_argument('--flip_prob', type=float, help='Flip Prob', default=0.0)
     parser.add_argument('--data_name', type=str, help='Data name', default="reactome")
     args = parser.parse_args()
