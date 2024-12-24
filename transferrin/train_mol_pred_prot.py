@@ -8,9 +8,9 @@ from transferrin.utils import get_go_terms, get_vecs, find_optimal_filter_column
     get_go_ancestors_cached
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
-p_model = "ProtBert"
+p_model = "esm3-medium"
 m_model = "ChemBERTa"
-fuse_base = "data/reactome/model/ProtBert-ChemBERTa-2-256-0.3-10-0.001-8192-0.0"
+fuse_base = "data/reactome/model/esm3-medium-ChemBERTa-2-256-0.3-10-0.001-8192-0.0"
 model: LinFuseModel = None
 score, model = trainer_task_main(use_fuse=True, use_model=False, bs=32, lr=1e-4, drop_out=0.1, hidden_dim=128,
                                  task_name="BBBP", fuse_base=fuse_base, mol_emd=m_model, protein_emd=p_model,
