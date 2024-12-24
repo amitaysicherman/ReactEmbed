@@ -3,7 +3,7 @@
 #SBATCH --mem=64G
 #SBATCH --requeue
 #SBATCH --gres=gpu:L40:1
-#SBATCH --array=1-109
+#SBATCH --array=1-85
 
 # Define molecule and protein models
 #molecule_models=("ChemBERTa" "MoLFormer" "MolCLR")
@@ -104,51 +104,26 @@ python eval_tasks/prep_tasks_vecs.py --task BindingDB --p_model ProtBert --m_mod
 python eval_tasks/prep_tasks_vecs.py --task BindingDB --p_model ProtBert --m_model MoLFormer|\
 python eval_tasks/prep_tasks_vecs.py --task BindingDB --p_model ProtBert --m_model MolCLR|\
 python eval_tasks/prep_tasks_vecs.py --task BindingDB --p_model esm3-small --m_model ChemBERTa|\
-python eval_tasks/prep_tasks_vecs.py --task BindingDB --p_model esm3-small --m_model MoLFormer|\
-python eval_tasks/prep_tasks_vecs.py --task BindingDB --p_model esm3-small --m_model MolCLR|\
 python eval_tasks/prep_tasks_vecs.py --task BindingDB --p_model esm3-medium --m_model ChemBERTa|\
-python eval_tasks/prep_tasks_vecs.py --task BindingDB --p_model esm3-medium --m_model MoLFormer|\
-python eval_tasks/prep_tasks_vecs.py --task BindingDB --p_model esm3-medium --m_model MolCLR|\
 python eval_tasks/prep_tasks_vecs.py --task BindingDB --p_model GearNet --m_model ChemBERTa|\
-python eval_tasks/prep_tasks_vecs.py --task BindingDB --p_model GearNet --m_model MoLFormer|\
-python eval_tasks/prep_tasks_vecs.py --task BindingDB --p_model GearNet --m_model MolCLR|\
 python eval_tasks/prep_tasks_vecs.py --task PDBBind --p_model ProtBert --m_model ChemBERTa|\
 python eval_tasks/prep_tasks_vecs.py --task PDBBind --p_model ProtBert --m_model MoLFormer|\
 python eval_tasks/prep_tasks_vecs.py --task PDBBind --p_model ProtBert --m_model MolCLR|\
 python eval_tasks/prep_tasks_vecs.py --task PDBBind --p_model esm3-small --m_model ChemBERTa|\
-python eval_tasks/prep_tasks_vecs.py --task PDBBind --p_model esm3-small --m_model MoLFormer|\
-python eval_tasks/prep_tasks_vecs.py --task PDBBind --p_model esm3-small --m_model MolCLR|\
 python eval_tasks/prep_tasks_vecs.py --task PDBBind --p_model esm3-medium --m_model ChemBERTa|\
-python eval_tasks/prep_tasks_vecs.py --task PDBBind --p_model esm3-medium --m_model MoLFormer|\
-python eval_tasks/prep_tasks_vecs.py --task PDBBind --p_model esm3-medium --m_model MolCLR|\
 python eval_tasks/prep_tasks_vecs.py --task PDBBind --p_model GearNet --m_model ChemBERTa|\
-python eval_tasks/prep_tasks_vecs.py --task PDBBind --p_model GearNet --m_model MoLFormer|\
-python eval_tasks/prep_tasks_vecs.py --task PDBBind --p_model GearNet --m_model MolCLR|\
 python eval_tasks/prep_tasks_vecs.py --task DrugBank --p_model ProtBert --m_model ChemBERTa|\
 python eval_tasks/prep_tasks_vecs.py --task DrugBank --p_model ProtBert --m_model MoLFormer|\
 python eval_tasks/prep_tasks_vecs.py --task DrugBank --p_model ProtBert --m_model MolCLR|\
 python eval_tasks/prep_tasks_vecs.py --task DrugBank --p_model esm3-small --m_model ChemBERTa|\
-python eval_tasks/prep_tasks_vecs.py --task DrugBank --p_model esm3-small --m_model MoLFormer|\
-python eval_tasks/prep_tasks_vecs.py --task DrugBank --p_model esm3-small --m_model MolCLR|\
 python eval_tasks/prep_tasks_vecs.py --task DrugBank --p_model esm3-medium --m_model ChemBERTa|\
-python eval_tasks/prep_tasks_vecs.py --task DrugBank --p_model esm3-medium --m_model MoLFormer|\
-python eval_tasks/prep_tasks_vecs.py --task DrugBank --p_model esm3-medium --m_model MolCLR|\
 python eval_tasks/prep_tasks_vecs.py --task DrugBank --p_model GearNet --m_model ChemBERTa|\
-python eval_tasks/prep_tasks_vecs.py --task DrugBank --p_model GearNet --m_model MoLFormer|\
-python eval_tasks/prep_tasks_vecs.py --task DrugBank --p_model GearNet --m_model MolCLR|\
 python eval_tasks/prep_tasks_vecs.py --task Davis --p_model ProtBert --m_model ChemBERTa|\
 python eval_tasks/prep_tasks_vecs.py --task Davis --p_model ProtBert --m_model MoLFormer|\
 python eval_tasks/prep_tasks_vecs.py --task Davis --p_model ProtBert --m_model MolCLR|\
 python eval_tasks/prep_tasks_vecs.py --task Davis --p_model esm3-small --m_model ChemBERTa|\
-python eval_tasks/prep_tasks_vecs.py --task Davis --p_model esm3-small --m_model MoLFormer|\
-python eval_tasks/prep_tasks_vecs.py --task Davis --p_model esm3-small --m_model MolCLR|\
 python eval_tasks/prep_tasks_vecs.py --task Davis --p_model esm3-medium --m_model ChemBERTa|\
-python eval_tasks/prep_tasks_vecs.py --task Davis --p_model esm3-medium --m_model MoLFormer|\
-python eval_tasks/prep_tasks_vecs.py --task Davis --p_model esm3-medium --m_model MolCLR|\
-python eval_tasks/prep_tasks_vecs.py --task Davis --p_model GearNet --m_model ChemBERTa|\
-python eval_tasks/prep_tasks_vecs.py --task Davis --p_model GearNet --m_model MoLFormer|\
-python eval_tasks/prep_tasks_vecs.py --task Davis --p_model GearNet --m_model MolCLR"
-
+python eval_tasks/prep_tasks_vecs.py --task Davis --p_model GearNet --m_model ChemBERTa"
 
 
 IFS='|' read -r -a array <<< "$commands"

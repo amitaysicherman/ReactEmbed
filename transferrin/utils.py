@@ -4,12 +4,58 @@ from functools import lru_cache
 
 import pandas as pd
 import requests
+from joblib import Parallel, delayed
+from tqdm import tqdm
+
+from preprocessing.biopax_parser import get_req, from_second_line
+
+
+def get_human_enzyme_binding_proteins():
+    """
+    Retrieves the UniProt IDs of human proteins annotated with 'enzyme binding' GO term.
+
+    Args:
+        limit (int): The maximum number of UniProt IDs to retrieve (default: 10).
+
+    Returns:
+        list: A list of strings containing the UniProt IDs of human enzyme binding proteins.
+    """
+    url = f"https://rest.uniprot.org/uniprotkb/stream?fields=accession&format=tsv&query=%28%2A%29%20AND%20%28organism_id%3A9606%29%20AND%20%28go%3A0019899%29"
+
+    response = requests.get(url)
+
+    if response.status_code == 200:
+        protein_ids = response.text.strip().split("\n")[1:]
+    else:
+        print(f"Error: {response.status_code} - {response.text}")
+        return None
+    output_file = "transferrin/human_enzyme_binding_proteins.txt"
+    with open(output_file, "w") as f:
+        f.write("\n".join(protein_ids))
 
 
 def get_human_enzyme_binding_proteins():
     with open("transferrin/human_enzyme_binding_proteins.txt") as f:
         proteins = f.read().splitlines()
     return proteins
+
+
+def save_all_sequences(human_enzyme_binding_proteins):
+    def fetch_sequence(protein_id):
+        return get_req(f"https://www.uniprot.org/uniprot/{protein_id}.fasta")
+
+    all_seq = Parallel(n_jobs=-1)(
+        delayed(fetch_sequence)(protein_id) for protein_id in tqdm(human_enzyme_binding_proteins))
+
+    all_fasta = [from_second_line(seq) for seq in all_seq]
+    with open("transferrin/all_sequences.txt", "w") as f:
+        f.write("\n".join(all_fasta))
+
+
+def get_all_sequences():
+    with open("transferrin/all_sequences.txt") as f:
+        all_seq = f.read().splitlines()
+    return all_seq
 
 
 @lru_cache(maxsize=10000)
