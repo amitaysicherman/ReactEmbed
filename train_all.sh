@@ -1,3 +1,5 @@
+#!/bin/bash
+
 #SBATCH --time=7-00
 #SBATCH --mem=64G
 #SBATCH --requeue
