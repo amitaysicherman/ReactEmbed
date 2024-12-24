@@ -15,7 +15,8 @@ from preprocessing.seq_to_vec import SeqToVec
 IDS_FILE = "transferrin/human_enzyme_binding_proteins.txt"
 SEQ_FILE = "transferrin/all_sequences.txt"
 VEC_FILE = "transferrin/esm3-medium_vecs.npy"
-GO_FILE = "transferrin/go_matrix.csv"
+GO_FILE = "transferrin/go.csv"
+GO_ANCESTORS_FIRE = "transferrin/go_ancestors.txt"
 
 
 def find_optimal_filter_columns(df, index=0, min_samples=500, binary_cols=None, n=3):
@@ -187,7 +188,6 @@ def get_go_terms(uniprot_id):
         return set()
 
     data = response.json()
-    go_terms = set()
     direct_terms = set()
 
     if 'uniProtKBCrossReferences' in data:
@@ -195,20 +195,54 @@ def get_go_terms(uniprot_id):
             if ref['database'] == 'GO':
                 go_id = ref['id']
                 direct_terms.add(go_id)
-
-    go_terms.update(direct_terms)
-
-    # Use cached ancestor lookup
-    for term in direct_terms:
-        ancestors = get_go_ancestors_cached(term)
-        go_terms.update(ancestors)
-
-    return go_terms
+    return direct_terms
 
 
 def process_protein(protein):
     """Process a single protein and return its GO terms"""
     return (protein, get_go_terms(protein))
+
+
+def save_all_go_terms():
+    proteins = get_human_enzyme_binding_proteins()
+    n_cores = max(1, os.cpu_count() - 1)
+    n_cores = min(n_cores, 32)
+    all_goes = []
+    with ProcessPoolExecutor(max_workers=n_cores) as executor:
+        # Map the process_protein function across all proteins
+        results = executor.map(process_protein, proteins)
+        for protein, go_terms in results:
+            go_terms = " ".join(go_terms)
+            all_goes.append(go_terms)
+
+    go_terms = []
+    for protein in tqdm(proteins):
+        go_terms.append(get_go_terms(protein))
+    with open(GO_FILE, "w") as f:
+        for go_term in go_terms:
+            f.write(f"{go_term}\n")
+
+
+def save_go_ancestors():
+    with open(GO_FILE) as f:
+        go_terms = f.read().splitlines()
+    go_terms = [go_term.split() for go_term in go_terms]
+    all_goes = set()
+    for go_term in go_terms:
+        all_goes.update(go_term)
+    all_goes = list(all_goes)
+    n_cores = max(1, os.cpu_count() - 1)
+    n_cores = min(n_cores, 32)
+    mapping_lines = []
+    with ProcessPoolExecutor(max_workers=n_cores) as executor:
+        # Map the process_protein function across all proteins
+        results = executor.map(get_go_ancestors_cached, all_goes)
+        for go_term, ancestors in zip(all_goes, results):
+            print(f"Processed {go_term}")
+            line = f"{go_term}|{' '.join(ancestors)}\n"
+            mapping_lines.append(line)
+    with open(GO_ANCESTORS_FIRE, "w") as f:
+        f.writelines(mapping_lines)
 
 
 def build_go_matrix():
@@ -260,7 +294,9 @@ def prep_all():
     if not os.path.exists(VEC_FILE):
         save_vecs()
     if not os.path.exists(GO_FILE):
-        build_go_matrix()
+        save_all_go_terms()
+    if not os.path.exists(GO_ANCESTORS_FIRE):
+        save_go_ancestors()
 
 
 if __name__ == "__main__":
