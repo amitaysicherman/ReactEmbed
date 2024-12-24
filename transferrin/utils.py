@@ -214,13 +214,8 @@ def save_all_go_terms():
         for protein, go_terms in results:
             go_terms = " ".join(go_terms)
             all_goes.append(go_terms)
-
-    go_terms = []
-    for protein in tqdm(proteins):
-        go_terms.append(get_go_terms(protein))
     with open(GO_FILE, "w") as f:
-        for go_term in go_terms:
-            f.write(f"{go_term}\n")
+        f.write("\n".join(all_goes))
 
 
 def save_go_ancestors():
@@ -245,44 +240,33 @@ def save_go_ancestors():
         f.writelines(mapping_lines)
 
 
-def build_go_matrix():
-    # Get the list of proteins first
-    proteins = get_human_enzyme_binding_proteins()
-
-    # Determine number of CPU cores to use (leave one core free for system)
-    n_cores = max(1, os.cpu_count() - 1)
-
-    # Process proteins in parallel
-    go_matrix = {}
-    with ProcessPoolExecutor(max_workers=n_cores) as executor:
-        # Map the process_protein function across all proteins
-        results = executor.map(process_protein, proteins)
-
-        # Collect results
-        for protein, go_terms in results:
-            go_matrix[protein] = go_terms
-
-    # Collect all unique GO terms
-    all_go_terms = set()
-    for go_terms in go_matrix.values():
-        all_go_terms.update(go_terms)
-
-    # Create and fill the DataFrame
-    go_df = pd.DataFrame(index=proteins, columns=list(all_go_terms))
-
-    # Fill the matrix
-    for protein, go_terms in go_matrix.items():
-        go_df.loc[protein, list(go_terms)] = 1
-
-    # Fill missing values with 0
-    go_df.fillna(0, inplace=True)
-
-    # Save to CSV
-    go_df.to_csv(GO_FILE)
-
-
 def get_go_matrix():
-    return pd.read_csv(GO_FILE, index_col=0)
+    proteins = get_human_enzyme_binding_proteins()
+    with open(GO_FILE) as f:
+        go_terms = f.read().splitlines()
+    go_terms = [go_term.split() for go_term in go_terms]
+
+    mapping = {}
+    with open(GO_ANCESTORS_FIRE) as f:
+        for line in f:
+            go_term, ancestors = line.strip().split("|")
+            mapping[go_term] = ancestors.split()
+    full_go_terms = []
+    for go_term in go_terms:
+        full_list = set()
+        for term in go_term:
+            full_list.add(term)
+            full_list.update(mapping[term])
+        full_go_terms.append(full_list)
+    all_goes = set()
+    for go_term in full_go_terms:
+        all_goes.update(go_term)
+    all_goes = list(all_goes)
+    go_matrix = pd.DataFrame(index=proteins, columns=all_goes)
+    for protein, go_term in zip(proteins, full_go_terms):
+        go_matrix.loc[protein, list(go_term)] = 1
+    go_matrix.fillna(0, inplace=True)
+    return go_matrix
 
 
 def prep_all():
