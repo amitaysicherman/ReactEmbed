@@ -17,7 +17,7 @@ SEQ_FILE = "transferrin/all_sequences.txt"
 VEC_FILE = "transferrin/esm3-medium_vecs.npy"
 GO_FILE = "transferrin/go.csv"
 GO_ANCESTORS_FIRE = "transferrin/go_ancestors.txt"
-
+TRANSFERRIN_FILE = "transferrin/transferrin.txt"
 
 def find_optimal_filter_columns(df, index=0, min_samples=500, binary_cols=None, n=3):
     """
@@ -273,6 +273,30 @@ def get_go_matrix():
     return go_matrix
 
 
+def save_transferrin():
+    transferrin_id = "P02787"
+    transferrin_seq = "MRLAVGALLVCAVLGLCLAVPDKTVRWCAVSEHEATKCQSFRDHMKSVIPSDGPSVACVKKASYLDCIRAIAANEADAVTLDAGLVYDAYLAPNNLKPVVAEFYGSKEDPQTFYYAVAVVKKDSGFQMNQLRGKKSCHTGLGRSAGWNIPIGLLYCDLPEPRKPLEKAVANFFSGSCAPCADGTDFPQLCQLCPGCGCSTLNQYFGYSGAFKCLKDGAGDVAFVKHSTIFENLANKADRDQYELLCLDNTRKPVDEYKDCHLAQVPSHTVVARSMGGKEDLIWELLNQAQEHFGKDKSKEFQLFSSPHGKDLLFKDSAHGFLKVPPRMDAKMYLGYEYVTAIRNLREGTCPEAPTDECKPVKWCALSHHERLKCDEWSVNSVGKIECVSAETTEDCIAKIMNGEADAMSLDGGFVYIAGKCGLVPVLAENYNKSDNCEDTPEAGYFAIAVVKKSASDLTWDNLKGKKSCHTAVGRTAGWNIPMGLLYNKINHCRFDEFFSEGCAPGSKKDSSLCKLCMGSGLNLCEPNNKEGYYGYTGAFRCLVEKGDVAFVKHQTVPQNTGGKNPDPWAKNLNEKDYELLCLDGTRKPVEEYANCHLARAPNHAVVTRKDKEACVHKILRQQQHLFGSNVTDCSGNFCLFRSETKDLLFRDDTVCLAKLHDRNTYEKYLGEEYVKAVGNLRKCSTSSLLEACTFRRP"
+    seq_to_vec = SeqToVec("esm3-medium")
+    transferrin_vec = seq_to_vec.to_vec(transferrin_seq)
+    transferrin_vec_as_str = " ".join(map(str, transferrin_vec))
+    t_go_terms = list(get_go_terms(transferrin_id))
+    t_go_terms_with_ans = sum([get_go_ancestors_cached(go_term) for go_term in t_go_terms], [])
+    t_go_terms.extend(t_go_terms_with_ans)
+    t_go_terms = list(set(t_go_terms))
+    with open(TRANSFERRIN_FILE, "w") as f:
+        f.write(transferrin_vec_as_str + "\n")
+        f.write(" ".join(t_go_terms))
+
+
+def load_transferrin():
+    with open(TRANSFERRIN_FILE) as f:
+        transferrin_vec = list(map(float, f.readline().strip().split()))
+        transferrin_vec = np.array(transferrin_vec)
+        t_go_terms = f.readline().split()
+    return transferrin_vec, t_go_terms
+
+
+
 def prep_all():
     if not os.path.exists(IDS_FILE):
         save_human_enzyme_binding_proteins()
@@ -285,6 +309,8 @@ def prep_all():
         save_all_go_terms()
     if not os.path.exists(GO_ANCESTORS_FIRE):
         save_go_ancestors()
+    if not os.path.exists(TRANSFERRIN_FILE):
+        save_transferrin()
 
 
 if __name__ == "__main__":
