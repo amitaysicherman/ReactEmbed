@@ -18,7 +18,7 @@ def save_vectors(input_file, output_file, converter):
         return
     with open(input_file, 'r') as f:
         lines = f.read().splitlines()
-    vectors = np.stack([converter.to_vec(line) for line in tqdm(lines)])
+    vectors = converter.lines_to_vecs(lines)
     np.save(output_file, vectors)
 
 

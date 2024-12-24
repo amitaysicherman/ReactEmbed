@@ -218,6 +218,18 @@ class SeqToVec:
         self.mem[seq] = vec
         return vec
 
+    def lines_to_vecs(self, lines):
+        all_vecs = []
+        for line in tqdm(lines):
+            if len(line.strip()) == 0:
+                all_vecs.append(None)
+            seq = line.strip()
+            vec = self.to_vec(seq)
+            all_vecs.append(vec)
+        all_vecs = fill_none_with_zeros(all_vecs)
+        all_vecs = np.array(all_vecs)
+        return all_vecs
+
 
 def model_to_type(model_name):
     if model_name in ["ChemBERTa", "MoLFormer", "MolCLR"]:
@@ -255,19 +267,11 @@ def main(model, data_name):
         file = molecules_file.replace(".txt", "_sequences.txt")
     with open(file, "r") as f:
         lines = f.readlines()
-    all_vecs = []
     output_file = f"data/{data_name}/{model}_vectors.npy"
     if os.path.exists(output_file):
         print(f"{output_file} already exists")
         return None
-    for line in tqdm(lines):
-        if len(line.strip()) == 0:
-            all_vecs.append(None)
-        seq = line.strip()
-        vec = seq_to_vec.to_vec(seq)
-        all_vecs.append(vec)
-    all_vecs = fill_none_with_zeros(all_vecs)
-    all_vecs = np.array(all_vecs)
+    all_vecs = seq_to_vec.lines_to_vecs(lines)
     np.save(output_file, all_vecs)
 
 
