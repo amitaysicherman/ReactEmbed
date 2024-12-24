@@ -1,16 +1,97 @@
 import os
 from concurrent.futures import ProcessPoolExecutor
 from functools import lru_cache
+from itertools import combinations
 
+import numpy as np
 import pandas as pd
 import requests
 from joblib import Parallel, delayed
 from tqdm import tqdm
 
 from preprocessing.biopax_parser import get_req, from_second_line
+from preprocessing.seq_to_vec import SeqToVec
+
+IDS_FILE = "transferrin/human_enzyme_binding_proteins.txt"
+SEQ_FILE = "transferrin/all_sequences.txt"
+VEC_FILE = "transferrin/esm3-medium_vecs.npy"
+GO_FILE = "transferrin/go_matrix.csv"
 
 
-def get_human_enzyme_binding_proteins():
+def find_optimal_filter_columns(df, index=0, min_samples=500, binary_cols=None, n=3):
+    """
+    Find the optimal subset of binary columns to filter by to maximize the rank of a specific index
+    while maintaining a minimum number of samples after filtering.
+    Only considers columns where the target row has value 1.
+
+    Parameters:
+    -----------
+    df : pandas.DataFrame
+        Input dataframe with binary columns and a rank column 'R'
+    index : int
+        Index of the target row
+    min_samples : int
+        Minimum number of samples that must remain after filtering
+    binary_cols : list, optional
+        List of binary column names. If None, assumes all columns except 'R' are binary
+
+    Returns:
+    --------
+    tuple
+        (optimal_columns, new_rank, filtered_size)
+        - optimal_columns: list of column names that give the best result
+        - new_rank: the rank achieved with this filtering
+        - filtered_size: number of samples after filtering
+    """
+    # If binary columns not specified, use all columns except 'R'
+    if binary_cols is None:
+        binary_cols = [col for col in df.columns if col != 'R']
+
+    target_row = df.iloc[index]
+
+    # Only consider columns where target row has value 1
+    candidate_cols = [col for col in binary_cols if target_row[col] == 1]
+
+    best_rank_ratio = float('inf')  # We want to minimize this
+    best_columns = []
+    best_filtered_size = 0
+    best_new_rank = 0
+
+    # Try all possible combinations of columns
+    for length in range(n):
+        for cols in combinations(candidate_cols, length):
+            # Create filter mask - all selected columns must be 1
+            mask = pd.Series(True, index=df.index)
+            for col in cols:
+                mask &= (df[col] == 1)
+
+            filtered_df = df[mask]
+            filtered_size = len(filtered_df)
+
+            # Check if we meet minimum samples requirement
+            if filtered_size >= min_samples:
+                # Calculate new rank (0-based) in filtered dataset
+                new_rank = (filtered_df['R'] >= filtered_df.loc[index, 'R']).sum() - 1
+
+                # Calculate rank ratio (lower is better)
+                rank_ratio = new_rank / filtered_size
+
+                # Update best result if this is better
+                if rank_ratio < best_rank_ratio:
+                    best_rank_ratio = rank_ratio
+                    best_columns = list(cols)
+                    best_filtered_size = filtered_size
+                    best_new_rank = new_rank
+                # If rank ratios are equal, prefer fewer columns
+                elif rank_ratio == best_rank_ratio and len(cols) < len(best_columns):
+                    best_columns = list(cols)
+                    best_filtered_size = filtered_size
+                    best_new_rank = new_rank
+
+    return best_columns, best_new_rank, best_filtered_size
+
+
+def save_human_enzyme_binding_proteins():
     """
     Retrieves the UniProt IDs of human proteins annotated with 'enzyme binding' GO term.
 
@@ -29,33 +110,47 @@ def get_human_enzyme_binding_proteins():
     else:
         print(f"Error: {response.status_code} - {response.text}")
         return None
-    output_file = "transferrin/human_enzyme_binding_proteins.txt"
-    with open(output_file, "w") as f:
+    with open(IDS_FILE, "w") as f:
         f.write("\n".join(protein_ids))
 
 
 def get_human_enzyme_binding_proteins():
-    with open("transferrin/human_enzyme_binding_proteins.txt") as f:
+    with open(IDS_FILE) as f:
         proteins = f.read().splitlines()
     return proteins
 
 
 def save_all_sequences(human_enzyme_binding_proteins):
     def fetch_sequence(protein_id):
-        return get_req(f"https://www.uniprot.org/uniprot/{protein_id}.fasta")
+        try:
+            return get_req(f"https://www.uniprot.org/uniprot/{protein_id}.fasta", ret=1)
+        except Exception as e:
+            print(f"Error fetching sequence for {protein_id}: {str(e)}")
+            return ""
 
     all_seq = Parallel(n_jobs=-1)(
         delayed(fetch_sequence)(protein_id) for protein_id in tqdm(human_enzyme_binding_proteins))
 
     all_fasta = [from_second_line(seq) for seq in all_seq]
-    with open("transferrin/all_sequences.txt", "w") as f:
+    with open(SEQ_FILE, "w") as f:
         f.write("\n".join(all_fasta))
 
 
 def get_all_sequences():
-    with open("transferrin/all_sequences.txt") as f:
+    with open(SEQ_FILE) as f:
         all_seq = f.read().splitlines()
     return all_seq
+
+
+def save_vecs():
+    seq_to_vec = SeqToVec(model_name="esm3-medium")
+    all_seq = get_all_sequences()
+    vecs = seq_to_vec.lines_to_vecs(all_seq)
+    np.save(VEC_FILE, vecs)
+
+
+def get_vecs():
+    return np.load(VEC_FILE)
 
 
 @lru_cache(maxsize=10000)
@@ -135,18 +230,31 @@ def build_go_matrix():
 
     # Fill the matrix
     for protein, go_terms in go_matrix.items():
-        go_df.loc[protein, go_terms] = 1
+        go_df.loc[protein, list(go_terms)] = 1
 
     # Fill missing values with 0
     go_df.fillna(0, inplace=True)
 
     # Save to CSV
-    go_df.to_csv("transferrin/go_human_enzyme_binding_proteins_matrix.csv")
+    go_df.to_csv(GO_FILE)
 
 
 def get_go_matrix():
-    return pd.read_csv("transferrin/go_human_enzyme_binding_proteins_matrix.csv", index_col=0)
+    return pd.read_csv(GO_FILE, index_col=0)
 
 
 if __name__ == "__main__":
-    build_go_matrix()
+    # transferrin_id="P02787"
+    # go_terms = get_go_terms(transferrin_id)
+    # print(go_terms)
+    # print(len(go_terms))
+    p_model = "esm3-medium"
+    if not os.path.exists(IDS_FILE):
+        save_human_enzyme_binding_proteins()
+    human_enzyme_binding_proteins = get_human_enzyme_binding_proteins()
+    if not os.path.exists(SEQ_FILE):
+        save_all_sequences(human_enzyme_binding_proteins)
+    if not os.path.exists(VEC_FILE):
+        save_vecs()
+    if not os.path.exists(GO_FILE):
+        build_go_matrix()

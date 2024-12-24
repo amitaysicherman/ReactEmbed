@@ -26,8 +26,8 @@ def name_to_file(name):
         raise Exception("Not know name")
 
 
-def get_req(url: str, to_json=False):
-    for i in range(3):
+def get_req(url: str, to_json=False, ret=3):
+    for i in range(ret):
         response = requests.get(url)
         if response.status_code == 200:
             return response.json() if to_json else response.text
