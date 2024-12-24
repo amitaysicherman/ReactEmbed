@@ -4,7 +4,8 @@ from contrastive_learning.model import ReactEmbedModel
 from eval_tasks.models import LinFuseModel
 from eval_tasks.trainer import main as trainer_task_main
 from preprocessing.seq_to_vec import SeqToVec
-from transferrin.utils import get_go_terms, get_vecs, find_optimal_filter_columns, get_go_matrix
+from transferrin.utils import get_go_terms, get_vecs, find_optimal_filter_columns, get_go_matrix, \
+    get_go_ancestors_cached
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 p_model = "esm3-medium"
@@ -32,7 +33,11 @@ transferrin_vec = transferrin_vec.unsqueeze(0)
 t_x = fuse_model.dual_forward(transferrin_vec, "P")
 t_pred = model.layers(t_x)
 t_res = torch.sigmoid(t_pred).detach().cpu().numpy()
+
 t_go_terms = list(get_go_terms(transferrin_id))
+t_go_terms_with_ans = sum([get_go_ancestors_cached(go_term) for go_term in t_go_terms], [])
+t_go_terms.extend(t_go_terms_with_ans)
+t_go_terms = list(set(t_go_terms))
 
 go_matrix = get_go_matrix()
 go_matrix["score"] = res.flatten()
