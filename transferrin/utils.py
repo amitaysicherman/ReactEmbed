@@ -5,6 +5,7 @@ from itertools import combinations
 import numpy as np
 import pandas as pd
 import requests
+from goatools import obo_parser
 from joblib import Parallel, delayed
 from tqdm import tqdm
 
@@ -127,6 +128,25 @@ def find_top_n_combinations(df, index, n_results=5, max_cols=3, min_samples=10, 
                     heappushpop(top_results, (-rank_ratio, sequence_num, result))
                 sequence_num += 1
     return top_results
+
+
+def get_go_description(go_id):
+    try:
+        # Load the GO database
+        go_obo = obo_parser.GODag("transferrin/go-basic.obo")
+
+        # Clean the input GO ID
+        go_id = go_id.strip().upper()
+        if not go_id.startswith("GO:"):
+            go_id = "GO:" + go_id
+        if go_id in go_obo:
+            go_term = go_obo[go_id]
+            return f"{getattr(go_term, 'name', '-'), getattr(go_term, 'namespace', '-')}"
+        else:
+            return "??"
+
+    except Exception as e:
+        return "??"
 
 
 if __name__ == "__main__":
