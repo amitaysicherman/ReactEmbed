@@ -49,6 +49,7 @@ def save_all_sequences(ids, output_file):
 
 class Preprocess:
     def __init__(self, p_model="esm3-medium", reactome=False):
+        self.reactome = reactome
         self.add_transferrin = not reactome
         os.makedirs(f"transferrin/{p_model}", exist_ok=True)
         if reactome:
@@ -78,6 +79,9 @@ class Preprocess:
     def get_proteins(self):
         with open(self.proteins_ids_file) as f:
             proteins = f.read().splitlines()
+        if self.reactome:
+            proteins = [p.split(",")[1] for p in proteins]
+
         return proteins
 
     def get_vecs(self):
