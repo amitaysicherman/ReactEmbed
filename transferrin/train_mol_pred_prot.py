@@ -2,7 +2,7 @@ import torch
 
 from contrastive_learning.model import ReactEmbedModel
 from eval_tasks.trainer import main as trainer_task_main
-from transferrin.utils import PreprocessManager, find_top_n_combinations
+from transferrin.utils import PreprocessManager
 
 transferrin_id = "P02787"
 
@@ -26,11 +26,16 @@ def main(p_model, m_model, fuse_base, metric):
     assert len(go_matrix) == preprocess.get_vecs().shape[0]
     go_matrix["S"] = res.flatten()
     transferrin_index = go_matrix.index.get_loc(transferrin_id)
-    results = find_top_n_combinations(go_matrix, transferrin_index, n_results=1, max_cols=2, min_samples=100)
-    results = results[0][2]
+    transferrin_score = go_matrix.iloc[transferrin_index]["S"]
+    higher_score_count = (go_matrix["S"] > transferrin_score).sum()
     with open("transferrin/results.csv", "a") as f:
         f.write(
-            f"{p_model},{m_model},{fuse_base},{metric},{results['filtered_size']},{results['new_rank']}\n")
+            f"{p_model},{m_model},{fuse_base},{metric},{transferrin_score},{higher_score_count}\n")
+    # results = find_top_n_combinations(go_matrix, transferrin_index, n_results=1, max_cols=2, min_samples=100)
+    # results = results[0][2]
+    # with open("transferrin/results.csv", "a") as f:
+    #     f.write(
+    #         f"{p_model},{m_model},{fuse_base},{metric},{results['filtered_size']},{results['new_rank']}\n")
 
 
 if __name__ == '__main__':
