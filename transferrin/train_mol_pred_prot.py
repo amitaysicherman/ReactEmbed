@@ -8,21 +8,6 @@ transferrin_id = "P02787"
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
-parser.add_argument("--use_fuse", type=int, default=1)
-parser.add_argument("--use_model", type=int, default=1)
-parser.add_argument("--bs", type=int, default=16)
-parser.add_argument("--lr", type=float, default=0.001)
-parser.add_argument("--drop_out", type=float, default=0.3)
-parser.add_argument("--hidden_dim", type=int, default=512)
-parser.add_argument("--task_name", type=str, default="BACE")
-parser.add_argument("--fusion_name", type=str,
-                    default="data/pathbank/model/ProtBert-MolCLR-2-64-0.3-10-0.001-8192-0.0/")
-parser.add_argument("--m_model", type=str, default="ChemBERTa")
-parser.add_argument("--p_model", type=str, default="ProtBert")
-parser.add_argument("--max_no_improve", type=int, default=5)
-parser.add_argument("--n_layers", type=int, default=2)
-parser.add_argument("--metric", type=str, default="f1_max")
-
 
 def main(p_model, m_model, fuse_base, metric):
     preprocess = PreprocessManager(p_model=p_model, reactome=True)
