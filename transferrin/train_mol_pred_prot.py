@@ -39,5 +39,5 @@ print("Transferrin:", res.flatten()[transferrin_index], sum(res > res[transferri
 results = find_top_n_combinations(go_matrix, transferrin_index, n_results=30, max_cols=2, min_samples=100)
 for r in results:
     print(r)
-    for go_id in r['columns']:
+    for go_id in r[2]['columns']:
         print(get_go_description(go_id))
