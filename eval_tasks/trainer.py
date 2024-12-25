@@ -150,6 +150,11 @@ def main(use_fuse, use_model, bs, lr, drop_out, hidden_dim, task_name, fuse_base
     }
     res = train_model_with_config(config, task_name, fuse_base, mol_emd, protein_emd, max_no_improve,
                                   fuse_model=fuse_model, task_suffix=task_suffix, return_model=return_model)
+
+    with open(f"all_res.csv", "a") as f:
+        f.write(
+            f"{use_fuse},{use_model},{bs},{lr},{drop_out},{hidden_dim},{task_name},{fuse_base},{mol_emd},{protein_emd},{n_layers},{metric},{max_no_improve},{res}\n")
+    
     return res
 
 
@@ -162,14 +167,14 @@ if __name__ == '__main__':
     parser.add_argument("--bs", type=int, default=16)
     parser.add_argument("--lr", type=float, default=0.001)
     parser.add_argument("--drop_out", type=float, default=0.3)
-    parser.add_argument("--hidden_dim", type=int, default=64)
+    parser.add_argument("--hidden_dim", type=int, default=512)
     parser.add_argument("--task_name", type=str, default="BACE")
     parser.add_argument("--fusion_name", type=str,
                         default="data/pathbank/model/ProtBert-MolCLR-2-64-0.3-10-0.001-8192-0.0/")
     parser.add_argument("--m_model", type=str, default="ChemBERTa")
     parser.add_argument("--p_model", type=str, default="ProtBert")
-    parser.add_argument("--max_no_improve", type=int, default=15)
-    parser.add_argument("--n_layers", type=int, default=1)
+    parser.add_argument("--max_no_improve", type=int, default=5)
+    parser.add_argument("--n_layers", type=int, default=2)
     parser.add_argument("--metric", type=str, default="f1_max")
     args = parser.parse_args()
     torch.manual_seed(42)
