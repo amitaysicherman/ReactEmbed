@@ -47,7 +47,7 @@ def save_all_sequences(ids, output_file):
         f.write("\n".join(all_fasta))
 
 
-class Preprocess:
+class PreprocessManager:
     def __init__(self, p_model="esm3-medium", reactome=False):
         self.reactome = reactome
         self.add_transferrin = not reactome
@@ -135,4 +135,4 @@ if __name__ == "__main__":
         print(f"Processing {p_model}")
         for reactome in [True]:
             print(f"Reactome: {reactome}")
-            preprocess = Preprocess(p_model=p_model, reactome=reactome)
+            preprocess = PreprocessManager(p_model=p_model, reactome=reactome)
