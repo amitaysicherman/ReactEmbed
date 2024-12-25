@@ -125,7 +125,6 @@ def find_top_n_combinations(df, index, n_results=5, max_cols=3, min_samples=10, 
                     heappush(top_results, (-rank_ratio, sequence_num, result))
                 elif -rank_ratio > top_results[0][0]:  # Compare with negative values
                     heappushpop(top_results, (-rank_ratio, sequence_num, result))
-                    print([(-t[0], t[2]['columns']) for t in top_results])  # Print actual rank ratios
                 sequence_num += 1
     return top_results
 
