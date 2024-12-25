@@ -57,8 +57,8 @@ class Preprocess:
             self.vec_file = f"data/reactome/{p_model}_vectors.npy"
             self.go_file = f"transferrin/{p_model}/reactome_go.txt"
         else:
-            self.proteins_ids_file = "transferrin/human_enzyme_binding_proteins.txt"
-            self.proteins_seq_file = "transferrin/all_sequences.txt"
+            self.proteins_ids_file = ENZ_FILE
+            self.proteins_seq_file = ENZ_SEQ_FILE
             self.vec_file = f"transferrin/{p_model}/vecs.npy"
             self.go_file = f"transferrin/{p_model}/go_terms.csv"
         if not reactome:
