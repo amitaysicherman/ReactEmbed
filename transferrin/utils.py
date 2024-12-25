@@ -133,6 +133,6 @@ def find_top_n_combinations(df, index, n_results=5, max_cols=3, min_samples=10, 
 if __name__ == "__main__":
     for p_model in ["ProtBert", "esm3-small", "esm3-medium", "GearNet"]:
         print(f"Processing {p_model}")
-        for reactome in [True, False]:
+        for reactome in [True]:
             print(f"Reactome: {reactome}")
             preprocess = Preprocess(p_model=p_model, reactome=reactome)
