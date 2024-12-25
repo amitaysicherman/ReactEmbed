@@ -65,40 +65,42 @@ def save_reactome_go_ancestors():
     with open(GO_REACTOME_ANCESTORS, "w") as f:
         f.writelines(mapping_lines)
 
-
 def find_top_n_combinations(df, index, n_results=5, max_cols=3, min_samples=10, binary_cols=None):
     SELECTED_SCORE = float(df.iloc[index]["S"])
-
     if binary_cols is None:
         binary_cols = [col for col in df.columns if col != 'S']
-
     target_row = df.iloc[index]
     candidate_cols = [col for col in binary_cols if target_row[col] == 1]
+    relevant_cols = ['S'] + candidate_cols
+    filtered_df = df[relevant_cols]
+    data_array = filtered_df.values
+    scores = data_array[:, 0]  # First column is 'S'
+    binary_data = data_array[:, 1:]  # Rest are binary columns
+    col_to_idx = {col: idx for idx, col in enumerate(candidate_cols)}
     top_results = []
-
+    sequence_num = 0  # Add sequence number for stable comparison
     for length in range(1, max_cols + 1):
         for cols in combinations(candidate_cols, length):
-            filtered_df = df[df[list(cols)].eq(1).all(axis=1)]
-            filtered_size = len(filtered_df)
+            col_indices = [col_to_idx[col] for col in cols]
+            mask = np.all(binary_data[:, col_indices] == 1, axis=1)
+            filtered_size = np.sum(mask)
             if filtered_size >= min_samples:
-                new_rank = (filtered_df['S'] >= SELECTED_SCORE).sum() - 1
-                rank_ratio = new_rank / filtered_size
-
+                filtered_scores = scores[mask]
+                new_rank = np.sum(filtered_scores >= SELECTED_SCORE) - 1
+                rank_ratio = float(new_rank / filtered_size)
                 result = {
                     'rank_ratio': rank_ratio,
                     'columns': list(cols),
-                    'filtered_size': filtered_size,
-                    'new_rank': new_rank,
-                    'lower_rank_indices': filtered_df[filtered_df["S"] >= SELECTED_SCORE].index.tolist()
+                    'filtered_size': int(filtered_size),
+                    'new_rank': int(new_rank),
+                    'lower_rank_indices': np.where(mask & (scores >= SELECTED_SCORE))[0].tolist()
                 }
-
                 if len(top_results) < n_results:
-                    print(result)
-                    heappush(top_results, (rank_ratio, len(cols), result))
-                # If this result is better than our worst result
-                elif rank_ratio < top_results[0][0]:
-                    print(result)
-                    heappushpop(top_results, (rank_ratio, len(cols), result))
+                    heappush(top_results, (-rank_ratio, sequence_num, result))
+                elif -rank_ratio > top_results[0][0]:  # Compare with negative values
+                    heappushpop(top_results, (-rank_ratio, sequence_num, result))
+                    print([(-t[0], t[2]['columns']) for t in top_results])  # Print actual rank ratios
+                sequence_num += 1
     return top_results
 
 def save_human_enzyme_binding_proteins():
