@@ -154,7 +154,7 @@ def main(use_fuse, use_model, bs, lr, drop_out, hidden_dim, task_name, fuse_base
     with open(f"all_res.csv", "a") as f:
         f.write(
             f"{use_fuse},{use_model},{bs},{lr},{drop_out},{hidden_dim},{task_name},{fuse_base},{mol_emd},{protein_emd},{n_layers},{metric},{max_no_improve},{res}\n")
-    
+
     return res
 
 

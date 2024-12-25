@@ -67,3 +67,10 @@ name_to_task = {
     "Davis": Task("Davis", PairsFuseModel, nn.BCEWithLogitsLoss, DataType.PROTEIN, 1, DataType.MOLECULE,
                   PrepType.drugtarget),
 }
+
+
+def task_to_metric(task, set=0):
+    if task.criterion == nn.BCEWithLogitsLoss:
+        return ['f1_max', "auprc"][set]
+    else:
+        return ['r2', "mse"][set]
