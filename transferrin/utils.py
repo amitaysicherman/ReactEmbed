@@ -1,6 +1,7 @@
 import os
 from concurrent.futures import ProcessPoolExecutor
 from functools import lru_cache
+from heapq import heappush, heappushpop
 from itertools import combinations
 
 import numpy as np
@@ -65,59 +66,40 @@ def save_reactome_go_ancestors():
         f.writelines(mapping_lines)
 
 
-def find_optimal_filter_columns(df, index=0, min_samples=500, binary_cols=None, n=3):
-    SELECTED_R = float(df.iloc[index]["R"])
+def find_top_n_combinations(df, index, n_results=5, max_cols=3, min_samples=10, binary_cols=None):
+    SELECTED_SCORE = float(df.iloc[index]["S"])
+
     if binary_cols is None:
-        binary_cols = [col for col in df.columns if col != 'R']
+        binary_cols = [col for col in df.columns if col != 'S']
 
     target_row = df.iloc[index]
-
-    # Only consider columns where target row has value 1
     candidate_cols = [col for col in binary_cols if target_row[col] == 1]
+    top_results = []
 
-    best_rank_ratio = float('inf')  # We want to minimize this
-    best_columns = []
-    best_filtered_size = 0
-    best_new_rank = 0
-
-    # Try all possible combinations of columns
-    for length in range(n):
+    for length in range(1, max_cols + 1):
         for cols in combinations(candidate_cols, length):
-            # Create filter mask - all selected columns must be 1
-            mask = pd.Series(True, index=df.index)
-            for col in cols:
-                mask &= (df[col] == 1)
-
-            filtered_df = df[mask]
+            filtered_df = df[df[list(cols)].eq(1).all(axis=1)]
             filtered_size = len(filtered_df)
-
-            # Check if we meet minimum samples requirement
             if filtered_size >= min_samples:
-                # Calculate new rank (0-based) in filtered dataset
-                new_rank = (filtered_df['R'] >= SELECTED_R).sum() - 1
-
-                # Calculate rank ratio (lower is better)
+                new_rank = (filtered_df['S'] >= SELECTED_SCORE).sum() - 1
                 rank_ratio = new_rank / filtered_size
-                # Update best result if this is better
-                if rank_ratio < best_rank_ratio:
-                    best_rank_ratio = rank_ratio
-                    best_columns = list(cols)
-                    best_filtered_size = filtered_size
-                    best_new_rank = new_rank
-                    print(f"New best: {best_rank_ratio} with {best_columns} , {best_filtered_size}, {best_new_rank}")
-                    print(filtered_df[filtered_df["R"] < SELECTED_R].index)
 
-                # If rank ratios are equal, prefer fewer columns
-                elif rank_ratio == best_rank_ratio and len(cols) < len(best_columns):
-                    best_columns = list(cols)
-                    best_filtered_size = filtered_size
-                    best_new_rank = new_rank
-                    print(f"New best: {best_rank_ratio} with {best_columns} , {best_filtered_size}, {best_new_rank}")
-                    # print the index of the protein with lower rank then the selected protein
-                    print(filtered_df[filtered_df["R"] < SELECTED_R].index)
+                result = {
+                    'rank_ratio': rank_ratio,
+                    'columns': list(cols),
+                    'filtered_size': filtered_size,
+                    'new_rank': new_rank,
+                    'lower_rank_indices': filtered_df[filtered_df["S"] >= SELECTED_SCORE].index.tolist()
+                }
 
-    return best_columns, best_new_rank, best_filtered_size
-
+                if len(top_results) < n_results:
+                    print(result)
+                    heappush(top_results, (rank_ratio, len(cols), result))
+                # If this result is better than our worst result
+                elif rank_ratio < top_results[0][0]:
+                    print(result)
+                    heappushpop(top_results, (rank_ratio, len(cols), result))
+    return top_results
 
 def save_human_enzyme_binding_proteins():
     url = f"https://rest.uniprot.org/uniprotkb/stream?fields=accession&format=tsv&query=%28%2A%29%20AND%20%28organism_id%3A9606%29%20AND%20%28go%3A0019899%29"
