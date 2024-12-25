@@ -37,11 +37,6 @@ config=${config_array[$((SLURM_ARRAY_TASK_ID - 1))]}
 
 eval "$(conda shell.bash hook)"
 
-if [[ $cmd == *"esm"* ]]; then
-    conda activate ReactEmbedESM
-else
-    conda activate ReactEmbedTorchDrug
-fi
-echo $cmd
+conda activate ReactEmbedTorchDrug
 export PYTHONPATH=$PYTHONPATH:$(pwd)
 python contrastive_learning/trainer.py $config
