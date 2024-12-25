@@ -7,7 +7,7 @@
 configs="--metric f1_max |\
   --metric auprc |\
   --metric acc |\
-  --metric f1_max"
+  --metric auc"
 
 
 models="--p_model ProtBert --m_model ChemBERTa --fusion_name data/reactome/model/ProtBert-ChemBERTa-1-256-0.3-1-5e-05-256-0.0/  |\
