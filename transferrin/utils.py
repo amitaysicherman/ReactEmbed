@@ -56,12 +56,12 @@ class PreprocessManager:
             self.proteins_ids_file = "data/reactome/proteins.txt"
             self.proteins_seq_file = None
             self.vec_file = f"data/reactome/{p_model}_vectors.npy"
-            self.go_file = f"transferrin/{p_model}/reactome_go.txt"
+            self.go_file = "transferrin/reactome_go.txt"
         else:
             self.proteins_ids_file = ENZ_FILE
             self.proteins_seq_file = ENZ_SEQ_FILE
             self.vec_file = f"transferrin/{p_model}/vecs.npy"
-            self.go_file = f"transferrin/{p_model}/go_terms.csv"
+            self.go_file = f"transferrin/go_terms.csv"
         if not reactome:
             if not os.path.exists(self.proteins_ids_file):
                 save_human_enzyme_binding_proteins(self.proteins_ids_file)
