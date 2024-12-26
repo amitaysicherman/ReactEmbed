@@ -47,13 +47,13 @@ def main(p_model="esm3-medium", m_model="ChemBERTa",
 if __name__ == '__main__':
     import argparse
 
-    print_full_res = False
     parser = argparse.ArgumentParser()
     parser.add_argument("--p_model", type=str, default="esm3-medium")
     parser.add_argument("--m_model", type=str, default="ChemBERTa")
     parser.add_argument("--fusion_name", type=str,
                         default="data/reactome/model/esm3-medium-ChemBERTa-1-256-0.3-1-5e-05-256-0.0/")
     parser.add_argument("--metric", type=str, default="f1_max")
+    parser.add_argument("--print_full_res", action="store_true")
     args = parser.parse_args()
     torch.manual_seed(42)
     main(args.p_model, args.m_model, args.fusion_name, args.metric, print_full_res)
