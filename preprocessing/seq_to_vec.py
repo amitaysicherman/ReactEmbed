@@ -263,7 +263,7 @@ def fill_none_with_zeros(vecs):
     return vecs
 
 
-def main(model, data_name):
+def main(model, data_name, start_index=-1, end_index=-1):
     if "esm3" in model:
         from esm.models.esmc import ESMC
         from esm.sdk.api import ESMProtein, LogitsConfig
@@ -271,13 +271,20 @@ def main(model, data_name):
     molecules_file = f'data/{data_name}/molecules.txt'
     data_types = model_to_type(model)
     seq_to_vec = SeqToVec(model)
+
     if data_types == "protein":
         file = proteins_file.replace(".txt", "_sequences.txt")
     else:
         file = molecules_file.replace(".txt", "_sequences.txt")
     with open(file, "r") as f:
         lines = f.readlines()
-    output_file = f"data/{data_name}/{model}_vectors.npy"
+
+    if start_index != -1 and end_index != -1:
+        end_index = min(end_index, len(lines))
+        lines = lines[start_index:end_index]
+        output_file = f"data/{data_name}/{model}_vectors_{start_index}_{end_index}.npy"
+    else:
+        output_file = f"data/{data_name}/{model}_vectors.npy"
     if os.path.exists(output_file):
         print(f"{output_file} already exists")
         return None
@@ -293,5 +300,8 @@ if __name__ == "__main__":
                         choices=["ProtBert", "ChemBERTa", "MoLFormer", "esm3-small", "esm3-medium", "GearNet",
                                  "MolCLR"])
     parser.add_argument('--data_name', type=str, help='Data name', default="reactome")
+    parser.add_argument('--start_index', type=int, default=-1)
+    parser.add_argument('--end_index', type=int, default=-1)
+
     args = parser.parse_args()
-    main(args.model, args.data_name)
+    main(args.model, args.data_name, args.start_index, args.end_index)
