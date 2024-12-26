@@ -361,6 +361,6 @@ if __name__ == "__main__":
                         choices=["ProtBert", "ChemBERTa", "MoLFormer", "esm3-small", "esm3-medium", "GearNet",
                                  "MolCLR"])
     parser.add_argument('--data_name', type=str, help='Data name', default="reactome")
-    parser.add_argument('--num_chunks', type=int, help='Number of chunks to split the data into', default=10)
+    parser.add_argument('--num_chunks', type=int, help='Number of chunks to split the data into', default=25)
     args = parser.parse_args()
     main(args.model, args.data_name, args.num_chunks)

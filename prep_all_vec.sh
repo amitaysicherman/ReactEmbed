@@ -128,6 +128,13 @@ python eval_tasks/prep_tasks_vecs.py --task Davis --p_model GearNet --m_model Ch
 
 IFS='|' read -r -a array <<< "$commands"
 cmd=${array[$((SLURM_ARRAY_TASK_ID - 1))]}
+
+# if cmd not contains GearNet : stop the script
+if [[ $cmd != *"GearNet"* ]]; then
+    exit 1
+fi
+
+
 # if esm in cmd active cond env ReactEmbedESM else ReactEmbedTorchDrug
 eval "$(conda shell.bash hook)"
 
