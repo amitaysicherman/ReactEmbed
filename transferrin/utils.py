@@ -127,7 +127,17 @@ def find_top_n_combinations(df, index, n_results=5, max_cols=3, min_samples=10, 
                 elif -rank_ratio > top_results[0][0]:  # Compare with negative values
                     heappushpop(top_results, (-rank_ratio, sequence_num, result))
                 sequence_num += 1
-    return top_results
+    # format results
+    top_results = [result for _, _, result in sorted(top_results)]
+    go_names = []
+    for result in top_results:
+        go_names.append([get_go_description(go_id) for go_id in result['columns']])
+    final_res = []
+    for res, go_name in zip(top_results, go_names):
+        res['go_names'] = go_name
+        final_res.append(res)
+
+    return final_res
 
 
 def get_go_description(go_id):
