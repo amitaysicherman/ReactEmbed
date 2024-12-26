@@ -37,7 +37,7 @@ python preprocessing/seq_to_vec.py --model GearNet --data_name reactome --start_
 python preprocessing/seq_to_vec.py --model GearNet --data_name reactome --start_index 8000 --end_index 8500|\
 python preprocessing/seq_to_vec.py --model GearNet --data_name reactome --start_index 8500 --end_index 9000|\
 python preprocessing/seq_to_vec.py --model GearNet --data_name reactome --start_index 9000 --end_index 9500|\
-python preprocessing/seq_to_vec.py --model GearNet --data_name reactome --start_index 9500 --end_index 10000|\
+python preprocessing/seq_to_vec.py --model GearNet --data_name reactome --start_index 9500 --end_index 10000"
 
 
 
