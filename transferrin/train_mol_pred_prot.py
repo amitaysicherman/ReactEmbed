@@ -56,4 +56,4 @@ if __name__ == '__main__':
     parser.add_argument("--print_full_res", action="store_true")
     args = parser.parse_args()
     torch.manual_seed(42)
-    main(args.p_model, args.m_model, args.fusion_name, args.metric, print_full_res)
+    main(args.p_model, args.m_model, args.fusion_name, args.metric, args.print_full_res)
