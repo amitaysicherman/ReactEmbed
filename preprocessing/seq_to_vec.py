@@ -19,28 +19,6 @@ name_to_hf_cp = {
 }
 
 
-def model_to_type(model_name):
-    if model_name in ["ChemBERTa", "MoLFormer", "MolCLR"]:
-        return "molecule"
-    elif model_name in ["ProtBert", "esm3-small", "esm3-medium", "GearNet"]:
-        return "protein"
-    else:
-        raise ValueError(f"Unknown model: {model_name}")
-
-
-def fill_none_with_zeros(vecs):
-    first_non_none = None
-    for i, vec in enumerate(vecs):
-        if vec is not None:
-            first_non_none = vec
-            break
-    zeroes = np.zeros_like(first_non_none)
-    for i, vec in enumerate(vecs):
-        if vec is None:
-            vecs[i] = zeroes
-    return vecs
-
-
 class MolCLREmbedder:
     def __init__(self, cp_file="data/models/MolCLR/model.pth"):
         if not os.path.exists(cp_file):
@@ -113,6 +91,7 @@ class GearNet3Embedder:
         mol = Chem.MolFromPDBBlock(pdb_content, sanitize=False)
         if mol is None:
             return None
+        protein = self.data.Protein.from_molecule(mol)
         try:
             protein = self.data.Protein.from_molecule(mol)
         except Exception as e:
@@ -248,109 +227,62 @@ class SeqToVec:
         self.mem[seq] = vec
         return vec
 
-    def process_chunk(self, lines, chunk_id, output_dir):
-        """Process a chunk of sequences and save the results."""
-        chunk_output_file = os.path.join(output_dir, f'chunk_{chunk_id}.npy')
-
-        # Skip if chunk already exists
-        if os.path.exists(chunk_output_file):
-            print(f"Chunk {chunk_id} already exists, skipping...")
-            return
-
-        chunk_vecs = []
-        for line in tqdm(lines, desc=f'Processing chunk {chunk_id}'):
+    def lines_to_vecs(self, lines):
+        all_vecs = []
+        for line in tqdm(lines):
             if len(line.strip()) == 0:
-                chunk_vecs.append(None)
+                all_vecs.append(None)
                 continue
             seq = line.strip()
             vec = self.to_vec(seq)
-            chunk_vecs.append(vec)
-
-        chunk_vecs = fill_none_with_zeros(chunk_vecs)
-        chunk_vecs = np.array(chunk_vecs)
-
-        # Save chunk
-        np.save(chunk_output_file, chunk_vecs)
-        return chunk_vecs.shape
-
-    def lines_to_vecs(self, lines, num_chunks, output_dir):
-        """Process all sequences in chunks."""
-        os.makedirs(output_dir, exist_ok=True)
-
-        # Split lines into chunks
-        chunk_size = len(lines) // num_chunks + (1 if len(lines) % num_chunks else 0)
-        chunks = [lines[i:i + chunk_size] for i in range(0, len(lines), chunk_size)]
-
-        shapes = []
-        for i, chunk in enumerate(chunks):
-            shape = self.process_chunk(chunk, i, output_dir)
-            if shape is not None:
-                shapes.append(shape)
-
-        return shapes
+            all_vecs.append(vec)
+        all_vecs = fill_none_with_zeros(all_vecs)
+        all_vecs = np.array(all_vecs)
+        return all_vecs
 
 
-def combine_chunks(output_dir, final_output_file):
-    """Combine all chunks into a single file."""
-    # Get all chunk files
-    chunk_files = sorted([f for f in os.listdir(output_dir) if f.startswith('chunk_') and f.endswith('.npy')])
-
-    if not chunk_files:
-        raise ValueError("No chunks found to combine")
-
-    # Load and combine chunks
-    combined_vecs = []
-    for chunk_file in tqdm(chunk_files, desc="Combining chunks"):
-        chunk_path = os.path.join(output_dir, chunk_file)
-        chunk_data = np.load(chunk_path)
-        combined_vecs.append(chunk_data)
-
-    # Concatenate all chunks
-    final_vecs = np.concatenate(combined_vecs, axis=0)
-
-    # Save final result
-    np.save(final_output_file, final_vecs)
-    print(f"Saved combined vectors to {final_output_file}")
-
-    # Optionally cleanup chunk files
-    for chunk_file in chunk_files:
-        os.remove(os.path.join(output_dir, chunk_file))
+def model_to_type(model_name):
+    if model_name in ["ChemBERTa", "MoLFormer", "MolCLR"]:
+        return "molecule"
+    elif model_name in ["ProtBert", "esm3-small", "esm3-medium", "GearNet"]:
+        return "protein"
+    else:
+        raise ValueError(f"Unknown model: {model_name}")
 
 
-def main(model, data_name, num_chunks=10):
+def fill_none_with_zeros(vecs):
+    first_non_none = None
+    for i, vec in enumerate(vecs):
+        if vec is not None:
+            first_non_none = vec
+            break
+    zeroes = np.zeros_like(first_non_none)
+    for i, vec in enumerate(vecs):
+        if vec is None:
+            vecs[i] = zeroes
+    return vecs
+
+
+def main(model, data_name):
     if "esm3" in model:
         from esm.models.esmc import ESMC
         from esm.sdk.api import ESMProtein, LogitsConfig
-
     proteins_file = f'data/{data_name}/proteins.txt'
     molecules_file = f'data/{data_name}/molecules.txt'
     data_types = model_to_type(model)
     seq_to_vec = SeqToVec(model)
-
-    # Determine input file
     if data_types == "protein":
         file = proteins_file.replace(".txt", "_sequences.txt")
     else:
         file = molecules_file.replace(".txt", "_sequences.txt")
-
-    # Setup output directories
-    output_dir = f"data/{data_name}/chunks_{model}"
-    final_output_file = f"data/{data_name}/{model}_vectors.npy"
-
-    # Skip if final output already exists
-    if os.path.exists(final_output_file):
-        print(f"{final_output_file} already exists")
-        return
-
-    # Process data in chunks
     with open(file, "r") as f:
         lines = f.readlines()
-
-    # Process chunks
-    shapes = seq_to_vec.lines_to_vecs(lines, num_chunks, output_dir)
-
-    # Combine chunks into final output
-    combine_chunks(output_dir, final_output_file)
+    output_file = f"data/{data_name}/{model}_vectors.npy"
+    if os.path.exists(output_file):
+        print(f"{output_file} already exists")
+        return None
+    all_vecs = seq_to_vec.lines_to_vecs(lines)
+    np.save(output_file, all_vecs)
 
 
 if __name__ == "__main__":
@@ -361,6 +293,5 @@ if __name__ == "__main__":
                         choices=["ProtBert", "ChemBERTa", "MoLFormer", "esm3-small", "esm3-medium", "GearNet",
                                  "MolCLR"])
     parser.add_argument('--data_name', type=str, help='Data name', default="reactome")
-    parser.add_argument('--num_chunks', type=int, help='Number of chunks to split the data into', default=25)
     args = parser.parse_args()
-    main(args.model, args.data_name, args.num_chunks)
+    main(args.model, args.data_name)
