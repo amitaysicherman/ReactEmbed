@@ -136,6 +136,7 @@ def find_top_n_combinations(df, index, n_results=5, max_cols=3, min_samples=10, 
     for res, go_name in zip(top_results, go_names):
         res['go_names'] = go_name
         final_res.append(res)
+        res['lower_rank_indices'] = [df.index[int(i)] for i in res['lower_rank_indices']]
 
     return final_res
 
