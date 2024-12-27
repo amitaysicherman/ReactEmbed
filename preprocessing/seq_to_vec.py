@@ -91,7 +91,6 @@ class GearNet3Embedder:
         mol = Chem.MolFromPDBBlock(pdb_content, sanitize=False)
         if mol is None:
             return None
-        protein = self.data.Protein.from_molecule(mol)
         try:
             protein = self.data.Protein.from_molecule(mol)
         except Exception as e:
@@ -105,7 +104,7 @@ class GearNet3Embedder:
         protein = protein["graph"]
         protein = self.data.Protein.pack([protein])
         protein = self.graph_construction_model(protein)
-        output = self.gearnet_model(protein.cuda(), protein.node_feature.float().cuda())
+        output = self.gearnet_model(protein.to(device), protein.node_feature.float().to(device))
         output = output['node_feature'].mean(dim=0)
         return output.detach().cpu().numpy().flatten()
 
