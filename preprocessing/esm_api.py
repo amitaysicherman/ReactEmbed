@@ -22,8 +22,9 @@ class ESM3FEmbedding:
                 logits_output = self.emb_model.logits(
                     protein_tensor, LogitsConfig(sequence=True, return_embeddings=True)
                 )
-                embeddings = logits_output.embeddings[0].numpy().flatten()
+                embeddings = logits_output.embeddings
                 if embeddings is not None:
+                    embeddings = embeddings[0].numpy().mean(axis=0)
                     return embeddings
             except Exception as e:
                 pass
