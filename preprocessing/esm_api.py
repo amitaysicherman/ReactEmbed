@@ -3,6 +3,7 @@ import os
 import numpy as np
 from esm.sdk.api import ESMProtein, LogitsConfig
 from esm.sdk.forge import ESM3ForgeInferenceClient
+from tqdm import tqdm
 
 
 class ESM3FEmbedding:
@@ -43,7 +44,6 @@ class ESM3FEmbedding:
 
 if __name__ == "__main__":
     import argparse
-    from tqdm import tqdm
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--token", type=str, required=True)
