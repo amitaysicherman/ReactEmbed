@@ -64,7 +64,7 @@ def main(data_name, start_index, end_index):
     file = proteins_file.replace(".txt", "_sequences.txt")
     with open(file, "r") as f:
         lines = f.readlines()
-    if start_index != -1 and end_index != -1:
+    if start_index != 0 and end_index != -1:
         end_index = min(end_index, len(lines))
         lines = lines[start_index:end_index]
     output_dir = f"data/{data_name}/fold/"
@@ -77,7 +77,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='Convert sequence to vector')
     parser.add_argument('--data_name', type=str, help='Data name', default="reactome")
-    parser.add_argument('--start_index', type=int, default=-1)
+    parser.add_argument('--start_index', type=int, default=0)
     parser.add_argument('--end_index', type=int, default=-1)
 
     args = parser.parse_args()
