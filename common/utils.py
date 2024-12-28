@@ -1,8 +1,5 @@
 from enum import Enum
 
-from transformers.models.esm.openfold_utils import atom14_to_atom37, to_pdb
-from transformers.models.esm.openfold_utils.protein import Protein as OFProtein
-
 
 def model_args_to_name(**kwargs):
     names_to_check = ["batch_size", "p_model", "m_model", "n_layers", "hidden_dim", "dropout", "epochs",
@@ -45,27 +42,6 @@ def name_to_model_args(name):
             "epochs": epochs, "lr": lr, "batch_size": batch_size, "flip_prob": flip_prob}
 
 
-def fold_to_pdb(outputs):
-    final_atom_positions = atom14_to_atom37(outputs["positions"][-1], outputs)
-    outputs = {k: v.to("cpu").numpy() for k, v in outputs.items()}
-    final_atom_positions = final_atom_positions.cpu().numpy()
-    final_atom_mask = outputs["atom37_atom_exists"]
-    pdbs = []
-    for i in range(outputs["aatype"].shape[0]):
-        aa = outputs["aatype"][i]
-        pred_pos = final_atom_positions[i]
-        mask = final_atom_mask[i]
-        resid = outputs["residue_index"][i] + 1
-        pred = OFProtein(
-            aatype=aa,
-            atom_positions=pred_pos,
-            atom_mask=mask,
-            residue_index=resid,
-            b_factors=outputs["plddt"][i],
-            chain_index=outputs["chain_index"][i] if "chain_index" in outputs else None,
-        )
-        pdbs.append(to_pdb(pred))
-    return pdbs
 
 
 class Config(Enum):
