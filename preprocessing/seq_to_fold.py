@@ -1,6 +1,7 @@
 import os
 
 import torch
+from tqdm import tqdm
 from transformers import AutoTokenizer, EsmForProteinFolding
 from transformers.models.esm.openfold_utils import atom14_to_atom37, to_pdb
 from transformers.models.esm.openfold_utils.protein import Protein as OFProtein
@@ -52,7 +53,7 @@ class ESMFold:
             output_io.write(pdbs[0])
 
     def fold_save_lines(self, lines, output_dir, start_index=0):
-        for i, line in enumerate(lines):
+        for i, line in tqdm(enumerate(lines)):
             output_file = os.path.join(output_dir, f"{start_index + i}.pdb")
             self.fold_seq(line, output_file)
 
