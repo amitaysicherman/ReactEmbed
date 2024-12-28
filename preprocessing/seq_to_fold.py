@@ -38,8 +38,8 @@ class ESMFold:
         from torchdrug import data, transforms
         self.data = data
         self.transforms = transforms
-        self.fold_tokenizer = AutoTokenizer.from_pretrained("facebook/esmfold_v1")
-        self.fold_model = EsmForProteinFolding.from_pretrained("facebook/esmfold_v1")
+        self.fold_tokenizer = AutoTokenizer.from_pretrained("facebook/esmfold_v1").to(device)
+        self.fold_model = EsmForProteinFolding.from_pretrained("facebook/esmfold_v1").to(device).eval()
 
     def fold_seq(self, seq: str, output_file):
         if len(seq) > 550:
