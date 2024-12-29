@@ -17,7 +17,7 @@ def main(p_model="esm3-medium", m_model="ChemBERTa",
                                      task_name="BBBP", fuse_base=fuse_base, mol_emd=m_model, protein_emd=p_model,
                                      n_layers=2, metric=metric, max_no_improve=5, return_model=True)
     vecs = preprocess.get_vecs()
-    proteins = torch.tensor(vecs).to(device)
+    proteins = torch.tensor(vecs).to(device).float()
     fuse_model: ReactEmbedModel = model.fuse_model
     fuse_model.eval()
     x = fuse_model.dual_forward(proteins, "P")
