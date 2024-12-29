@@ -19,6 +19,7 @@ model_to_dim = {
     "MoLFormer": 768,
     "MolCLR": 512,
     "GearNet": 3072,
+    "esm3-6b": 2560,
 }
 
 try:
