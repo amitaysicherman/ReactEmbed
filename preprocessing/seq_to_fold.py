@@ -35,9 +35,6 @@ def fold_to_pdb(outputs):
 class ESMFold:
     def __init__(self, ):
 
-        from torchdrug import data, transforms
-        self.data = data
-        self.transforms = transforms
         self.fold_tokenizer = AutoTokenizer.from_pretrained("facebook/esmfold_v1")
         self.fold_model = EsmForProteinFolding.from_pretrained("facebook/esmfold_v1").to(device).eval()
 
