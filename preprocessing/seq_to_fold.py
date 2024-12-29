@@ -37,18 +37,23 @@ class ESMFold:
 
         self.fold_tokenizer = AutoTokenizer.from_pretrained("facebook/esmfold_v1")
         self.fold_model = EsmForProteinFolding.from_pretrained("facebook/esmfold_v1").to(device).eval()
+        self.memory = dict()
 
     def fold_seq(self, seq: str, output_file):
         if len(seq) > 550:
             seq = seq[:550]
-        tokenized_input = self.fold_tokenizer([seq], return_tensors="pt", add_special_tokens=False)['input_ids']
-        tokenized_input = tokenized_input.to(device)
-        with torch.no_grad():
-            output = self.fold_model(tokenized_input)
-        pdbs = fold_to_pdb(output)
-        with open(output_file, "w") as output_io:
-            output_io.write(pdbs[0])
-
+        if seq in self.memory:
+            tokenized_input = self.fold_tokenizer([seq], return_tensors="pt", add_special_tokens=False)['input_ids']
+            tokenized_input = tokenized_input.to(device)
+            with torch.no_grad():
+                output = self.fold_model(tokenized_input)
+            pdbs = fold_to_pdb(output)
+            with open(output_file, "w") as output_io:
+                output_io.write(pdbs[0])
+            self.memory[seq] = output_file
+        else:
+            # copy the file from memory to output_file
+            os.system(f"cp {self.memory[seq]} {output_file}")
     def fold_save_lines(self, lines, output_dir, start_index=0):
         for i, line in tqdm(enumerate(lines)):
             output_file = os.path.join(output_dir, f"{start_index + i}.pdb")
