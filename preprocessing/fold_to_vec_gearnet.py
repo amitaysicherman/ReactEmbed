@@ -63,7 +63,7 @@ class GearNet3Embedder:
         return all_vecs
 
 
-def main(model, data_name, start_index=-1, end_index=-1):
+def main(data_name, start_index=-1, end_index=-1):
     GearNetEMB = GearNet3Embedder(f"data/{data_name}/fold")
     vecs = GearNetEMB.lines_to_vecs(start_index, end_index)
     np.save(f"data/{data_name}/GearNet_vectors.npy", vecs)
@@ -77,4 +77,4 @@ if __name__ == "__main__":
     parser.add_argument('--start_index', type=int, default=-1)
     parser.add_argument('--end_index', type=int, default=-1)
     args = parser.parse_args()
-    main(args.model, args.data_name, args.start_index, args.end_index)
+    main(args.data_name, args.start_index, args.end_index)
