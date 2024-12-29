@@ -7,7 +7,7 @@ from rdkit import Chem
 from tqdm import tqdm
 from transformers import AutoTokenizer, EsmForProteinFolding
 
-from common.utils import fold_to_pdb
+from preprocessing.seq_to_fold import fold_to_pdb
 
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
