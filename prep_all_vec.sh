@@ -150,7 +150,7 @@ eval "$(conda shell.bash hook)"
 if [[ $cmd == *"esm"* ]]; then
     conda activate ReactEmbedESM
 else
-    conda activate ReactEmbedTorchDrug
+    conda activate retd
 fi
 echo $cmd
 export PYTHONPATH=$PYTHONPATH:$(pwd)
