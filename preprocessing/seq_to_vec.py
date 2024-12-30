@@ -8,8 +8,12 @@ from rdkit import Chem
 from tqdm import tqdm
 from transformers import AutoModel, BertModel, BertTokenizer
 from transformers import AutoTokenizer, EsmForProteinFolding
+from transformers.models.esm.openfold_utils import atom14_to_atom37, to_pdb
+from transformers.models.esm.openfold_utils.protein import Protein as OFProtein
 
-from preprocessing.seq_to_fold import fold_to_pdb
+device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+
+
 
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 name_to_hf_cp = {
@@ -42,6 +46,27 @@ class MolCLREmbedder:
         return emb.detach().cpu().numpy().flatten()
 
 
+def fold_to_pdb(outputs):
+    final_atom_positions = atom14_to_atom37(outputs["positions"][-1], outputs)
+    outputs = {k: v.to("cpu").numpy() for k, v in outputs.items()}
+    final_atom_positions = final_atom_positions.cpu().numpy()
+    final_atom_mask = outputs["atom37_atom_exists"]
+    pdbs = []
+    for i in range(outputs["aatype"].shape[0]):
+        aa = outputs["aatype"][i]
+        pred_pos = final_atom_positions[i]
+        mask = final_atom_mask[i]
+        resid = outputs["residue_index"][i] + 1
+        pred = OFProtein(
+            aatype=aa,
+            atom_positions=pred_pos,
+            atom_mask=mask,
+            residue_index=resid,
+            b_factors=outputs["plddt"][i],
+            chain_index=outputs["chain_index"][i] if "chain_index" in outputs else None,
+        )
+        pdbs.append(to_pdb(pred))
+    return pdbs
 class GearNet3Embedder:
     def __init__(self, gearnet_cp_file="data/models/gearnet/mc_gearnet_edge.pth"):
 
@@ -262,7 +287,7 @@ def fill_none_with_zeros(vecs):
     return vecs
 
 
-def main(model, data_name, start_index=-1, end_index=-1):
+def main(model, data_name):
     if "esm3" in model:
         from esm.models.esmc import ESMC
         from esm.sdk.api import ESMProtein, LogitsConfig
@@ -278,12 +303,7 @@ def main(model, data_name, start_index=-1, end_index=-1):
     with open(file, "r") as f:
         lines = f.readlines()
 
-    if start_index != -1 and end_index != -1:
-        end_index = min(end_index, len(lines))
-        lines = lines[start_index:end_index]
-        output_file = f"data/{data_name}/{model}_vectors_{start_index}_{end_index}.npy"
-    else:
-        output_file = f"data/{data_name}/{model}_vectors.npy"
+    output_file = f"data/{data_name}/{model}_vectors.npy"
     if os.path.exists(output_file):
         print(f"{output_file} already exists")
         return None
@@ -299,8 +319,5 @@ if __name__ == "__main__":
                         choices=["ProtBert", "ChemBERTa", "MoLFormer", "esm3-small", "esm3-medium", "GearNet",
                                  "MolCLR"])
     parser.add_argument('--data_name', type=str, help='Data name', default="reactome")
-    parser.add_argument('--start_index', type=int, default=-1)
-    parser.add_argument('--end_index', type=int, default=-1)
-
     args = parser.parse_args()
-    main(args.model, args.data_name, args.start_index, args.end_index)
+    main(args.model, args.data_name)
