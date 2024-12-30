@@ -38,7 +38,7 @@ def main(p_model="esm3-medium", m_model="ChemBERTa",
         save_dir = f"transferrin/models"
         if not os.path.exists(save_dir):
             os.makedirs(save_dir)
-        torch.save(model.state_dict(), f"{save_dir}/{p_model}_{m_model}_{fuse_base}_{metric}.pt")
+        torch.save(model.state_dict(), f"{save_dir}/{p_model}_{m_model}_{metric}.pt")
 
     if not print_full_res:
         return
