@@ -1,7 +1,6 @@
 #!/bin/bash
 #SBATCH --mem=64G
 #SBATCH --requeue
-#SBATCH --gres=gpu:1
 #SBATCH --array=1-135
 
 configs="--task_name BACE --metric f1_max --use_fuse 0 --use_model 1|\
