@@ -33,6 +33,13 @@ def main(p_model="esm3-medium", m_model="ChemBERTa",
     with open("transferrin/results.csv", "a") as f:
         f.write(
             f"{p_model},{m_model},{fuse_base},{metric},{transferrin_score},{higher_score_count}\n")
+    if save_models:
+        import os
+        save_dir = f"transferrin/models"
+        if not os.path.exists(save_dir):
+            os.makedirs(save_dir)
+        torch.save(model.state_dict(), f"{save_dir}/{p_model}_{m_model}_{fuse_base}_{metric}.pt")
+
     if not print_full_res:
         return
 
@@ -43,12 +50,6 @@ def main(p_model="esm3-medium", m_model="ChemBERTa",
     print("Transferrin results Double")
     print(double_res)
 
-    if save_models:
-        import os
-        save_dir = f"transferrin/models"
-        if not os.path.exists(save_dir):
-            os.makedirs(save_dir)
-        torch.save(model.state_dict(), f"{save_dir}/{p_model}_{m_model}_{fuse_base}_{metric}.pt")
 
 
 if __name__ == '__main__':
