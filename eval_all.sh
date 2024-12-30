@@ -167,5 +167,11 @@ conda activate ReactEmbedTorchDrug
 export PYTHONPATH=$PYTHONPATH:$(pwd)
 for model in "${models_array[@]}"
 do
-    python eval_tasks/trainer.py $config $model
+    model01=$(echo $model | sed 's/0.0/0.1/g')
+    python eval_tasks/trainer.py $config $model01
+    model05=$(echo $model | sed 's/0.0/0.1/g')
+    python eval_tasks/trainer.py $config $model05
+    modelpb=$(echo $model | sed 's/reactome/pathbank/g')
+    python eval_tasks/trainer.py $config $modelpb
+
 done
