@@ -3,7 +3,7 @@
 #SBATCH --mem=64G
 #SBATCH --requeue
 #SBATCH --gres=gpu:L40:1
-#SBATCH --array=1-85
+#SBATCH --array=1-9
 
 # Define molecule and protein models
 #molecule_models=("ChemBERTa" "MoLFormer" "MolCLR")
