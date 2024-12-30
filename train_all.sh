@@ -37,7 +37,7 @@ config=${config_array[$((SLURM_ARRAY_TASK_ID - 1))]}
 
 eval "$(conda shell.bash hook)"
 
-conda activate ReactEmbedTorchDrug
+conda activate ReactEmbedESM
 export PYTHONPATH=$PYTHONPATH:$(pwd)
 python contrastive_learning/trainer.py $config --data_name "pathbank"
 python contrastive_learning/trainer.py $config --flip_prob 0.1
