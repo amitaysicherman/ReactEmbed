@@ -39,4 +39,6 @@ eval "$(conda shell.bash hook)"
 
 conda activate ReactEmbedTorchDrug
 export PYTHONPATH=$PYTHONPATH:$(pwd)
-python contrastive_learning/trainer.py $config
+python contrastive_learning/trainer.py $config --data_name "pathbank"
+python contrastive_learning/trainer.py $config --flip_prob 0.1
+python contrastive_learning/trainer.py $config --flip_prob 0.5
