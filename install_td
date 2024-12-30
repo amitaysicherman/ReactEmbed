@@ -1,0 +1,9 @@
+ conda create --name retd python=3.10
+ conda activate retd
+ conda install pytorch torchvision torchaudio pytorch-cuda=12.1 -c pytorch -c nvidia --force-reinstall
+ pip install torch-scatter torch-sparse torch-cluster -f https://data.pyg.org/whl/torch-2.4.1+cu121.html
+ pip install torchdrug
+ pip uninstall numpy
+ pip install numpy==1.24.3
+ conda install conda-forge::transformers
+ 
