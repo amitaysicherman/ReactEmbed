@@ -32,8 +32,10 @@ def main(p_model="esm3-medium", m_model="ChemBERTa",
     transferrin_score = go_matrix.iloc[transferrin_index]["S"]
     higher_score_count = (go_matrix["S"] > transferrin_score).sum()
     with open("transferrin/results.csv", "a") as f:
-        f.write(
-            f"{p_model},{m_model},{fuse_base},{metric},{n_layers},{hid_dim},{drop_out},{transferrin_score},{higher_score_count}\n")
+        txt = f"{p_model},{m_model},{fuse_base},{metric},{n_layers},{hid_dim},{drop_out},{transferrin_score},{higher_score_count}\n"
+        print(txt)
+        f.write(txt)
+
     if save_models:
         import os
         save_dir = f"transferrin/models"
