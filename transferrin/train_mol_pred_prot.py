@@ -76,5 +76,5 @@ if __name__ == '__main__':
         for m_model in ["ChemBERTa", "MoLFormer", "MolCLR"]:
             fuse_base = f"data/reactome/model/{p_model}-{m_model}-1-256-0.3-1-5e-05-256-0.0/"
             main(p_model, m_model, fuse_base, args.metric,
-                 1, args.hid_dim, 0,
+                 1, args.hid_dim, 0.2,
                  False, True)
