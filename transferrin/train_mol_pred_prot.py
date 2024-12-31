@@ -11,11 +11,12 @@ device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 def main(p_model="esm3-medium", m_model="ChemBERTa",
          fuse_base="data/reactome/model/esm3-medium-ChemBERTa-1-256-0.3-1-5e-05-256-0.0/", metric="f1_max",
-         print_full_res=False, save_models=False):
+         n_layers=2, hid_dim=512, drop_out=0.3, print_full_res=False, save_models=False):
     preprocess = PreprocessManager(p_model=p_model, reactome=True)
-    score, model = trainer_task_main(use_fuse=True, use_model=False, bs=16, lr=0.001, drop_out=0.3, hidden_dim=512,
+    score, model = trainer_task_main(use_fuse=True, use_model=False, bs=16, lr=0.001, drop_out=drop_out,
+                                     hidden_dim=hid_dim,
                                      task_name="BBBP", fuse_base=fuse_base, mol_emd=m_model, protein_emd=p_model,
-                                     n_layers=2, metric=metric, max_no_improve=5, return_model=True)
+                                     n_layers=n_layers, metric=metric, max_no_improve=5, return_model=True)
     vecs = preprocess.get_vecs()
     proteins = torch.tensor(vecs).to(device).float()
     fuse_model: ReactEmbedModel = model.fuse_model
@@ -51,7 +52,6 @@ def main(p_model="esm3-medium", m_model="ChemBERTa",
     print(double_res)
 
 
-
 if __name__ == '__main__':
     import argparse
 
@@ -63,6 +63,11 @@ if __name__ == '__main__':
     parser.add_argument("--metric", type=str, default="f1_max")
     parser.add_argument("--print_full_res", action="store_true")
     parser.add_argument("--save_models", action="store_true")
+    parser.add_argument("--n_layers", type=int, default=2)
+    parser.add_argument("--hid_dim", type=int, default=512)
+    parser.add_argument("--drop_out", type=float, default=0.3)
     args = parser.parse_args()
     torch.manual_seed(42)
-    main(args.p_model, args.m_model, args.fusion_name, args.metric, args.print_full_res, args.save_models)
+    main(args.p_model, args.m_model, args.fusion_name, args.metric,
+         args.n_layers, args.hid_dim, args.drop_out,
+         args.print_full_res, args.save_models)
