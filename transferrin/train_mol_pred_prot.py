@@ -69,6 +69,10 @@ if __name__ == '__main__':
     parser.add_argument("--drop_out", type=float, default=0.3)
     args = parser.parse_args()
     torch.manual_seed(42)
-    main(args.p_model, args.m_model, args.fusion_name, args.metric,
-         args.n_layers, args.hid_dim, args.drop_out,
-         args.print_full_res, args.save_models)
+
+    for p_model in ["ProtBert", "esm3-small", "esm3-medium", "GearNet"]:
+        for m_model in ["ChemBERTa", "MoLFormer", "MolCLR"]:
+            fuse_base = f"data/reactome/model/{p_model}-{m_model}-1-256-0.3-1-5e-05-256-0.0/"
+            main(p_model, m_model, fuse_base, args.metric,
+                 1, args.hid_dim, 0,
+                 False, True)
