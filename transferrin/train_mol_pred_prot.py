@@ -33,13 +33,14 @@ def main(p_model="esm3-medium", m_model="ChemBERTa",
     higher_score_count = (go_matrix["S"] > transferrin_score).sum()
     with open("transferrin/results.csv", "a") as f:
         f.write(
-            f"{p_model},{m_model},{fuse_base},{metric},{transferrin_score},{higher_score_count}\n")
+            f"{p_model},{m_model},{fuse_base},{metric},{n_layers},{hid_dim},{drop_out},{transferrin_score},{higher_score_count}\n")
     if save_models:
         import os
         save_dir = f"transferrin/models"
         if not os.path.exists(save_dir):
             os.makedirs(save_dir)
-        torch.save(model.state_dict(), f"{save_dir}/{p_model}_{m_model}_{metric}.pt")
+        file_name = f"{p_model}_{m_model}_{metric}_{n_layers}_{hid_dim}_{drop_out}"
+        torch.save(model.state_dict(), f"{save_dir}/{file_name}.pt")
 
     if not print_full_res:
         return
