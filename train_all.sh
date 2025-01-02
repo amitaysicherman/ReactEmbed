@@ -39,12 +39,12 @@ eval "$(conda shell.bash hook)"
 
 conda activate ReactEmbedESM
 export PYTHONPATH=$PYTHONPATH:$(pwd)
-python contrastive_learning/trainer.py $config --data_name "pathbank"
-python contrastive_learning/trainer.py $config --data_name "pathbank" --flip_prob 0.1
-python contrastive_learning/trainer.py $config --data_name "pathbank" --flip_prob 0.5
-python contrastive_learning/trainer.py $config
-python contrastive_learning/trainer.py $config --flip_prob 0.1
-python contrastive_learning/trainer.py $config --flip_prob 0.5
+#python contrastive_learning/trainer.py $config --data_name "pathbank"
+#python contrastive_learning/trainer.py $config --data_name "pathbank" --flip_prob 0.1
+#python contrastive_learning/trainer.py $config --data_name "pathbank" --flip_prob 0.5
+#python contrastive_learning/trainer.py $config
+#python contrastive_learning/trainer.py $config --flip_prob 0.1
+#python contrastive_learning/trainer.py $config --flip_prob 0.5
 python contrastive_learning/trainer.py $config --data_name "pathbank" --min_value 5
 python contrastive_learning/trainer.py $config --data_name "pathbank" --flip_prob 0.1 --min_value 5
 python contrastive_learning/trainer.py $config --data_name "pathbank" --flip_prob 0.5 --min_value 5
