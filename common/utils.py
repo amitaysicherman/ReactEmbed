@@ -19,8 +19,9 @@ def model_args_to_name(**kwargs):
     epochs = kwargs["epochs"]
     lr = kwargs["lr"]
     flip_prob = kwargs["flip_prob"]
+    min_value = kwargs.get("min_value", 1)
 
-    return f"{p_model}-{m_model}-{n_layers}-{hidden_dim}-{dropout}-{epochs}-{lr}-{batch_size}-{flip_prob}"
+    return f"{p_model}-{m_model}-{n_layers}-{hidden_dim}-{dropout}-{epochs}-{lr}-{batch_size}-{flip_prob}-{min_value}"
 
 
 def name_to_model_args(name):

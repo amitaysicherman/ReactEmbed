@@ -72,6 +72,7 @@ def main(data_name, batch_size, p_model, m_model, n_layers, hidden_dim, dropout,
          datasets=None, override=False):
     name = model_args_to_name(batch_size=batch_size, p_model=p_model, m_model=m_model, n_layers=n_layers,
                               hidden_dim=hidden_dim, dropout=dropout, epochs=epochs, lr=lr, flip_prob=flip_prob,
+                              min_value=min_value
                               )
     save_dir = f"data/{data_name}/model/{name}/"
     model_file = f"{save_dir}/model.pt"
