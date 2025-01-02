@@ -74,3 +74,4 @@ if __name__ == '__main__':
     torch.manual_seed(42)
     main(args.p_model, args.m_model, args.fusion_name, args.metric, args.n_layers, args.hid_dim, args.drop_out,
          args.print_full_res, args.save_models)
+

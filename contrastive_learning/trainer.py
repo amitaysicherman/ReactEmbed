@@ -68,11 +68,15 @@ def build_models(p_dim, m_dim, n_layers, hidden_dim, dropout, save_dir):
 
 
 def main(data_name, batch_size, p_model, m_model, n_layers, hidden_dim, dropout, epochs, lr, flip_prob=0,
-         datasets=None):
+         datasets=None, override=False):
     name = model_args_to_name(batch_size=batch_size, p_model=p_model, m_model=m_model, n_layers=n_layers,
-                              hidden_dim=hidden_dim, dropout=dropout, epochs=epochs, lr=lr, flip_prob=flip_prob)
-
+                              hidden_dim=hidden_dim, dropout=dropout, epochs=epochs, lr=lr, flip_prob=flip_prob,
+                              )
     save_dir = f"data/{data_name}/model/{name}/"
+    model_file = f"{save_dir}/model.pt"
+    if not override and os.path.exists(model_file):
+        print("Model already exists")
+        return
     os.makedirs(save_dir, exist_ok=True)
     if datasets is not None:
         train_loader, valid_loader, test_loader = datasets
@@ -121,6 +125,7 @@ if __name__ == '__main__':
     parser.add_argument('--lr', type=float, help='Learning rate', default=0.00005)
     parser.add_argument('--flip_prob', type=float, help='Flip Prob', default=0.0)
     parser.add_argument('--data_name', type=str, help='Data name', default="reactome")
+    parser.add_argument('--override', action='store_true', help='Override existing model')
     args = parser.parse_args()
 
     main(args.data_name, args.batch_size, args.p_model, args.m_model, args.n_layers,
