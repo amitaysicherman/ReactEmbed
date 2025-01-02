@@ -39,8 +39,9 @@ def name_to_model_args(name):
     lr = float(names[6])
     batch_size = int(names[7])
     flip_prob = float(names[8])
+    min_value = int(names[9])
     return {"p_model": p_model, "m_model": m_model, "n_layers": n_layers, "hidden_dim": hidden_dim, "dropout": dropout,
-            "epochs": epochs, "lr": lr, "batch_size": batch_size, "flip_prob": flip_prob}
+            "epochs": epochs, "lr": lr, "batch_size": batch_size, "flip_prob": flip_prob, "min_value": min_value}
 
 
 
