@@ -171,7 +171,6 @@ configs="--p_model ProtBert --m_model MolCLR --fusion_name data/pathbank/model/P
 --p_model esm3-medium --m_model MolCLR --fusion_name data/reactome/model/esm3-medium-MolCLR-1-256-0.3-1-5e-05-256-0.0-1 |\
 --p_model esm3-small --m_model ChemBERTa --fusion_name data/reactome/model/esm3-small-ChemBERTa-1-256-0.3-1-5e-05-256-0.0-1 |\
 --p_model esm3-small --m_model MoLFormer --fusion_name data/reactome/model/esm3-small-MoLFormer-1-256-0.3-1-5e-05-256-0.0-1 |\
---p_model .ipynb_checkpoints --m_model 1 --fusion_name data/reactome/model/.ipynb_checkpoints-1 |\
 --p_model esm3 --m_model 6b --fusion_name data/reactome/model/esm3-6b-ChemBERTa-2-256-0.3-10-5e-05-256-0.0-1 |\
 --p_model esm3 --m_model 6b --fusion_name data/reactome/model/esm3-6b-ChemBERTa-1-256-0.3-1-5e-05-256-0.0-1 |\
 --p_model GearNet --m_model ChemBERTa --fusion_name data/reactome/model/GearNet-ChemBERTa-1-256-0.3-1-5e-05-256-0.1-1 |\

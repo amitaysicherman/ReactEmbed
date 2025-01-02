@@ -151,7 +151,7 @@ def main(use_fuse, use_model, bs, lr, drop_out, hidden_dim, task_name, fuse_base
     res = train_model_with_config(config, task_name, fuse_base, mol_emd, protein_emd, max_no_improve,
                                   fuse_model=fuse_model, task_suffix=task_suffix, return_model=return_model)
     res_to_print = res if not return_model else res[0]
-    with open(f"all_res.csv", "a") as f:
+    with open(f"eval_res_all.csv", "a") as f:
         f.write(
             f"{use_fuse},{use_model},{bs},{lr},{drop_out},{hidden_dim},{task_name},{fuse_base},{mol_emd},{protein_emd},{n_layers},{metric},{max_no_improve},{res_to_print}\n")
 
@@ -179,20 +179,8 @@ if __name__ == '__main__':
     args = parser.parse_args()
     torch.manual_seed(42)
 
-    r_fuse = main(use_fuse=1, use_model=0, bs=args.bs, lr=args.lr, drop_out=args.drop_out,
+    r_fuse = main(use_fuse=args.use_fuse, use_model=args.use_model, bs=args.bs, lr=args.lr, drop_out=args.drop_out,
                   hidden_dim=args.hidden_dim, task_name=args.task_name, fuse_base=args.fusion_name,
                   mol_emd=args.m_model, protein_emd=args.p_model,
                   max_no_improve=args.max_no_improve,
                   n_layers=args.n_layers, metric=args.metric)
-    r_model = main(use_fuse=0, use_model=1, bs=args.bs, lr=args.lr, drop_out=args.drop_out,
-                   hidden_dim=args.hidden_dim, task_name=args.task_name, fuse_base=args.fusion_name,
-                   mol_emd=args.m_model, protein_emd=args.p_model,
-                   max_no_improve=args.max_no_improve,
-                   n_layers=args.n_layers, metric=args.metric)
-
-    r_both = main(use_fuse=1, use_model=1, bs=args.bs, lr=args.lr, drop_out=args.drop_out,
-                  hidden_dim=args.hidden_dim, task_name=args.task_name, fuse_base=args.fusion_name,
-                  mol_emd=args.m_model, protein_emd=args.p_model,
-                  max_no_improve=args.max_no_improve,
-                  n_layers=args.n_layers, metric=args.metric)
-    print(f"Fuse: {r_fuse}, Model: {r_model}, Both: {r_both}")
