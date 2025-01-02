@@ -54,8 +54,9 @@ def run_epoch(model, optimizer, loader, contrastive_loss, is_train):
     return total_loss / len(loader)
 
 
-def get_loader(data_name, split, batch_size, p_model, m_model, flip_prob):
-    dataset = TripletsDataset(data_name=data_name, p_model=p_model, m_model=m_model, split=split, flip_prob=flip_prob)
+def get_loader(data_name, split, batch_size, p_model, m_model, flip_prob, min_value):
+    dataset = TripletsDataset(data_name=data_name, p_model=p_model, m_model=m_model, split=split, flip_prob=flip_prob,
+                              min_value=min_value)
     sampler = TripletsBatchSampler(dataset, batch_size)
     return DataLoader(dataset, batch_sampler=sampler)
 
@@ -67,7 +68,7 @@ def build_models(p_dim, m_dim, n_layers, hidden_dim, dropout, save_dir):
     return model
 
 
-def main(data_name, batch_size, p_model, m_model, n_layers, hidden_dim, dropout, epochs, lr, flip_prob=0,
+def main(data_name, batch_size, p_model, m_model, n_layers, hidden_dim, dropout, epochs, lr, flip_prob=0, min_value=1,
          datasets=None, override=False):
     name = model_args_to_name(batch_size=batch_size, p_model=p_model, m_model=m_model, n_layers=n_layers,
                               hidden_dim=hidden_dim, dropout=dropout, epochs=epochs, lr=lr, flip_prob=flip_prob,
@@ -81,9 +82,9 @@ def main(data_name, batch_size, p_model, m_model, n_layers, hidden_dim, dropout,
     if datasets is not None:
         train_loader, valid_loader, test_loader = datasets
     else:
-        train_loader = get_loader(data_name, "train", batch_size, p_model, m_model, flip_prob)
-        valid_loader = get_loader(data_name, "valid", batch_size, p_model, m_model, flip_prob)
-        test_loader = get_loader(data_name, "test", batch_size, p_model, m_model, flip_prob)
+        train_loader = get_loader(data_name, "train", batch_size, p_model, m_model, flip_prob, min_value)
+        valid_loader = get_loader(data_name, "valid", batch_size, p_model, m_model, flip_prob, min_value)
+        test_loader = get_loader(data_name, "test", batch_size, p_model, m_model, flip_prob, min_value)
     p_dim = model_to_dim[p_model]
     m_dim = model_to_dim[m_model]
 
@@ -124,9 +125,10 @@ if __name__ == '__main__':
     parser.add_argument('--epochs', type=int, help='Number of epochs', default=10)
     parser.add_argument('--lr', type=float, help='Learning rate', default=0.00005)
     parser.add_argument('--flip_prob', type=float, help='Flip Prob', default=0.0)
+    parser.add_argument('--min_value', type=int, help='Minimum value', default=1)
     parser.add_argument('--data_name', type=str, help='Data name', default="reactome")
     parser.add_argument('--override', action='store_true', help='Override existing model')
     args = parser.parse_args()
 
     main(args.data_name, args.batch_size, args.p_model, args.m_model, args.n_layers,
-         args.hidden_dim, args.dropout, args.epochs, args.lr, args.flip_prob)
+         args.hidden_dim, args.dropout, args.epochs, args.lr, args.flip_prob, args.min_value, override=args.override)
