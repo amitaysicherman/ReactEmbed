@@ -3,7 +3,7 @@ from enum import Enum
 
 def model_args_to_name(**kwargs):
     names_to_check = ["batch_size", "p_model", "m_model", "n_layers", "hidden_dim", "dropout", "epochs",
-                      "lr", "flip_prob"]
+                      "lr", "flip_prob", "min_value"]
     for name in names_to_check:
         if name not in kwargs:
             raise ValueError(f"Missing argument: {name}")
