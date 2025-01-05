@@ -47,7 +47,7 @@ graph_construction_model = layers.GraphConstruction(node_layers=[geometry.AlphaC
                                                         geometry.SequentialEdge(max_distance=2)],
                                                     edge_feature="gearnet")
 dataset_class = task_name_to_dataset_class(name)
-dataset = dataset_class(output_base, transform=transform, atom_feature=None, bond_feature=None)
+dataset = dataset_class(output_base, transform=transform, atom_feature=None, bond_feature=None, lazy=True)
 if hasattr(dataset_class, "splits"):
     splits = dataset.split()
     if len(splits) == 3:
