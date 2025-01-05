@@ -55,9 +55,9 @@ name_to_task = {
                                     DataType.PROTEIN, 10),
     "EnzymeCommission": Task("EnzymeCommission", LinFuseModel, nn.BCEWithLogitsLoss,
                              DataType.PROTEIN, 6),
-    "GOMF": Task("GOMF", LinFuseModel, nn.BCEWithLogitsLoss, DataType.PROTEIN, 1, branch="MF"),
-    "GOBP": Task("GOBP", LinFuseModel, nn.BCEWithLogitsLoss, DataType.PROTEIN, 1, branch="BP"),
-    "GOCC": Task("GOCC", LinFuseModel, nn.BCEWithLogitsLoss, DataType.PROTEIN, 1, branch="CC"),
+    "GeneOntologyMF": Task("GeneOntologyMF", LinFuseModel, nn.BCEWithLogitsLoss, DataType.PROTEIN, 1, branch="MF"),
+    "GeneOntologyBP": Task("GeneOntologyBP", LinFuseModel, nn.BCEWithLogitsLoss, DataType.PROTEIN, 1, branch="BP"),
+    "GeneOntologyCC": Task("GOCC", LinFuseModel, nn.BCEWithLogitsLoss, DataType.PROTEIN, 1, branch="CC"),
     "SecondaryStructure": Task("SecondaryStructure", LinFuseModel, nn.BCEWithLogitsLoss,
                                DataType.PROTEIN, 3, branch="ss3"),
 

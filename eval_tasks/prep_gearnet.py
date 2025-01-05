@@ -21,8 +21,8 @@ output_base = pjoin(base_dir, name)
 
 
 def task_name_to_dataset_class(task_name):
-    if task_name.startswith("GO"):
-        return getattr(datasets, "GO")
+    if task_name.startswith("GeneOntology"):
+        return getattr(datasets, "GeneOntology")
     return getattr(datasets, task_name)
 
 

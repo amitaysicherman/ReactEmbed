@@ -44,8 +44,8 @@ SIDER_LABELS = ['Hepatobiliary disorders',
 
 
 def task_name_to_dataset_class(task_name):
-    if task_name.startswith("GO"):
-        return getattr(datasets, "GO")
+    if task_name.startswith("GeneOntology"):
+        return getattr(datasets, "GeneOntology")
     return getattr(datasets, task_name)
 
 def get_seq(x):
