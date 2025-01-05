@@ -38,4 +38,4 @@ eval "$(conda shell.bash hook)"
 conda activate retd
 export PYTHONPATH=$PYTHONPATH:$(pwd)
 task=${config_array[$((SLURM_ARRAY_TASK_ID - 1))]}
-python eval_tasks/prep_tasks_seqs.py --task "$task"
+python eval_tasks/prep_tasks_seqs.py "$task"
