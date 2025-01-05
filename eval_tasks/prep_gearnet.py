@@ -49,8 +49,8 @@ transform = transforms.Compose([truncate_transform, protein_view_transform])
 
 for split, name in zip([train, valid, test], ["train", "valid", "test"]):
     vecs = []
-    for data in tqdm(split): \
-            data = transform(data)
+    for data in tqdm(split):
+        data = transform(data)
 
         protein = data["graph"]
         protein = data.Protein.pack([protein])
