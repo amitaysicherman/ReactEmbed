@@ -21,6 +21,7 @@ class Task:
     output_dim: int
     dtype2: DataType = None
     prep_type: PrepType = PrepType.torchdrug
+    branch: str = None
 
 
 def mse_metric(output, target):
@@ -47,8 +48,19 @@ name_to_task = {
     "BetaLactamase": Task("BetaLactamase", LinFuseModel, nn.MSELoss, DataType.PROTEIN, 1),
     "Fluorescence": Task("Fluorescence", LinFuseModel, nn.MSELoss, DataType.PROTEIN, 1),
     "Stability": Task("Stability", LinFuseModel, nn.MSELoss, DataType.PROTEIN, 1),
+    "Solubility": Task("Solubility", LinFuseModel, nn.BCEWithLogitsLoss, DataType.PROTEIN, 1),
     "BinaryLocalization": Task("BinaryLocalization", LinFuseModel, nn.BCEWithLogitsLoss,
                                DataType.PROTEIN, 1),
+    "SubcellularLocalization": Task("SubcellularLocalization", LinFuseModel, nn.BCEWithLogitsLoss,
+                                    DataType.PROTEIN, 10),
+    "EnzymeCommission": Task("EnzymeCommission", LinFuseModel, nn.BCEWithLogitsLoss,
+                             DataType.PROTEIN, 6),
+    "GOMF": Task("GOMF", LinFuseModel, nn.BCEWithLogitsLoss, DataType.PROTEIN, 1, branch="MF"),
+    "GOBP": Task("GOBP", LinFuseModel, nn.BCEWithLogitsLoss, DataType.PROTEIN, 1, branch="BP"),
+    "GOCC": Task("GOCC", LinFuseModel, nn.BCEWithLogitsLoss, DataType.PROTEIN, 1, branch="CC"),
+    "SecondaryStructure": Task("SecondaryStructure", LinFuseModel, nn.BCEWithLogitsLoss,
+                               DataType.PROTEIN, 3, branch="ss3"),
+
     # Pairs tasks
     "HumanPPI": Task("HumanPPI", PairsFuseModel, nn.BCEWithLogitsLoss, DataType.PROTEIN, 1,
                      DataType.PROTEIN),
@@ -74,3 +86,8 @@ def task_to_metric(task, set=0):
         return ['f1_max', "auprc"][set]
     else:
         return ['r2', "mse"][set]
+
+
+if __name__ == '__main__':
+    for name in name_to_task:
+        print(name)

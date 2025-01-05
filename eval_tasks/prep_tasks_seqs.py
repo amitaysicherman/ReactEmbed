@@ -44,6 +44,8 @@ SIDER_LABELS = ['Hepatobiliary disorders',
 
 
 def task_name_to_dataset_class(task_name):
+    if task_name.startswith("GO"):
+        return getattr(datasets, "GO")
     return getattr(datasets, task_name)
 
 def get_seq(x):
@@ -127,8 +129,12 @@ def prep_dataset(task: Task):
                     atom_feature=None, bond_feature=None)
     else:
         args = dict()
+    if task.branch is not None:
+        args["branch"] = task.branch
+
     dataset_class = task_name_to_dataset_class(task.name)
     dataset = dataset_class(pjoin(base_dir, task.name), **args)
+    dataset
     labels_keys = getattr(dataset_class, 'target_fields')
     if task.name == "SIDER":
         labels_keys = SIDER_LABELS
