@@ -49,8 +49,8 @@ dataset = dataset_class(output_base, atom_feature=None, bond_feature=None, trans
 # splits = dataset.split()
 # train, valid, test, *unused_test = splits
 vecs = []
-for protein in tqdm(dataset):
-    protein = protein["graph"]
+for protein_ in tqdm(dataset):
+    protein = protein_["graph"]
     protein = data.Protein.pack([protein])
     protein = graph_construction_model(protein)
     output = gearnet_model(protein.to(device), protein.node_feature.float().to(device))['node_feature'].mean(
