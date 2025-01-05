@@ -22,9 +22,9 @@ Solubility|\
 BinaryLocalization|\
 SubcellularLocalization|\
 EnzymeCommission|\
-GOMF|\
-GOBP|\
-GOCC|\
+GeneOntologyMF|\
+GeneOntologyBP|\
+GeneOntologyCC|\
 SecondaryStructure|\
 HumanPPI|\
 YeastPPI|\

@@ -31,7 +31,7 @@ gearnet_model = models.GearNet(input_dim=21, hidden_dims=[512, 512, 512, 512, 51
                                edge_input_dim=59,
                                num_angle_bin=8,
                                batch_norm=True, concat_hidden=True, short_cut=True, readout="sum").to(device).eval()
-checkpoint = torch.load(gearnet_cp_file)
+checkpoint = torch.load(gearnet_cp_file, map_location=torch.device(device))
 gearnet_model.load_state_dict(checkpoint)
 
 graph_construction_model = layers.GraphConstruction(node_layers=[geometry.AlphaCarbonNode()],
