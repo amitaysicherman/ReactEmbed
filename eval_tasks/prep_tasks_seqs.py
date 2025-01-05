@@ -134,7 +134,6 @@ def prep_dataset(task: Task):
 
     dataset_class = task_name_to_dataset_class(task.name)
     dataset = dataset_class(pjoin(base_dir, task.name), **args)
-    dataset
     labels_keys = getattr(dataset_class, 'target_fields')
     if task.name == "SIDER":
         labels_keys = SIDER_LABELS
