@@ -45,12 +45,11 @@ truncate_transform = transforms.TruncateProtein(max_length=350, random=False)
 protein_view_transform = transforms.ProteinView(view="residue")
 transform = transforms.Compose([truncate_transform, protein_view_transform])
 
-dataset = dataset_class(output_base, atom_feature=None, bond_feature=None)
+dataset = dataset_class(output_base, atom_feature=None, bond_feature=None, transform=transform)
 # splits = dataset.split()
 # train, valid, test, *unused_test = splits
 vecs = []
 for protein in tqdm(dataset):
-    protein = transform(protein)
     protein = protein["graph"]
     protein = data.Protein.pack([protein])
     protein = graph_construction_model(protein)
