@@ -126,7 +126,7 @@ if __name__ == '__main__':
     parser.add_argument('--epochs', type=int, help='Number of epochs', default=10)
     parser.add_argument('--lr', type=float, help='Learning rate', default=0.00005)
     parser.add_argument('--flip_prob', type=float, help='Flip Prob', default=0.0)
-    parser.add_argument('--min_value', type=int, help='Minimum value', default=1)
+    parser.add_argument('--min_value', type=int, help='Minimum value', default=5)
     parser.add_argument('--data_name', type=str, help='Data name', default="reactome")
     parser.add_argument('--override', action='store_true', help='Override existing model')
     args = parser.parse_args()
