@@ -22,8 +22,10 @@ def load_data(task_name, mol_emd, protein_emd):
 
     task = name_to_task[task_name]
     emb1 = protein_emd if task.dtype1 == DataType.PROTEIN else mol_emd
-    emb2 = protein_emd if task.dtype2 == DataType.PROTEIN else mol_emd if task.dtype2 else None
-
+    emb2 = None
+    if task.dtype2:
+        emb2 = protein_emd if task.dtype2 == DataType.PROTEIN else mol_emd
+    
     x1_train, x2_train, labels_train = load_split('train', emb1, emb2)
     x1_valid, x2_valid, labels_valid = load_split('valid', emb1, emb2)
     x1_test, x2_test, labels_test = load_split('test', emb1, emb2)
