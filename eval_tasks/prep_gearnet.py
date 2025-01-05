@@ -2,6 +2,7 @@ from os.path import join as pjoin
 
 import numpy as np
 import torch
+from torchdrug import data
 from torchdrug import datasets
 from torchdrug import layers
 from torchdrug import models
@@ -53,7 +54,7 @@ for split, name in zip([train, valid, test], ["train", "valid", "test"]):
     for protein in tqdm(split):
         protein = transform(protein)
         protein = protein["graph"]
-        protein = protein.Protein.pack([protein])
+        protein = data.Protein.pack([protein])
         protein = graph_construction_model(protein)
         output = gearnet_model(protein.to(device), protein.node_feature.float().to(device))['node_feature'].mean(dim=0)
         output = output.cpu().detach().numpy().flatten()
