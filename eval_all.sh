@@ -1,6 +1,7 @@
 #!/bin/bash
 #SBATCH --mem=64G
 #SBATCH --requeue
+#SBATCH --gres=gpu:1
 #SBATCH --array=1-90
 
 configs="--p_model GearNet --m_model MoLFormer --fusion_name data/pathbank/model/GearNet-MoLFormer-1-256-0.3-1-5e-05-256-0.0-5 |\
