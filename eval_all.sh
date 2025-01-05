@@ -103,7 +103,6 @@ tasks_configs="--task_name BACE --bs 64 --metric f1_max |\
 --task_name Malaria --bs 256 --metric pearsonr |\
 --task_name SIDER --bs 64 --metric f1_max |\
 --task_name Tox21 --bs 256 --metric f1_max |\
---task_name Fluorescence --bs 512 --metric pearsonr |\
 --task_name Stability --bs 512 --metric pearsonr |\
 --task_name BinaryLocalization --bs 256 --metric f1_max |\
 --task_name HumanPPI --bs 512 --bs 256 --metric f1_max |\
