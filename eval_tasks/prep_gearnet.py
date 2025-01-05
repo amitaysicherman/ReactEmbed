@@ -44,15 +44,16 @@ truncate_transform = transforms.TruncateProtein(max_length=350, random=False)
 protein_view_transform = transforms.ProteinView(view="residue")
 transform = transforms.Compose([truncate_transform, protein_view_transform])
 
-dataset = dataset_class(output_base, atom_feature=None, bond_feature=None, transform=transform)
+dataset = dataset_class(output_base, atom_feature=None, bond_feature=None)
 splits = dataset.split()
 train, valid, test, *unused_test = splits
 
 for split, name in zip([train, valid, test], ["train", "valid", "test"]):
     vecs = []
-    for data in tqdm(split):
-        protein = data["graph"]
-        protein = data.Protein.pack([protein])
+    for protein in tqdm(split):
+        protein = transform(protein)
+        protein = protein["graph"]
+        protein = protein.Protein.pack([protein])
         protein = graph_construction_model(protein)
         output = gearnet_model(protein.to(device), protein.node_feature.float().to(device))['node_feature'].mean(dim=0)
         output = output.cpu().detach().numpy().flatten()
