@@ -18,7 +18,7 @@ configs="--m_model MolCLR --p_model GearNet  |\
 --m_model MoLFormer --p_model esm3-small  |\
 --m_model MolCLR --p_model esm3-medium  |\
 --m_model ChemBERTa --p_model esm3-medium  |\
---m_model MoLFormer --p_model esm3-medium "
+--m_model MoLFormer --p_model esm3-medium"
 IFS='|' read -ra config_array <<< "$configs"
 config=${config_array[$((SLURM_ARRAY_TASK_ID - 1))]}
 
