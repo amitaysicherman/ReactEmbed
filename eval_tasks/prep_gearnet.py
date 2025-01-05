@@ -1,4 +1,3 @@
-import argparse
 from os.path import join as pjoin
 
 import numpy as np
@@ -7,20 +6,14 @@ from torchdrug import datasets
 from torchdrug import layers
 from torchdrug import models
 from torchdrug import transforms
-from torchdrug.data import ordered_scaffold_split
 from torchdrug.layers import geometry
+from tqdm import tqdm
 
 from common.path_manager import data_path
 
-parser = argparse.ArgumentParser()
-parser.add_argument("--task_name", type=str, default="EnzymeCommission")
-args = parser.parse_args()
-name = args.task_name
+name = "EnzymeCommission"
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
-truncate_transform = transforms.TruncateProtein(max_length=350, random=False)
-protein_view_transform = transforms.ProteinView(view="residue")
-transform = transforms.Compose([truncate_transform, protein_view_transform])
 
 base_dir = f"{data_path}/torchdrug/"
 output_base = pjoin(base_dir, name)
@@ -47,22 +40,18 @@ graph_construction_model = layers.GraphConstruction(node_layers=[geometry.AlphaC
                                                         geometry.SequentialEdge(max_distance=2)],
                                                     edge_feature="gearnet")
 dataset_class = task_name_to_dataset_class(name)
-dataset = dataset_class(output_base, transform=transform, atom_feature=None, bond_feature=None, lazy=True)
-if hasattr(dataset_class, "splits"):
-    splits = dataset.split()
-    if len(splits) == 3:
-        train, valid, test = splits
-    elif len(splits) > 3:
-        train, valid, test, *unused_test = splits
-    else:
-        raise Exception("splits", getattr(dataset_class, "splits"))
+dataset = dataset_class(output_base, atom_feature=None, bond_feature=None)
+splits = dataset.split()
+train, valid, test, *unused_test = splits
+truncate_transform = transforms.TruncateProtein(max_length=350, random=False)
+protein_view_transform = transforms.ProteinView(view="residue")
+transform = transforms.Compose([truncate_transform, protein_view_transform])
 
-else:
-    train, valid, test = ordered_scaffold_split(dataset, None)
 for split, name in zip([train, valid, test], ["train", "valid", "test"]):
     vecs = []
-    for data in split:
+    for data in tqdm(split):
         protein = data["graph"]
+        protein = transform(protein)
         protein = data.Protein.pack([protein])
         protein = graph_construction_model(protein)
         output = gearnet_model(protein.to(device), protein.node_feature.float().to(device))['node_feature'].mean(dim=0)
