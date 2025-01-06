@@ -61,7 +61,6 @@ for split_name, split in zip(["train", "valid", "test"], [train, valid, test]):
         output = gearnet_model(protein.to(device), protein.node_feature.float().to(device))['node_feature'].mean(
             dim=0)
         output = output.cpu().detach().numpy().flatten()
-        print(output.shape)
         vecs.append(output)
     vecs = np.array(vecs)
     np.save(pjoin(output_base, f"{split_name}_GearNet_1.npy"), vecs)
