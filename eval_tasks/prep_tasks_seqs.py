@@ -140,7 +140,7 @@ def prep_dataset(task: Task):
         labels_keys = SIDER_LABELS
     else:
         labels_keys = getattr(dataset_class, 'target_fields')
-    if hasattr(dataset_class, "splits"):
+    try:
         splits = dataset.split()
         if len(splits) == 3:
             train, valid, test = splits
@@ -148,9 +148,10 @@ def prep_dataset(task: Task):
             train, valid, test, *unused_test = splits
         else:
             raise Exception("splits", getattr(dataset_class, "splits"))
-
-    else:
+    except Exception as e:
+        print(e)
         train, valid, test = ordered_scaffold_split(dataset, None)
+
     for split, name in zip([train, valid, test], ["train", "valid", "test"]):
         all_seq_1 = []
         all_seq_2 = []

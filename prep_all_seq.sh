@@ -25,7 +25,6 @@ EnzymeCommission|\
 GeneOntologyMF|\
 GeneOntologyBP|\
 GeneOntologyCC|\
-SecondaryStructure|\
 HumanPPI|\
 YeastPPI|\
 PPIAffinity|\
