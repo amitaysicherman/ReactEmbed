@@ -48,6 +48,7 @@ def task_name_to_dataset_class(task_name):
         return getattr(datasets, "GeneOntology")
     return getattr(datasets, task_name)
 
+
 def get_seq(x):
     try:
         # check if the sequence is a protein sequence have to_sequence method:
@@ -68,6 +69,7 @@ def split_train_val_test(data, val_size=0.16, test_size=0.20):
     val_data = data[train_val_index:val_test_index]
     test_data = data[val_test_index:]
     return train_data, val_data, test_data
+
 
 def prep_dataset(task: Task):
     output_base = pjoin(base_dir, task.name)
@@ -115,8 +117,6 @@ def prep_dataset(task: Task):
                 f.write("\n".join(split))
         return
 
-
-
     if task.dtype1 == DataType.PROTEIN:
         if task.dtype2 is None:
             keys = ["graph"]
@@ -134,9 +134,12 @@ def prep_dataset(task: Task):
 
     dataset_class = task_name_to_dataset_class(task.name)
     dataset = dataset_class(pjoin(base_dir, task.name), **args)
-    labels_keys = getattr(dataset_class, 'target_fields')
-    if task.name == "SIDER":
+    if hasattr(dataset_class, "target_fields"):
+        labels_keys = getattr(dataset_class, 'target_fields')
+    elif task.name == "SIDER":
         labels_keys = SIDER_LABELS
+    else:
+        labels_keys = "targets"
     if hasattr(dataset_class, "splits"):
         splits = dataset.split()
         if len(splits) == 3:
@@ -163,7 +166,11 @@ def prep_dataset(task: Task):
                 if seq_2 is None:
                     continue
                 all_seq_2.append(seq_2)
-            all_labels.append(" ".join([str(split[i][key]) for key in labels_keys]))
+            if labels_keys == "targets":
+                new_labels = " ".join(str(x) for x in split[i][labels_keys].tolist())
+                all_labels.append(new_labels)
+            else:
+                all_labels.append(" ".join([str(split[i][key]) for key in labels_keys]))
         with open(pjoin(output_base, f"{name}_1.txt"), "w") as f:
             f.write("\n".join(all_seq_1))
         if task.dtype2 is not None:
