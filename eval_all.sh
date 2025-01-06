@@ -104,7 +104,15 @@ tasks_configs="--task_name BACE --bs 64 --metric f1_max |\
 --task_name SIDER --bs 64 --metric f1_max |\
 --task_name Tox21 --bs 256 --metric f1_max |\
 --task_name BetaLactamase --bs 64 --metric pearsonr |\
+--task_name Fluorescence --bs 512 --metric pearsonr |\
+--task_name Stability --bs 512 --metric pearsonr |\
+--task_name Solubility --bs 512 --metric pearsonr |\
 --task_name BinaryLocalization --bs 256 --metric f1_max |\
+--task_name SubcellularLocalization --bs 256 --metric f1_max |\
+--task_name EnzymeCommission --bs 512 --metric f1_max |\
+--task_name GeneOntologyMF --bs 512 --metric f1_max |\
+--task_name GeneOntologyBP --bs 512 --metric f1_max |\
+--task_name GeneOntologyCC --bs 512 --metric f1_max |\
 --task_name HumanPPI --bs 512 --bs 256 --metric f1_max |\
 --task_name YeastPPI --bs 256 --metric f1_max |\
 --task_name PPIAffinity --bs 64 --metric pearsonr |\
@@ -112,6 +120,8 @@ tasks_configs="--task_name BACE --bs 64 --metric f1_max |\
 --task_name PDBBind --bs 512 --metric pearsonr |\
 --task_name DrugBank --bs 512 --metric f1_max |\
 --task_name Davis --bs 512 --metric f1_max"
+
+
 IFS='|' read -ra task_array <<< "$tasks_configs"
 
 
