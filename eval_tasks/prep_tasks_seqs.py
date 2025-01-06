@@ -134,12 +134,12 @@ def prep_dataset(task: Task):
 
     dataset_class = task_name_to_dataset_class(task.name)
     dataset = dataset_class(pjoin(base_dir, task.name), **args)
-    if hasattr(dataset_class, "target_fields"):
-        labels_keys = getattr(dataset_class, 'target_fields')
+    if task.name == "EnzymeCommission" or task.name.startswith("GeneOntology"):
+        labels_keys = "targets"
     elif task.name == "SIDER":
         labels_keys = SIDER_LABELS
     else:
-        labels_keys = "targets"
+        labels_keys = getattr(dataset_class, 'target_fields')
     if hasattr(dataset_class, "splits"):
         splits = dataset.split()
         if len(splits) == 3:
