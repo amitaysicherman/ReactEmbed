@@ -5,56 +5,34 @@
 #SBATCH --gres=gpu:1
 #SBATCH --array=1-126
 
- Define molecule and protein models
-molecule_models=("ChemBERTa" "MoLFormer" "MolCLR")
-protein_models=("ProtBert" "esm3-small" "esm3-medium" "GearNet")
-
-
-mol_task=("BACE" "BBBP" "CEP" "ClinTox" "Delaney" "FreeSolv" "HIV" "Lipophilicity" "Malaria" "SIDER" "Tox21")
-for m_task in "${mol_task[@]}"; do
-  for m_model in "${molecule_models[@]}"; do
-    echo python eval_tasks/prep_tasks_vecs.py --task "$m_task" --m_model "$m_model|\\"
-  done
-done
-
+# Define molecule and protein models
+#molecule_models=("ChemBERTa" "MoLFormer" "MolCLR")
+#protein_models=("ProtBert" "esm3-small" "esm3-medium" "GearNet")
 #
-# "BetaLactamase": Task("BetaLactamase", LinFuseModel, nn.MSELoss, DataType.PROTEIN, 1),
-#    "Fluorescence": Task("Fluorescence", LinFuseModel, nn.MSELoss, DataType.PROTEIN, 1),
-#    "Stability": Task("Stability", LinFuseModel, nn.MSELoss, DataType.PROTEIN, 1),
-#    "Solubility": Task("Solubility", LinFuseModel, nn.BCEWithLogitsLoss, DataType.PROTEIN, 1),
-#    "BinaryLocalization": Task("BinaryLocalization", LinFuseModel, nn.BCEWithLogitsLoss,
-#                               DataType.PROTEIN, 1),
-#    "SubcellularLocalization": Task("SubcellularLocalization", LinFuseModel, nn.BCEWithLogitsLoss,
-#                                    DataType.PROTEIN, 10),
-#    "EnzymeCommission": Task("EnzymeCommission", LinFuseModel, nn.BCEWithLogitsLoss,
-#                             DataType.PROTEIN, 6),
-#    "GeneOntologyMF": Task("GeneOntologyMF", LinFuseModel, nn.BCEWithLogitsLoss, DataType.PROTEIN, 1, branch="MF"),
-#    "GeneOntologyBP": Task("GeneOntologyBP", LinFuseModel, nn.BCEWithLogitsLoss, DataType.PROTEIN, 1, branch="BP"),
-#    "GeneOntologyCC": Task("GeneOntologyCC", LinFuseModel, nn.BCEWithLogitsLoss, DataType.PROTEIN, 1, branch="CC"),
 #
-#    # Pairs tasks
-#    "HumanPPI": Task("HumanPPI", PairsFuseModel, nn.BCEWithLogitsLoss, DataType.PROTEIN, 1,
-#                     DataType.PROTEIN),
-#    "YeastPPI": Task("YeastPPI", PairsFuseModel, nn.BCEWithLogitsLoss, DataType.PROTEIN, 1,
-#                     DataType.PROTEIN),
-#    "PPIAffinity": Task("PPIAffinity", PairsFuseModel, nn.MSELoss, DataType.PROTEIN, 1,
-#                        DataType.PROTEIN),
+#mol_task=("BACE" "BBBP" "CEP" "ClinTox" "Delaney" "FreeSolv" "HIV" "Lipophilicity" "Malaria" "SIDER" "Tox21")
+#for m_task in "${mol_task[@]}"; do
+#  for m_model in "${molecule_models[@]}"; do
+#    echo python eval_tasks/prep_tasks_vecs.py --task "$m_task" --m_model "$m_model|\\"
+#  done
+#done
 
-prot_task=("BetaLactamase" "Fluorescence" "Stability" "BinaryLocalization" "SubcellularLocalization" "EnzymeCommission" "GeneOntologyMF" "GeneOntologyBP" "GeneOntologyCC" "HumanPPI" "YeastPPI" "PPIAffinity")
-for p_task in "${prot_task[@]}"; do
-  for p_model in "${protein_models[@]}"; do
-    echo python eval_tasks/prep_tasks_vecs.py --task "$p_task" --p_model "$p_model|\\"
-  done
-done
 
-lig_task=("BindingDB" "PDBBind" "DrugBank" "Davis")
-for l_task in "${lig_task[@]}"; do
-  for p_model in "${protein_models[@]}"; do
-    for m_model in "${molecule_models[@]}"; do
-      echo python eval_tasks/prep_tasks_vecs.py --task "$l_task" --p_model "$p_model" --m_model "$m_model|\\"
-    done
-  done
-done
+#prot_task=("BetaLactamase" "Fluorescence" "Stability" "BinaryLocalization" "SubcellularLocalization" "EnzymeCommission" "GeneOntologyMF" "GeneOntologyBP" "GeneOntologyCC" "HumanPPI" "YeastPPI" "PPIAffinity")
+#for p_task in "${prot_task[@]}"; do
+#  for p_model in "${protein_models[@]}"; do
+#    echo python eval_tasks/prep_tasks_vecs.py --task "$p_task" --p_model "$p_model|\\"
+#  done
+#done
+#
+#lig_task=("BindingDB" "PDBBind" "DrugBank" "Davis")
+#for l_task in "${lig_task[@]}"; do
+#  for p_model in "${protein_models[@]}"; do
+#    for m_model in "${molecule_models[@]}"; do
+#      echo python eval_tasks/prep_tasks_vecs.py --task "$l_task" --p_model "$p_model" --m_model "$m_model|\\"
+#    done
+#  done
+#done
 commands="python eval_tasks/prep_tasks_vecs.py --task BACE --m_model ChemBERTa|\
 python eval_tasks/prep_tasks_vecs.py --task BACE --m_model MoLFormer|\
 python eval_tasks/prep_tasks_vecs.py --task BACE --m_model MolCLR|\
@@ -191,8 +169,11 @@ cmd=${array[$((SLURM_ARRAY_TASK_ID - 1))]}
 
 # if esm in cmd active cond env ReactEmbedESM else ReactEmbedTorchDrug
 eval "$(conda shell.bash hook)"
-conda activate retd
-
+if [[ $cmd == *"esm"* ]]; then
+    conda activate ReactEmbedESM
+else
+    conda activate retd
+fi
 echo $cmd
 export PYTHONPATH=$PYTHONPATH:$(pwd)
 eval $cmd
