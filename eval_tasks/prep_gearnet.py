@@ -1,3 +1,4 @@
+import argparse
 from os.path import join as pjoin
 
 import numpy as np
@@ -12,9 +13,11 @@ from tqdm import tqdm
 
 from common.path_manager import data_path
 
-name = "EnzymeCommission"
+parser = argparse.ArgumentParser()
+parser.add_argument("--task_name", type=str, default="EnzymeCommission")
+args = parser.parse_args()
+name = args.task_name
 device = "cuda" if torch.cuda.is_available() else "cpu"
-
 
 base_dir = f"{data_path}/torchdrug/"
 output_base = pjoin(base_dir, name)
@@ -46,18 +49,19 @@ protein_view_transform = transforms.ProteinView(view="residue")
 transform = transforms.Compose([truncate_transform, protein_view_transform])
 
 dataset = dataset_class(output_base, atom_feature=None, bond_feature=None, transform=transform)
-# splits = dataset.split()
-# train, valid, test, *unused_test = splits
-vecs = []
-for protein_ in tqdm(dataset):
-    protein = protein_["graph"]
-    protein = data.Protein.pack([protein])
-    protein = graph_construction_model(protein)
-    output = gearnet_model(protein.to(device), protein.node_feature.float().to(device))['node_feature'].mean(
-        dim=0)
-    output = output.cpu().detach().numpy().flatten()
-    print(output.shape)
-    vecs.append(output)
-vecs = np.array(vecs)
-output_file = f"{output_base}/{name}_GearNet_1.npy"
-np.save(output_file, vecs)
+splits = dataset.split()
+train, valid, test, *unused_test = splits
+for split_name, split in zip(["train", "valid", "test"], [train, valid, test]):
+    vecs = []
+
+    for protein_ in tqdm(split):
+        protein = protein_["graph"]
+        protein = data.Protein.pack([protein])
+        protein = graph_construction_model(protein)
+        output = gearnet_model(protein.to(device), protein.node_feature.float().to(device))['node_feature'].mean(
+            dim=0)
+        output = output.cpu().detach().numpy().flatten()
+        print(output.shape)
+        vecs.append(output)
+    vecs = np.array(vecs)
+    np.save(pjoin(output_base, f"{split_name}_GearNet_1.npy"), vecs)
