@@ -133,5 +133,6 @@ export PYTHONPATH=$PYTHONPATH:$(pwd)
 for task in "${task_array[@]}"; do
     python eval_tasks/trainer.py $config $task --use_fuse 1 --use_model 1
     python eval_tasks/trainer.py $config $task --use_fuse 0 --use_model 1
+    python eval_tasks/trainer.py $config $task --use_fuse 1 --use_model 0
 done
 
