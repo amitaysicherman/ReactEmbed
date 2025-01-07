@@ -9,7 +9,7 @@ from eval_tasks.tasks import name_to_task, Task
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 
-def run_epoch(model, loader, optimizer, criterion, metric_name, part):
+def run_epoch(model, loader, optimizer, criterion, metric_name, part) -> Scores:
     if part == "train":
         model.train()
     else:
@@ -81,7 +81,7 @@ def get_model_from_task(task: Task, dataset, conf, fuse_base, drop_out, n_layers
 
 def train_model_with_config(config: dict, task_name: str, fuse_base: str, mol_emd: str, protein_emd: str,
                             max_no_improve=15, fuse_model=None, return_valid=False, task_suffix="",
-                            return_model=False):
+                            return_model=False, return_train=False):
     use_fuse = config["use_fuse"]
     use_model = config["use_model"]
     bs = config["bs"]
@@ -136,6 +136,7 @@ def train_model_with_config(config: dict, task_name: str, fuse_base: str, mol_em
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
     no_improve = 0
     scores_manager = ScoresManager(config['metric'])
+    train_scores = Scores(config['metric'])
     for epoch in range(50):
         train_scores = run_epoch(model, train_loader, optimizer, criterion, config['metric'], "train")
         with torch.no_grad():
@@ -152,6 +153,8 @@ def train_model_with_config(config: dict, task_name: str, fuse_base: str, mol_em
         return scores_manager.test_scores.get_value(), scores_manager.valid_scores.get_value()
     if return_model:
         return scores_manager.test_scores.get_value(), model
+    if return_train:
+        return scores_manager.test_scores.get_value(), train_scores
     return scores_manager.test_scores.get_value()
 
 
@@ -167,12 +170,14 @@ def main(use_fuse, use_model, bs, lr, drop_out, hidden_dim, task_name, fuse_base
         'n_layers': n_layers,
         'metric': metric
     }
-    res = train_model_with_config(config, task_name, fuse_base, mol_emd, protein_emd, max_no_improve,
-                                  fuse_model=fuse_model, task_suffix=task_suffix, return_model=return_model)
+    *res, train_res = train_model_with_config(config, task_name, fuse_base, mol_emd, protein_emd, max_no_improve,
+                                              fuse_model=fuse_model, task_suffix=task_suffix, return_model=return_model,
+                                              return_train=True)
     res_to_print = res if not return_model else res[0]
-    with open(f"res2.csv", "a") as f:
+
+    with open(f"res_update.csv", "a") as f:
         f.write(
-            f"{use_fuse},{use_model},{bs},{lr},{drop_out},{hidden_dim},{task_name},{fuse_base},{mol_emd},{protein_emd},{n_layers},{metric},{max_no_improve},{res_to_print}\n")
+            f"{use_fuse},{use_model},{bs},{lr},{drop_out},{hidden_dim},{task_name},{fuse_base},{mol_emd},{protein_emd},{n_layers},{metric},{max_no_improve},{res_to_print},{train_res}\n")
 
     return res
 
