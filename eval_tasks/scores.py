@@ -148,11 +148,11 @@ def pearsonr(pred, target):
 #     return spearmanr
 #
 
-def one_into_two(preds):
-    preds = preds.flatten()
-    probs_class_1 = torch.sigmoid(preds)
-    probs_class_0 = 1 - probs_class_1
-    return torch.cat((probs_class_0, probs_class_1), dim=1)
+# def one_into_two(preds):
+#     preds = preds.flatten()
+#     probs_class_1 = torch.sigmoid(preds)
+#     probs_class_0 = 1 - probs_class_1
+#     return torch.cat((probs_class_0, probs_class_1), dim=1)
 
 
 # def metric_prep(preds, reals, metric):
@@ -195,18 +195,18 @@ def one_into_two(preds):
 #         raise ValueError("Unknown metric")
 #     return preds, reals
 #
-
-def mse_metric(output, target):
-    squared_diff = (output - target) ** 2
-    mse = torch.mean(squared_diff)
-    return mse
-
-
-def mae_metric(output, target):
-    abs_diff = torch.abs(output - target)
-    mae = torch.mean(abs_diff)
-    return mae
-
+#
+# def mse_metric(output, target):
+#     squared_diff = (output - target) ** 2
+#     mse = torch.mean(squared_diff)
+#     return mse
+#
+#
+# def mae_metric(output, target):
+#     abs_diff = torch.abs(output - target)
+#     mae = torch.mean(abs_diff)
+#     return mae
+#
 
 class Scores:
 
@@ -240,7 +240,7 @@ class Scores:
                 # multiclass classification
                 values = []
                 for i in range(preds.shape[1]):
-                    values.append(f1_max(preds[:, i], reals[:, i]).item())
+                    values.append(self.binary_classification_f1_max(preds[:, i], reals[:, i]))
                 self.value = sum(values) / len(values)
 
     def __repr__(self):
