@@ -94,12 +94,26 @@ def train_model_with_config(config: dict, task_name: str, fuse_base: str, mol_em
     task = name_to_task[task_name]
     train_loader, valid_loader, test_loader = get_dataloaders(task_name, mol_emd, protein_emd, bs)
     if task.criterion == torch.nn.BCEWithLogitsLoss:
-        train_labels = train_loader.dataset.labels
-        positive_sample_weight = train_labels.sum() / len(train_labels)
-        negative_sample_weight = 1 - positive_sample_weight
-        pos_weight = negative_sample_weight / positive_sample_weight
-        print("pos_weight", pos_weight)
-        criterion = task.criterion(pos_weight=torch.tensor(pos_weight).to(device))
+        train_labels = train_loader.dataset.labels  # Shape: [n_samples, n_classes]
+
+        # Calculate positive weights for each class
+        n_samples = len(train_labels)
+        positive_counts = train_labels.sum(dim=0)  # Sum along samples dimension
+        positive_weights = positive_counts / n_samples  # Per-class positive sample ratio
+        negative_weights = 1 - positive_weights  # Per-class negative sample ratio
+
+        # Calculate pos_weight for each class
+        pos_weight = negative_weights / positive_weights
+
+        # Handle potential division by zero
+        pos_weight = torch.where(
+            positive_weights == 0,
+            torch.ones_like(pos_weight),  # Default to 1 for classes with no positive samples
+            pos_weight
+        )
+
+        print("pos_weight per class:", pos_weight)
+        criterion = task.criterion(pos_weight=pos_weight.to(device))
     else:
         criterion = task.criterion()
     if use_fuse and use_model:
