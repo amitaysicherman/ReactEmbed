@@ -33,7 +33,6 @@ def save_labels(input_file, output_file):
     labels = np.nan_to_num(labels)
     if np.all(labels == labels.astype(int)):  # if classificaiton , convert to one hot
         labels = labels.astype(int)
-        print("Converting to one hot")
         if labels.max() > 1:
             print(f"Converting to one hot {labels.max() + 1}")
             # for example - 10 classes and the label is just the index of the class. convert to one hot

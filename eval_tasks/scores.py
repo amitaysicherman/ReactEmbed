@@ -1,52 +1,54 @@
 import torch
-from torch.nn import functional as F
-from torch_scatter import scatter_mean
 
 
-# ALL the metrics copy from torchdrug.metrics
-def area_under_roc(pred, target):
-    """
-    Area under receiver operating characteristic curve (ROC).
-
-    Parameters:
-        pred (Tensor): predictions of shape :math:`(n,)`
-        target (Tensor): binary targets of shape :math:`(n,)`
-    """
-    order = pred.argsort(descending=True)
-    target = target[order]
-    hit = target.cumsum(0)
-    all = (target == 0).sum() * (target == 1).sum()
-    auroc = hit[target == 0].sum() / (all + 1e-10)
-    return auroc
+# from torch.nn import functional as F
+# from torch_scatter import scatter_mean
 
 
-def area_under_prc(pred, target):
-    """
-    Area under precision-recall curve (PRC).
+# # ALL the metrics copy from torchdrug.metrics
+# def area_under_roc(pred, target):
+#     """
+#     Area under receiver operating characteristic curve (ROC).
+#
+#     Parameters:
+#         pred (Tensor): predictions of shape :math:`(n,)`
+#         target (Tensor): binary targets of shape :math:`(n,)`
+#     """
+#     order = pred.argsort(descending=True)
+#     target = target[order]
+#     hit = target.cumsum(0)
+#     all = (target == 0).sum() * (target == 1).sum()
+#     auroc = hit[target == 0].sum() / (all + 1e-10)
+#     return auroc
 
-    Parameters:
-        pred (Tensor): predictions of shape :math:`(n,)`
-        target (Tensor): binary targets of shape :math:`(n,)`
-    """
-    order = pred.argsort(descending=True)
-    target = target[order]
-    precision = target.cumsum(0) / torch.arange(1, len(target) + 1, device=target.device)
-    auprc = precision[target == 1].sum() / ((target == 1).sum() + 1e-10)
-    return auprc
 
-
-def accuracy(pred, target):
-    """
-    Classification accuracy.
-
-    Suppose there are :math:`N` sets and :math:`C` categories.
-
-    Parameters:
-        pred (Tensor): prediction of shape :math:`(N, C)`
-        target (Tensor): target of shape :math:`(N,)`
-    """
-    return (pred.argmax(dim=-1) == target).float().mean()
-
+# def area_under_prc(pred, target):
+#     """
+#     Area under precision-recall curve (PRC).
+#
+#     Parameters:
+#         pred (Tensor): predictions of shape :math:`(n,)`
+#         target (Tensor): binary targets of shape :math:`(n,)`
+#     """
+#     order = pred.argsort(descending=True)
+#     target = target[order]
+#     precision = target.cumsum(0) / torch.arange(1, len(target) + 1, device=target.device)
+#     auprc = precision[target == 1].sum() / ((target == 1).sum() + 1e-10)
+#     return auprc
+#
+#
+# def accuracy(pred, target):
+#     """
+#     Classification accuracy.
+#
+#     Suppose there are :math:`N` sets and :math:`C` categories.
+#
+#     Parameters:
+#         pred (Tensor): prediction of shape :math:`(N, C)`
+#         target (Tensor): target of shape :math:`(N,)`
+#     """
+#     return (pred.argmax(dim=-1) == target).float().mean()
+#
 
 def f1_max(pred, target):
     """
@@ -86,17 +88,17 @@ def f1_max(pred, target):
     return all_f1.max()
 
 
-def r2(pred, target):
-    """
-    :math:`R^2` regression score.
-
-    Parameters:
-        pred (Tensor): predictions of shape :math:`(n,)`
-        target (Tensor): targets of shape :math:`(n,)`
-    """
-    total = torch.var(target, unbiased=False)
-    residual = F.mse_loss(pred, target)
-    return 1 - residual / total
+# def r2(pred, target):
+#     """
+#     :math:`R^2` regression score.
+#
+#     Parameters:
+#         pred (Tensor): predictions of shape :math:`(n,)`
+#         target (Tensor): targets of shape :math:`(n,)`
+#     """
+#     total = torch.var(target, unbiased=False)
+#     residual = F.mse_loss(pred, target)
+#     return 1 - residual / total
 
 
 def pearsonr(pred, target):
@@ -117,81 +119,82 @@ def pearsonr(pred, target):
     return pearsonr
 
 
-def spearmanr(pred, target):
-    """
-    Spearman correlation between prediction and target.
-
-    Parameters:
-        pred (Tensor): prediction of shape :math: `(N,)`
-        target (Tensor): target of shape :math: `(N,)`
-    """
-
-    def get_ranking(input):
-        input_set, input_inverse = input.unique(return_inverse=True)
-        order = input_inverse.argsort()
-        ranking = torch.zeros(len(input_inverse), device=input.device)
-        ranking[order] = torch.arange(1, len(input) + 1, dtype=torch.float, device=input.device)
-
-        # for elements that have the same value, replace their rankings with the mean of their rankings
-        mean_ranking = scatter_mean(ranking, input_inverse, dim=0, dim_size=len(input_set))
-        ranking = mean_ranking[input_inverse]
-        return ranking
-
-    pred = get_ranking(pred)
-    target = get_ranking(target)
-    covariance = (pred * target).mean() - pred.mean() * target.mean()
-    pred_std = pred.std(unbiased=False)
-    target_std = target.std(unbiased=False)
-    spearmanr = covariance / (pred_std * target_std + 1e-10)
-    return spearmanr
-
+# def spearmanr(pred, target):
+#     """
+#     Spearman correlation between prediction and target.
+#
+#     Parameters:
+#         pred (Tensor): prediction of shape :math: `(N,)`
+#         target (Tensor): target of shape :math: `(N,)`
+#     """
+#
+#     def get_ranking(input):
+#         input_set, input_inverse = input.unique(return_inverse=True)
+#         order = input_inverse.argsort()
+#         ranking = torch.zeros(len(input_inverse), device=input.device)
+#         ranking[order] = torch.arange(1, len(input) + 1, dtype=torch.float, device=input.device)
+#
+#         # for elements that have the same value, replace their rankings with the mean of their rankings
+#         mean_ranking = scatter_mean(ranking, input_inverse, dim=0, dim_size=len(input_set))
+#         ranking = mean_ranking[input_inverse]
+#         return ranking
+#
+#     pred = get_ranking(pred)
+#     target = get_ranking(target)
+#     covariance = (pred * target).mean() - pred.mean() * target.mean()
+#     pred_std = pred.std(unbiased=False)
+#     target_std = target.std(unbiased=False)
+#     spearmanr = covariance / (pred_std * target_std + 1e-10)
+#     return spearmanr
+#
 
 def one_into_two(preds):
+    preds = preds.flatten()
     probs_class_1 = torch.sigmoid(preds)
     probs_class_0 = 1 - probs_class_1
     return torch.cat((probs_class_0, probs_class_1), dim=1)
 
 
-def metric_prep(preds, reals, metric):
-    if metric.__name__ == "area_under_roc" or metric.__name__ == "area_under_prc":
-        if preds.dim() > 1 and preds.shape[1] > 1:
-            reals = torch.nn.functional.one_hot(reals.long().flatten(), num_classes=preds.shape[1] + 1).flatten()
-        else:
-            reals = reals.flatten()
-        preds = torch.sigmoid(preds).flatten()
-
-
-    elif metric.__name__ == "f1_max" or metric.__name__ == "accuracy":
-        is_multilabel = reals.shape[1] > 1
-        is_binary = preds.shape[1] <= 1
-
-        if metric.__name__ == "accuracy":
-            if is_multilabel:
-                preds = preds.flatten().unsqueeze(1)
-                preds = one_into_two(preds)
-                reals = reals.flatten()
-            elif is_binary:
-                preds = preds.flatten().unsqueeze(1)
-                preds = one_into_two(preds)
-                reals = reals.flatten()
-            else:
-                preds = torch.softmax(preds, dim=1)
-                reals = reals.long().flatten()
-        else:  # f1_max
-            if is_binary:
-                preds = preds.flatten().unsqueeze(1)
-                preds = one_into_two(preds)
-                reals = torch.nn.functional.one_hot(reals.long().flatten(), num_classes=2)
-            elif is_multilabel:
-                preds = torch.sigmoid(preds)
-                reals = reals
-            else:
-                preds = torch.softmax(preds, dim=1)
-                reals = reals
-    else:
-        raise ValueError("Unknown metric")
-    return preds, reals
-
+# def metric_prep(preds, reals, metric):
+#     if metric.__name__ == "area_under_roc" or metric.__name__ == "area_under_prc":
+#         if preds.dim() > 1 and preds.shape[1] > 1:
+#             reals = torch.nn.functional.one_hot(reals.long().flatten(), num_classes=preds.shape[1] + 1).flatten()
+#         else:
+#             reals = reals.flatten()
+#         preds = torch.sigmoid(preds).flatten()
+#
+#
+#     elif metric.__name__ == "f1_max" or metric.__name__ == "accuracy":
+#         is_multilabel = reals.shape[1] > 1
+#         is_binary = preds.shape[1] <= 1
+#
+#         if metric.__name__ == "accuracy":
+#             if is_multilabel:
+#                 preds = preds.flatten().unsqueeze(1)
+#                 preds = one_into_two(preds)
+#                 reals = reals.flatten()
+#             elif is_binary:
+#                 preds = preds.flatten().unsqueeze(1)
+#                 preds = one_into_two(preds)
+#                 reals = reals.flatten()
+#             else:
+#                 preds = torch.softmax(preds, dim=1)
+#                 reals = reals.long().flatten()
+#         else:  # f1_max
+#             if is_binary:
+#                 preds = preds.flatten().unsqueeze(1)
+#                 preds = one_into_two(preds)
+#                 reals = torch.nn.functional.one_hot(reals.long().flatten(), num_classes=2)
+#             elif is_multilabel:
+#                 preds = torch.sigmoid(preds)
+#                 reals = reals
+#             else:
+#                 preds = torch.softmax(preds, dim=1)
+#                 reals = reals
+#     else:
+#         raise ValueError("Unknown metric")
+#     return preds, reals
+#
 
 def mse_metric(output, target):
     squared_diff = (output - target) ** 2
@@ -209,35 +212,36 @@ class Scores:
 
     def __init__(self, metric_name, preds=None, reals=None):
         self.metric_name = metric_name
-        if self.metric_name in ['mse', 'mae', 'r2']:
-            self.value = 1e6
-        else:
-            self.value = -1e6
-
+        assert self.metric_name in ["f1_max", "pearsonr"]
+        # if self.metric_name in ['mse', 'mae', 'r2']:
+        #     self.value = 1e6
+        # else:
+        #     self.value = -1e6
+        self.value = -1e6
         if preds is not None:
             self.calcualte(preds, reals)
 
+    def binary_classification_f1_max(self, preds, reals):
+        preds = torch.sigmoid(preds)
+        if preds.dim() == 1:
+            preds = preds.unsqueeze(1)
+        if reals.dim() == 1:
+            reals = reals.unsqueeze(1)
+        return f1_max(preds, reals).item()
+
     def calcualte(self, preds, reals):
-        if self.metric_name == "auc":
-            self.value = area_under_roc(*metric_prep(preds, reals, area_under_roc)).item()
-        elif self.metric_name == "auprc":
-            self.value = area_under_prc(*metric_prep(preds, reals, area_under_prc)).item()
-        elif self.metric_name == "acc":
-            self.value = accuracy(*metric_prep(preds, reals, accuracy)).item()
-        elif self.metric_name == "f1_max":
-            self.value = f1_max(*metric_prep(preds, reals, f1_max)).item()
-        elif self.metric_name == "mse":
-            self.value = mse_metric(preds.flatten(), reals.flatten()).item()
-        elif self.metric_name == "mae":
-            self.value = mae_metric(preds.flatten(), reals.flatten()).item()
-        elif self.metric_name == "r2":
-            self.value = r2(preds.flatten(), reals.flatten()).item()
-        elif self.metric_name == "pearsonr":
+        if self.metric_name == "pearsonr":
             self.value = pearsonr(preds.flatten(), reals.flatten()).item()
-        elif self.metric_name == "spearmanr":
-            self.value = spearmanr(preds.flatten(), reals.flatten()).item()
-        else:
-            raise ValueError("Unknown metric")
+        elif self.metric_name == "f1_max":
+            if preds.shape[1] == 1:
+                # binary classification
+                self.value = self.binary_classification_f1_max(preds, reals)
+            else:
+                # multiclass classification
+                values = []
+                for i in range(preds.shape[1]):
+                    values.append(f1_max(preds[:, i], reals[:, i]).item())
+                self.value = sum(values) / len(values)
 
     def __repr__(self):
         return f"{self.metric_name}: {self.value:.4f}"
@@ -256,15 +260,14 @@ class ScoresManager:
         self.name = name
 
     def update(self, valid_score: Scores, test_score: Scores):
-
-        if self.name in ['mse', 'mae']:
-            if valid_score.value < self.valid_scores.value:
-                self.valid_scores.value = valid_score.value
-                self.test_scores.value = test_score.value
-                return True
-        else:
-            if valid_score.value > self.valid_scores.value:
-                self.valid_scores.value = valid_score.value
-                self.test_scores.value = test_score.value
-                return True
+        # if self.name in ['mse', 'mae']:
+        #     if valid_score.value < self.valid_scores.value:
+        #         self.valid_scores.value = valid_score.value
+        #         self.test_scores.value = test_score.value
+        #         return True
+        # else:
+        if valid_score.value > self.valid_scores.value:
+            self.valid_scores.value = valid_score.value
+            self.test_scores.value = test_score.value
+            return True
         return False
