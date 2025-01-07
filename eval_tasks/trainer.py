@@ -98,6 +98,7 @@ def train_model_with_config(config: dict, task_name: str, fuse_base: str, mol_em
         positive_sample_weight = train_labels.sum() / len(train_labels)
         negative_sample_weight = 1 - positive_sample_weight
         pos_weight = negative_sample_weight / positive_sample_weight
+        print("pos_weight", pos_weight)
         criterion = task.criterion(pos_weight=torch.tensor(pos_weight).to(device))
     else:
         criterion = task.criterion()
