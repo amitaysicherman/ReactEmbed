@@ -6,20 +6,24 @@ import torch
 
 
 # # ALL the metrics copy from torchdrug.metrics
-# def area_under_roc(pred, target):
-#     """
-#     Area under receiver operating characteristic curve (ROC).
-#
-#     Parameters:
-#         pred (Tensor): predictions of shape :math:`(n,)`
-#         target (Tensor): binary targets of shape :math:`(n,)`
-#     """
-#     order = pred.argsort(descending=True)
-#     target = target[order]
-#     hit = target.cumsum(0)
-#     all = (target == 0).sum() * (target == 1).sum()
-#     auroc = hit[target == 0].sum() / (all + 1e-10)
-#     return auroc
+def auc(pred, target):
+    pred = pred.flatten()
+    target = target.flatten()
+    order = pred.argsort(descending=True)
+    target = target[order]
+    hit = target.cumsum(0)
+    all = (target == 0).sum() * (target == 1).sum()
+    auroc = hit[target == 0].sum() / (all + 1e-10)
+    return auroc
+
+
+def multilabel_auc(predictions, targets):
+    num_labels = predictions.size(1)
+    aurocs = []
+    for i in range(num_labels):
+        auroc = auc(predictions[:, i], targets[:, i])
+        aurocs.append(auroc)
+    return torch.stack(aurocs).mean()  # macro average
 
 
 # def area_under_prc(pred, target):
@@ -50,43 +54,43 @@ import torch
 #     return (pred.argmax(dim=-1) == target).float().mean()
 #
 
-def f1_max(pred, target):
-    """
-    F1 score with the optimal threshold.
-
-    This function first enumerates all possible thresholds for deciding positive and negative
-    samples, and then pick the threshold with the maximal F1 score.
-
-    Parameters:
-        pred (Tensor): predictions of shape :math:`(B, N)`
-        target (Tensor): binary targets of shape :math:`(B, N)`
-    """
-    order = pred.argsort(descending=True, dim=1)
-    target = target.gather(1, order)
-    precision = target.cumsum(1) / torch.ones_like(target).cumsum(1)
-    recall = target.cumsum(1) / (target.sum(1, keepdim=True) + 1e-10)
-    is_start = torch.zeros_like(target).bool()
-    is_start[:, 0] = 1
-    is_start = torch.scatter(is_start, 1, order, is_start)
-
-    all_order = pred.flatten().argsort(descending=True)
-    order = order + torch.arange(order.shape[0], device=order.device).unsqueeze(1) * order.shape[1]
-    order = order.flatten()
-    inv_order = torch.zeros_like(order)
-    inv_order[order] = torch.arange(order.shape[0], device=order.device)
-    is_start = is_start.flatten()[all_order]
-    all_order = inv_order[all_order]
-    precision = precision.flatten()
-    recall = recall.flatten()
-    all_precision = precision[all_order] - \
-                    torch.where(is_start, torch.zeros_like(precision), precision[all_order - 1])
-    all_precision = all_precision.cumsum(0) / is_start.cumsum(0)
-    all_recall = recall[all_order] - \
-                 torch.where(is_start, torch.zeros_like(recall), recall[all_order - 1])
-    all_recall = all_recall.cumsum(0) / pred.shape[0]
-    all_f1 = 2 * all_precision * all_recall / (all_precision + all_recall + 1e-10)
-    return all_f1.max()
-
+# def f1_max(pred, target):
+#     """
+#     F1 score with the optimal threshold.
+#
+#     This function first enumerates all possible thresholds for deciding positive and negative
+#     samples, and then pick the threshold with the maximal F1 score.
+#
+#     Parameters:
+#         pred (Tensor): predictions of shape :math:`(B, N)`
+#         target (Tensor): binary targets of shape :math:`(B, N)`
+#     """
+#     order = pred.argsort(descending=True, dim=1)
+#     target = target.gather(1, order)
+#     precision = target.cumsum(1) / torch.ones_like(target).cumsum(1)
+#     recall = target.cumsum(1) / (target.sum(1, keepdim=True) + 1e-10)
+#     is_start = torch.zeros_like(target).bool()
+#     is_start[:, 0] = 1
+#     is_start = torch.scatter(is_start, 1, order, is_start)
+#
+#     all_order = pred.flatten().argsort(descending=True)
+#     order = order + torch.arange(order.shape[0], device=order.device).unsqueeze(1) * order.shape[1]
+#     order = order.flatten()
+#     inv_order = torch.zeros_like(order)
+#     inv_order[order] = torch.arange(order.shape[0], device=order.device)
+#     is_start = is_start.flatten()[all_order]
+#     all_order = inv_order[all_order]
+#     precision = precision.flatten()
+#     recall = recall.flatten()
+#     all_precision = precision[all_order] - \
+#                     torch.where(is_start, torch.zeros_like(precision), precision[all_order - 1])
+#     all_precision = all_precision.cumsum(0) / is_start.cumsum(0)
+#     all_recall = recall[all_order] - \
+#                  torch.where(is_start, torch.zeros_like(recall), recall[all_order - 1])
+#     all_recall = all_recall.cumsum(0) / pred.shape[0]
+#     all_f1 = 2 * all_precision * all_recall / (all_precision + all_recall + 1e-10)
+#     return all_f1.max()
+#
 
 # def r2(pred, target):
 #     """
@@ -101,22 +105,22 @@ def f1_max(pred, target):
 #     return 1 - residual / total
 
 
-def pearsonr(pred, target):
-    """
-    Pearson correlation between prediction and target.
-
-    Parameters:
-        pred (Tensor): prediction of shape :math: `(N,)`
-        target (Tensor): target of shape :math: `(N,)`
-    """
-    pred_mean = pred.float().mean()
-    target_mean = target.float().mean()
-    pred_centered = pred - pred_mean
-    target_centered = target - target_mean
-    pred_normalized = pred_centered / pred_centered.norm(2)
-    target_normalized = target_centered / target_centered.norm(2)
-    pearsonr = pred_normalized @ target_normalized
-    return pearsonr
+# def pearsonr(pred, target):
+#     """
+#     Pearson correlation between prediction and target.
+#
+#     Parameters:
+#         pred (Tensor): prediction of shape :math: `(N,)`
+#         target (Tensor): target of shape :math: `(N,)`
+#     """
+#     pred_mean = pred.float().mean()
+#     target_mean = target.float().mean()
+#     pred_centered = pred - pred_mean
+#     target_centered = target - target_mean
+#     pred_normalized = pred_centered / pred_centered.norm(2)
+#     target_normalized = target_centered / target_centered.norm(2)
+#     pearsonr = pred_normalized @ target_normalized
+#     return pearsonr
 
 
 # def spearmanr(pred, target):
@@ -200,6 +204,14 @@ def pearsonr(pred, target):
 #     squared_diff = (output - target) ** 2
 #     mse = torch.mean(squared_diff)
 #     return mse
+
+
+def rmse_metric(output, target):
+    squared_diff = (output - target) ** 2
+    mse = torch.mean(squared_diff)
+    return -1 * torch.sqrt(mse)
+
+
 #
 #
 # def mae_metric(output, target):
@@ -212,7 +224,7 @@ class Scores:
 
     def __init__(self, metric_name, preds=None, reals=None):
         self.metric_name = metric_name
-        assert self.metric_name in ["f1_max", "pearsonr"]
+        assert self.metric_name in ["auc", "rmse"]
         # if self.metric_name in ['mse', 'mae', 'r2']:
         #     self.value = 1e6
         # else:
@@ -221,19 +233,19 @@ class Scores:
         if preds is not None:
             self.calcualte(preds, reals)
 
-    def binary_classification_f1_max(self, preds, reals):
-        preds = torch.sigmoid(preds)
-        if preds.dim() == 1:
-            preds = preds.unsqueeze(1)
-        if reals.dim() == 1:
-            reals = reals.unsqueeze(1)
-        return f1_max(preds, reals).item()
+    # def binary_classification_f1_max(self, preds, reals):
+    #     preds = torch.sigmoid(preds)
+    #     if preds.dim() == 1:
+    #         preds = preds.unsqueeze(1)
+    #     if reals.dim() == 1:
+    #         reals = reals.unsqueeze(1)
+    #     return f1_max(preds, reals).item()
 
     def calcualte(self, preds, reals):
-        if self.metric_name == "pearsonr":
-            self.value = pearsonr(preds.flatten(), reals.flatten()).item()
-        elif self.metric_name == "f1_max":
-            self.value = f1_max(torch.sigmoid(preds), reals).item()
+        if self.metric_name == "rmse":
+            self.value = rmse_metric(preds, reals).item()
+        elif self.metric_name == "auc":
+            self.value = multilabel_auc(preds, reals).item()
             # if preds.shape[1] == 1:
             #     # binary classification
             #     self.value = self.binary_classification_f1_max(preds, reals)

@@ -136,7 +136,7 @@ def train_model_with_config(config: dict, task_name: str, fuse_base: str, mol_em
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
     no_improve = 0
     scores_manager = ScoresManager(config['metric'])
-    for epoch in range(500):
+    for epoch in range(50):
         train_scores = run_epoch(model, train_loader, optimizer, criterion, config['metric'], "train")
         with torch.no_grad():
             val_score = run_epoch(model, valid_loader, optimizer, criterion, config['metric'], "val")
