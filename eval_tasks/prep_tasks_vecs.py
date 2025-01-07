@@ -29,6 +29,12 @@ def save_labels(input_file, output_file):
         lines = f.read().splitlines()
     lines = [line.split() for line in lines]
     labels = np.stack([np.array([float(label) for label in line]) for line in tqdm(lines)])
+    # replace nan with 0
+    labels = np.nan_to_num(labels)
+    # convert dense to sparse
+    if labels.max() > 1:
+        # for example - 10 classes and the label is just the index of the class. convert to one hot
+        labels = np.eye(labels.max() + 1)[labels.astype(int)]
     np.save(output_file, labels)
 
 
