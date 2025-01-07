@@ -32,6 +32,7 @@ def save_labels(input_file, output_file):
     # replace nan with 0
     labels = np.nan_to_num(labels)
     if np.all(labels == labels.astype(int)):  # if classificaiton , convert to one hot
+        labels = labels.astype(int)
         if labels.max() > 1:
             # for example - 10 classes and the label is just the index of the class. convert to one hot
             labels = np.eye(labels.max() + 1)[labels.astype(int)]
