@@ -233,15 +233,16 @@ class Scores:
         if self.metric_name == "pearsonr":
             self.value = pearsonr(preds.flatten(), reals.flatten()).item()
         elif self.metric_name == "f1_max":
-            if preds.shape[1] == 1:
-                # binary classification
-                self.value = self.binary_classification_f1_max(preds, reals)
-            else:
-                # multiclass classification
-                values = []
-                for i in range(preds.shape[1]):
-                    values.append(self.binary_classification_f1_max(preds[:, i], reals[:, i]))
-                self.value = sum(values) / len(values)
+            self.value = f1_max(torch.sigmoid(preds), reals).item()
+            # if preds.shape[1] == 1:
+            #     # binary classification
+            #     self.value = self.binary_classification_f1_max(preds, reals)
+            # else:
+            #     # multiclass classification
+            #     values = []
+            #     for i in range(preds.shape[1]):
+            #         values.append(self.binary_classification_f1_max(preds[:, i], reals[:, i]))
+            #     self.value = sum(values) / len(values)
 
     def __repr__(self):
         return f"{self.metric_name}: {self.value:.4f}"
