@@ -96,9 +96,13 @@ def train_model_with_config(config: dict, task_name: str, fuse_base: str, mol_em
     if task.criterion == torch.nn.BCEWithLogitsLoss:
         train_labels = train_loader.dataset.labels  # Shape: [n_samples, n_classes]
 
+        # Convert to PyTorch tensor if it's not already
+        if not isinstance(train_labels, torch.Tensor):
+            train_labels = torch.tensor(train_labels)
+
         # Calculate positive weights for each class
         n_samples = len(train_labels)
-        positive_counts = train_labels.sum(dim=0)  # Sum along samples dimension
+        positive_counts = train_labels.sum(axis=0)  # For numpy compatibility
         positive_weights = positive_counts / n_samples  # Per-class positive sample ratio
         negative_weights = 1 - positive_weights  # Per-class negative sample ratio
 
