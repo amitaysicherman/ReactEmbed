@@ -154,7 +154,7 @@ def train_model_with_config(config: dict, task_name: str, fuse_base: str, mol_em
     if return_model:
         return scores_manager.test_scores.get_value(), model
     if return_train:
-        return scores_manager.test_scores.get_value(), train_scores
+        return scores_manager.test_scores.get_value(), train_scores.get_value()
     return scores_manager.test_scores.get_value()
 
 
