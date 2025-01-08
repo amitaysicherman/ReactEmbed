@@ -135,6 +135,7 @@ def train_model_with_config(config: dict, task_name: str, fuse_base: str, mol_em
     model = model.to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
     no_improve = 0
+    last_improve_epoch = 0
     scores_manager = ScoresManager(config['metric'])
     best_train_scores = Scores(config['metric'])
     for epoch in range(100):
@@ -146,16 +147,19 @@ def train_model_with_config(config: dict, task_name: str, fuse_base: str, mol_em
         if improved:
             no_improve = 0
             best_train_scores = train_scores
+            last_improve_epoch = epoch
         else:
             no_improve += 1
             if no_improve > max_no_improve:
                 break
+    print(f"Best epoch: {last_improve_epoch}")
     if return_valid:
         return scores_manager.test_scores.get_value(), scores_manager.valid_scores.get_value()
     if return_model:
         return scores_manager.test_scores.get_value(), model
     if return_train:
         return scores_manager.test_scores.get_value(), best_train_scores.get_value()
+
     return scores_manager.test_scores.get_value()
 
 
