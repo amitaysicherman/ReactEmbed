@@ -40,18 +40,21 @@ def run_epoch(model, optimizer, loader, contrastive_loss, is_train):
     else:
         model.eval()
     total_loss = 0
+    count = 0
     for i, (t1, t2, data_1, data_2, data_3) in tqdm(enumerate(loader), total=len(loader)):
         data_1, data_2, data_3 = data_1.to(device), data_2.to(device), data_3.to(device)
-        out1 = model(data_1, f"{t1[0]}-{t2[0]}")
-        out3 = model(data_3, f"{t2[0]}-{t2[0]}")
-        cont_loss = contrastive_loss(data_2, out1, out3)  # M-P-P OR P-P-P
+
+        out2 = model(data_2, f"{t2[0]}-{t1[0]}")
+        out3 = model(data_3, f"{t2[0]}-{t1[0]}")
+        cont_loss = contrastive_loss(data_1, out2, out3)
         total_loss += cont_loss.mean().item()
+        count += 1
         if not is_train:
             continue
         cont_loss.backward()
         optimizer.step()
         optimizer.zero_grad()
-    return total_loss / len(loader)
+    return total_loss / count
 
 
 def get_loader(data_name, split, batch_size, p_model, m_model, flip_prob, min_value):
@@ -120,13 +123,13 @@ if __name__ == '__main__':
     parser.add_argument('--batch_size', type=int, help='Batch size', default=256)
     parser.add_argument('--p_model', type=str, help='Protein model', default="ProtBert")
     parser.add_argument('--m_model', type=str, help='Molecule model', default="ChemBERTa")
-    parser.add_argument('--n_layers', type=int, help='Number of layers', default=1)
+    parser.add_argument('--n_layers', type=int, help='Number of layers', default=2)
     parser.add_argument('--hidden_dim', type=int, help='Hidden dimension', default=256)
     parser.add_argument('--dropout', type=float, help='Dropout', default=0.3)
-    parser.add_argument('--epochs', type=int, help='Number of epochs', default=1)
-    parser.add_argument('--lr', type=float, help='Learning rate', default=0.00005)
+    parser.add_argument('--epochs', type=int, help='Number of epochs', default=10)
+    parser.add_argument('--lr', type=float, help='Learning rate', default=1e-3)
     parser.add_argument('--flip_prob', type=float, help='Flip Prob', default=0.0)
-    parser.add_argument('--min_value', type=int, help='Minimum value', default=5)
+    parser.add_argument('--min_value', type=int, help='Minimum value', default=1)
     parser.add_argument('--data_name', type=str, help='Data name', default="reactome")
     parser.add_argument('--override', action='store_true', help='Override existing model')
     args = parser.parse_args()

@@ -142,13 +142,21 @@ class TripletsBatchSampler(Sampler):
     def __init__(self, dataset: TripletsDataset, batch_size):
         self.dataset = dataset
         self.batch_size = batch_size
+        max_len = max(len(self.dataset.triples[t]) for t in self.dataset.types)
+        print(f"Max length: {max_len}")
+        self.types_upsample = {t: max_len // len(self.dataset.triples[t]) for t in self.dataset.types}
 
     def __iter__(self):
+
         for t in self.dataset.types:
             indices = list(range(len(self.dataset.triples[t])))
             random.shuffle(indices)
-            for i in range(0, len(indices), self.batch_size):
-                yield [(t, idx) for idx in indices[i:i + self.batch_size]]
+            for _ in range(self.types_upsample[t]):
+                for i in range(0, len(indices), self.batch_size):
+                    yield [(t, idx) for idx in indices[i:i + self.batch_size]]
 
     def __len__(self):
-        return len(self.dataset) // self.batch_size
+        total_samples = 0
+        for t in self.dataset.types:
+            total_samples += len(self.dataset.triples[t] * self.types_upsample[t])
+        return total_samples // self.batch_size
