@@ -85,7 +85,7 @@ class LinFuseModel(FuseModel):
             # Compute attention/gating
             gate = self.gate(torch.cat([v1, v2], dim=1))
             print(gate[0])
-            x = (1 - gate) * v1 + gate * v2
+            x = gate * v1 + (1 - gate) * v2
         else:
             x = v1 if self.use_model else v2
 
