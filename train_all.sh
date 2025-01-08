@@ -3,7 +3,7 @@
 #SBATCH --time=7-00
 #SBATCH --mem=64G
 #SBATCH --requeue
-#SBATCH --gres=gpu:1
+#SBATCH --gres=gpu:A4000:1
 #SBATCH --array=1-12
 
 
@@ -27,9 +27,13 @@ eval "$(conda shell.bash hook)"
 conda activate ReactEmbedESM
 export PYTHONPATH=$PYTHONPATH:$(pwd)
 python contrastive_learning/trainer.py $config --override
+python contrastive_learning/trainer.py $config --n_layers 1 --epochs 1 --override
+python contrastive_learning/trainer.py $config --min_value 2 --override
 python contrastive_learning/trainer.py $config --flip_prob 0.1 --override
 python contrastive_learning/trainer.py $config --flip_prob 0.5 --override
-python contrastive_learning/trainer.py $config --data_name "pathbank" --override
-python contrastive_learning/trainer.py $config --n_layers 2 --epochs 10 --override
-python contrastive_learning/trainer.py $config --min_value 1 --override
-python contrastive_learning/trainer.py $config --min_value 10 --override
+python contrastive_learning/trainer.py $config --override  --data_name "pathbank"
+python contrastive_learning/trainer.py $config --n_layers 1 --epochs 1 --override  --data_name "pathbank"
+python contrastive_learning/trainer.py $config --min_value 2 --override  --data_name "pathbank"
+python contrastive_learning/trainer.py $config --flip_prob 0.1 --override  --data_name "pathbank"
+python contrastive_learning/trainer.py $config --flip_prob 0.5 --override  --data_name "pathbank"
+
