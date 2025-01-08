@@ -59,7 +59,7 @@ class LinFuseModel(FuseModel):
     def __init__(self, input_dim_1: int, dtype_1: DataType, output_dim: int, conf: Config,
                  fuse_model=None, fuse_base="", n_layers=2, drop_out=0.0, hidden_dim=-1):
         super().__init__(conf, fuse_model, fuse_base)
-
+        self.dtype = dtype_1
         # Separate projection layers for each input
         if self.use_model:
             self.v1_projection = torch.nn.Linear(input_dim_1, hidden_dim)
@@ -95,7 +95,8 @@ class PairsFuseModel(FuseModel):
                  output_dim: int, conf: Config, hidden_dim=-1, n_layers=2, drop_out=0.5,
                  fuse_model=None, fuse_base=""):
         super().__init__(conf, fuse_model, fuse_base)
-
+        self.x1_dtype = dtype_1
+        self.x2_dtype = dtype_2
         if hidden_dim == -1:
             hidden_dim = max(input_dim_1, input_dim_2)
 
