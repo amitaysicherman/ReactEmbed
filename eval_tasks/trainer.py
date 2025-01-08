@@ -152,7 +152,8 @@ def train_model_with_config(config: dict, task_name: str, fuse_base: str, mol_em
             no_improve += 1
             if no_improve > max_no_improve:
                 break
-    print(f"Best epoch: {last_improve_epoch}")
+    print(
+        f"Best epoch: {last_improve_epoch}, {scores_manager.test_scores.get_value()}, {best_train_scores.get_value()}")
     if return_valid:
         return scores_manager.test_scores.get_value(), scores_manager.valid_scores.get_value()
     if return_model:
