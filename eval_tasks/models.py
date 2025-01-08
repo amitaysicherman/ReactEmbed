@@ -68,7 +68,7 @@ class LinFuseModel(FuseModel):
 
         # Gating mechanism
         self.gate = torch.nn.Sequential(
-            torch.nn.Linear(hidden_dim * 2, hidden_dim),
+            torch.nn.Linear(hidden_dim * 2, 1),
             torch.nn.Sigmoid()
         ) if self.use_fuse and self.use_model else None
 
