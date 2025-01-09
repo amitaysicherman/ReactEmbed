@@ -133,7 +133,7 @@ def train_model_with_config(config: dict, task_name: str, fuse_base: str, mol_em
                                 n_layers=n_layers, hidden_dim=hidden_dim, fuse_model=fuse_model)
     # print(model)
     model = model.to(device)
-    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=lr)
     no_improve = 0
     last_improve_epoch = 0
     scores_manager = ScoresManager(config['metric'])
