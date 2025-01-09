@@ -13,7 +13,7 @@ class ReactEmbedConfig:
     n_layers: int
     hidden_dim: int
     dropout: float
-    normalize_last: int = 0
+    normalize_last: int = 1
 
     def save_to_file(self, file_name):
         with open(file_name, "w") as f:
