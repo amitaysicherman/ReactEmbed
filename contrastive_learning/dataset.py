@@ -141,11 +141,9 @@ class TripletsBatchSampler(Sampler):
         print(f"Max length: {max_len}")
         # self.types_upsample = {t: max_len // len(self.dataset.triples[t]) for t in self.dataset.triples}
         self.max_num_steps = max_num_steps
-        self.counter = 0
 
     def __iter__(self):
-        while self.counter < self.max_num_steps:
-            self.counter += 1
+        for _ in range(self.max_num_steps):
             t = random.choice(TRIPLET_TYPES)
             idx = random.choice(range(0, len(self.dataset.triples[t]) - self.batch_size - 1))
             yield [(t, idx + i) for i in range(self.batch_size)]
