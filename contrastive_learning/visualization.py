@@ -125,7 +125,7 @@ class ReactionVisualizer:
         plt.tight_layout()
         plt.savefig(f"{save_dir}/epoch_{epoch}_embeddings.png",
                     bbox_inches='tight', dpi=300)
-        plt.show()
+        # plt.show()
         plt.close()
 
 
