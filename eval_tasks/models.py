@@ -16,7 +16,7 @@ def load_fuse_model(name):
     cp_data = torch.load(f"{name}/model.pt", map_location=torch.device('cpu'))
     config_file = os.path.join(name, 'config.txt')
     config = ReactEmbedConfig.load_from_file(config_file)
-    dim = config.p_dim + config.m_dim
+    dim = config.shared_dim
     model = ReactEmbedModel(config)
     model.load_state_dict(cp_data)
     model = model.eval()
@@ -51,108 +51,67 @@ class FuseModel(torch.nn.Module):
                 self.fuse_model, dim = load_fuse_model(fuse_base)
             else:
                 self.fuse_model = fuse_model
-                dim = fuse_model.config.p_dim + fuse_model.config.m_dim
+                dim = fuse_model.config.shared_dim
             self.fuse_dim = dim
 
 
 class LinFuseModel(FuseModel):
-    def __init__(self, input_dim_1: int, dtype_1: DataType, output_dim: int, conf: Config,
-                 fuse_model=None, fuse_base="", n_layers=2, drop_out=0.0, hidden_dim=-1):
+    def __init__(self, input_dim_1: int, dtype_1: DataType, output_dim: int, conf: Config, fuse_model=None,
+                 fuse_base="", n_layers=2, drop_out=0.0, hidden_dim=-1):
         super().__init__(conf, fuse_model, fuse_base)
-        self.dtype = dtype_1
-        # Separate projection layers for each input
-        if self.use_model:
-            self.v1_projection = torch.nn.Linear(input_dim_1, hidden_dim)
+        self.input_dim = 0
         if self.use_fuse:
-            self.v2_projection = torch.nn.Linear(self.fuse_dim, hidden_dim)
+            self.input_dim += self.fuse_dim
+        if self.use_model:
+            self.input_dim += input_dim_1
 
-        # Gating mechanism
-        self.gate = torch.nn.Sequential(
-            torch.nn.Linear(hidden_dim * 2, 1),
-            torch.nn.Sigmoid()
-        ) if self.use_fuse and self.use_model else None
+        if hidden_dim == -1:
+            hidden_dim = self.input_dim
 
-        # Final layers
+        self.dtype = dtype_1
         hidden_layers = [hidden_dim] * (n_layers - 1)
-        self.layers = get_layers([hidden_dim] + hidden_layers + [output_dim], dropout=drop_out)
+        self.layers = get_layers([self.input_dim] + hidden_layers + [output_dim], dropout=drop_out)
 
     def forward(self, data):
-        v1 = self.v1_projection(data) if self.use_model else None
-        v2 = self.v2_projection(
-            self.fuse_model.dual_forward(data, self.dtype.value).detach()) if self.use_fuse else None
-
-        if self.use_fuse and self.use_model:
-            # Compute attention/gating
-            gate = self.gate(torch.cat([v1, v2], dim=1))
-            print(gate[0])
-            x = gate * v1 + (1 - gate) * v2
-        else:
-            x = v1 if self.use_model else v2
-
+        x = []
+        if self.use_fuse:
+            x.append(self.fuse_model.dual_forward(data, self.dtype.value).detach())
+        if self.use_model:
+            x.append(data)
+        x = torch.concat(x, dim=1)
         return self.layers(x)
 
+
 class PairsFuseModel(FuseModel):
-    def __init__(self, input_dim_1: int, dtype_1: DataType, input_dim_2: int, dtype_2: DataType,
-                 output_dim: int, conf: Config, hidden_dim=-1, n_layers=2, drop_out=0.5,
-                 fuse_model=None, fuse_base=""):
+    def __init__(self, input_dim_1: int, dtype_1: DataType, input_dim_2: int, dtype_2: DataType, output_dim: int,
+                 conf: Config,
+                 hidden_dim=-1, n_layers=2, drop_out=0.5, fuse_model=None,
+                 fuse_base=""):
         super().__init__(conf, fuse_model, fuse_base)
+
+        self.input_dim = 0
+        if self.use_fuse:
+            self.input_dim += self.fuse_dim * 2
+        if self.use_model:
+            self.input_dim += input_dim_1 + input_dim_2
         self.x1_dtype = dtype_1
         self.x2_dtype = dtype_2
+
         if hidden_dim == -1:
-            hidden_dim = max(input_dim_1, input_dim_2)
+            hidden_dim = self.input_dim
 
-        # Projection layers for original inputs
-        if self.use_model:
-            self.v1_projection = torch.nn.Linear(input_dim_1, hidden_dim)
-            self.v2_projection = torch.nn.Linear(input_dim_2, hidden_dim)
-
-        # Projection layers for fuse model outputs
-        if self.use_fuse:
-            self.fuse1_projection = torch.nn.Linear(self.fuse_dim, hidden_dim)
-            self.fuse2_projection = torch.nn.Linear(self.fuse_dim, hidden_dim)
-
-        # Gating mechanisms - one for each pair
-        if self.use_fuse and self.use_model:
-            self.gate1 = torch.nn.Sequential(
-                torch.nn.Linear(hidden_dim * 2, hidden_dim),
-                torch.nn.Sigmoid()
-            )
-            self.gate2 = torch.nn.Sequential(
-                torch.nn.Linear(hidden_dim * 2, hidden_dim),
-                torch.nn.Sigmoid()
-            )
-
-        # Final layers
-        hidden_layers = [hidden_dim * 2] * (n_layers - 1)  # *2 because we'll concatenate pair features
-        self.layers = get_layers([hidden_dim * 2] + hidden_layers + [output_dim], dropout=drop_out)
+        hidden_layers = [hidden_dim] * (n_layers - 1)
+        self.layers = get_layers([self.input_dim] + hidden_layers + [output_dim], dropout=drop_out)
 
     def forward(self, x1, x2):
-        # Process first input
-        if self.use_model:
-            v1 = self.v1_projection(x1)
+        x = []
         if self.use_fuse:
-            v1_fuse = self.fuse1_projection(self.fuse_model.dual_forward(x1, self.x1_dtype.value).detach())
-
-        # Process second input
+            x1_fuse = self.fuse_model(x1, self.x1_dtype.value).detach()
+            x.append(x1_fuse)
+            x2_fuse = self.fuse_model(x2, self.x2_dtype.value).detach()
+            x.append(x2_fuse)
         if self.use_model:
-            v2 = self.v2_projection(x2)
-        if self.use_fuse:
-            v2_fuse = self.fuse2_projection(self.fuse_model.dual_forward(x2, self.x2_dtype.value).detach())
-
-        # Apply gating if using both original and fuse
-        if self.use_fuse and self.use_model:
-            # Gate for first pair
-            gate1 = self.gate1(torch.cat([v1, v1_fuse], dim=1))
-            feat1 = v1 + gate1 * v1_fuse
-
-            # Gate for second pair
-            gate2 = self.gate2(torch.cat([v2, v2_fuse], dim=1))
-            feat2 = v2 + gate2 * v2_fuse
-        else:
-            # If using only one type of input
-            feat1 = v1 if self.use_model else v1_fuse
-            feat2 = v2 if self.use_model else v2_fuse
-
-        # Combine pair features
-        x = torch.cat([feat1, feat2], dim=1)
+            x.append(x1)
+            x.append(x2)
+        x = torch.cat(x, dim=1)
         return self.layers(x)
