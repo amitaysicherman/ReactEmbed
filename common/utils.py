@@ -3,7 +3,7 @@ from enum import Enum
 
 def model_args_to_name(**kwargs):
     names_to_check = ["batch_size", "p_model", "m_model", "n_layers", "hidden_dim", "dropout", "epochs",
-                      "lr", "flip_prob", "min_value"]
+                      "lr", "flip_prob", "shared_dim"]
     for name in names_to_check:
         if name not in kwargs:
             raise ValueError(f"Missing argument: {name}")
@@ -19,9 +19,9 @@ def model_args_to_name(**kwargs):
     epochs = kwargs["epochs"]
     lr = kwargs["lr"]
     flip_prob = kwargs["flip_prob"]
-    min_value = kwargs.get("min_value", 1)
+    shared_dim = kwargs["shared_dim"]
 
-    return f"{p_model}-{m_model}-{n_layers}-{hidden_dim}-{dropout}-{epochs}-{lr}-{batch_size}-{flip_prob}-{min_value}"
+    return f"{p_model}-{m_model}-{n_layers}-{hidden_dim}-{dropout}-{epochs}-{lr}-{batch_size}-{flip_prob}-{shared_dim}"
 
 
 def name_to_model_args(name):
