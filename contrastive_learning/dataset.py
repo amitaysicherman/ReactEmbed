@@ -139,32 +139,16 @@ class TripletsBatchSampler(Sampler):
         self.batch_size = batch_size
         max_len = max(len(self.dataset.triples[t]) for t in self.dataset.triples)
         print(f"Max length: {max_len}")
-        self.types_upsample = {t: max_len // len(self.dataset.triples[t]) for t in self.dataset.triples}
-        self.t_index_list = []
-        for t in self.dataset.triples:
-            for _ in range(self.types_upsample[t]):
-                start_i = random.randint(0, self.batch_size - 1)
-                indices = list(range(start_i, len(self.dataset.triples[t]) - self.batch_size - 1, self.batch_size))
-                random.shuffle(indices)
-                self.t_index_list.extend([(t, idx) for idx in indices])
-        random.shuffle(self.t_index_list)
-        if max_num_steps and len(self.t_index_list) > max_num_steps:
-            self.t_index_list = self.t_index_list[:max_num_steps]
+        # self.types_upsample = {t: max_len // len(self.dataset.triples[t]) for t in self.dataset.triples}
+        self.max_num_steps = max_num_steps
+        self.counter = 0
 
     def __iter__(self):
-        for t, idx in self.t_index_list:
-            yield [(t, i) for i in range(idx, idx + self.batch_size)]
+        while self.counter < self.max_num_steps:
+            self.counter += 1
+            t = random.choice(TRIPLET_TYPES)
+            idx = random.choice(range(0, len(self.dataset.triples[t]) - self.batch_size - 1))
+            yield [(t, idx + i) for i in range(self.batch_size)]
 
     def __len__(self):
-        return len(self.t_index_list)
-
-
-if __name__ == "__main__":
-    dataset = TripletsDataset("reactome", "test", n_duplicates=2)
-    sampler = TripletsBatchSampler(dataset, 16)
-    for batch in sampler:
-        print(batch)
-        break
-    print(len(sampler))
-    print(len(dataset))
-    print(dataset[("P-P-M", 0)])
+        return self.max_num_steps
