@@ -5,104 +5,18 @@
 #SBATCH --array=1-12
 
 
-configs="--p_model ProtBert --m_model MolCLR --fusion_name data/reactome/model/ProtBert-MolCLR-1-256-0.3-1-5e-05-256-0.0-5 |\
---p_model esm3-small --m_model ChemBERTa --fusion_name data/reactome/model/esm3-small-ChemBERTa-1-256-0.3-1-5e-05-256-0.0-5 |\
---p_model esm3-small --m_model MolCLR --fusion_name data/reactome/model/esm3-small-MolCLR-1-256-0.3-1-5e-05-256-0.0-5 |\
---p_model esm3-small --m_model MoLFormer --fusion_name data/reactome/model/esm3-small-MoLFormer-1-256-0.3-1-5e-05-256-0.0-5 |\
---p_model ProtBert --m_model MoLFormer --fusion_name data/reactome/model/ProtBert-MoLFormer-1-256-0.3-1-5e-05-256-0.0-5 |\
---p_model esm3-medium --m_model ChemBERTa --fusion_name data/reactome/model/esm3-medium-ChemBERTa-1-256-0.3-1-5e-05-256-0.0-5 |\
---p_model esm3-medium --m_model MolCLR --fusion_name data/reactome/model/esm3-medium-MolCLR-1-256-0.3-1-5e-05-256-0.0-5 |\
---p_model ProtBert --m_model ChemBERTa --fusion_name data/reactome/model/ProtBert-ChemBERTa-1-256-0.3-1-5e-05-256-0.0-5 |\
---p_model esm3-medium --m_model MoLFormer --fusion_name data/reactome/model/esm3-medium-MoLFormer-1-256-0.3-1-5e-05-256-0.0-5 |\
---p_model GearNet --m_model MolCLR --fusion_name data/reactome/model/GearNet-MolCLR-1-256-0.3-1-5e-05-256-0.0-5 |\
---p_model GearNet --m_model MoLFormer --fusion_name data/reactome/model/GearNet-MoLFormer-1-256-0.3-1-5e-05-256-0.0-5 |\
---p_model GearNet --m_model ChemBERTa --fusion_name data/reactome/model/GearNet-ChemBERTa-1-256-0.3-1-5e-05-256-0.0-5"
-
-
-#configs="--p_model GearNet --m_model MoLFormer --fusion_name data/pathbank/model/GearNet-MoLFormer-1-256-0.3-1-5e-05-256-0.0-5 |\
-#--p_model GearNet --m_model ChemBERTa --fusion_name data/pathbank/model/GearNet-ChemBERTa-1-256-0.3-1-5e-05-256-0.0-5 |\
-#--p_model ProtBert --m_model MolCLR --fusion_name data/pathbank/model/ProtBert-MolCLR-1-256-0.3-1-5e-05-256-0.0-5 |\
-#--p_model ProtBert --m_model MoLFormer --fusion_name data/pathbank/model/ProtBert-MoLFormer-1-256-0.3-1-5e-05-256-0.0-5 |\
-#--p_model ProtBert --m_model ChemBERTa --fusion_name data/pathbank/model/ProtBert-ChemBERTa-1-256-0.3-1-5e-05-256-0.0-5 |\
-#--p_model GearNet --m_model MolCLR --fusion_name data/pathbank/model/GearNet-MolCLR-1-256-0.3-1-5e-05-256-0.0-5 |\
-#--p_model esm3-small --m_model MolCLR --fusion_name data/pathbank/model/esm3-small-MolCLR-1-256-0.3-1-5e-05-256-0.0-5 |\
-#--p_model esm3-small --m_model ChemBERTa --fusion_name data/pathbank/model/esm3-small-ChemBERTa-1-256-0.3-1-5e-05-256-0.0-5 |\
-#--p_model esm3-medium --m_model MolCLR --fusion_name data/pathbank/model/esm3-medium-MolCLR-1-256-0.3-1-5e-05-256-0.0-5 |\
-#--p_model esm3-medium --m_model ChemBERTa --fusion_name data/pathbank/model/esm3-medium-ChemBERTa-1-256-0.3-1-5e-05-256-0.0-5 |\
-#--p_model esm3-small --m_model MoLFormer --fusion_name data/pathbank/model/esm3-small-MoLFormer-1-256-0.3-1-5e-05-256-0.0-5 |\
-#--p_model esm3-medium --m_model MoLFormer --fusion_name data/pathbank/model/esm3-medium-MoLFormer-1-256-0.3-1-5e-05-256-0.0-5 |\
-#--p_model GearNet --m_model MolCLR --fusion_name data/reactome/model/GearNet-MolCLR-2-256-0.3-10-5e-05-256-0.0-5 |\
-#--p_model ProtBert --m_model ChemBERTa --fusion_name data/reactome/model/ProtBert-ChemBERTa-2-256-0.3-10-5e-05-256-0.0-5 |\
-#--p_model ProtBert --m_model MoLFormer --fusion_name data/reactome/model/ProtBert-MoLFormer-2-256-0.3-10-5e-05-256-0.0-5 |\
-#--p_model GearNet --m_model MoLFormer --fusion_name data/reactome/model/GearNet-MoLFormer-2-256-0.3-10-5e-05-256-0.0-5 |\
-#--p_model GearNet --m_model ChemBERTa --fusion_name data/reactome/model/GearNet-ChemBERTa-2-256-0.3-10-5e-05-256-0.0-5 |\
-#--p_model ProtBert --m_model MolCLR --fusion_name data/reactome/model/ProtBert-MolCLR-2-256-0.3-10-5e-05-256-0.0-5 |\
-#--p_model esm3-small --m_model MolCLR --fusion_name data/reactome/model/esm3-small-MolCLR-2-256-0.3-10-5e-05-256-0.0-5 |\
-#--p_model esm3-medium --m_model MolCLR --fusion_name data/reactome/model/esm3-medium-MolCLR-2-256-0.3-10-5e-05-256-0.0-5 |\
-#--p_model esm3-medium --m_model ChemBERTa --fusion_name data/reactome/model/esm3-medium-ChemBERTa-2-256-0.3-10-5e-05-256-0.0-5 |\
-#--p_model esm3-small --m_model ChemBERTa --fusion_name data/reactome/model/esm3-small-ChemBERTa-2-256-0.3-10-5e-05-256-0.0-5 |\
-#--p_model ProtBert --m_model MolCLR --fusion_name data/reactome/model/ProtBert-MolCLR-1-256-0.3-1-5e-05-256-0.0-5 |\
-#--p_model esm3-small --m_model ChemBERTa --fusion_name data/reactome/model/esm3-small-ChemBERTa-1-256-0.3-1-5e-05-256-0.0-5 |\
-#--p_model esm3-small --m_model MolCLR --fusion_name data/reactome/model/esm3-small-MolCLR-1-256-0.3-1-5e-05-256-0.0-5 |\
-#--p_model esm3-small --m_model MoLFormer --fusion_name data/reactome/model/esm3-small-MoLFormer-2-256-0.3-10-5e-05-256-0.0-5 |\
-#--p_model esm3-medium --m_model MoLFormer --fusion_name data/reactome/model/esm3-medium-MoLFormer-2-256-0.3-10-5e-05-256-0.0-5 |\
-#--p_model esm3-small --m_model MoLFormer --fusion_name data/reactome/model/esm3-small-MoLFormer-1-256-0.3-1-5e-05-256-0.0-5 |\
-#--p_model ProtBert --m_model MoLFormer --fusion_name data/reactome/model/ProtBert-MoLFormer-1-256-0.3-1-5e-05-256-0.0-5 |\
-#--p_model esm3-medium --m_model ChemBERTa --fusion_name data/reactome/model/esm3-medium-ChemBERTa-1-256-0.3-1-5e-05-256-0.0-5 |\
-#--p_model esm3-medium --m_model MolCLR --fusion_name data/reactome/model/esm3-medium-MolCLR-1-256-0.3-1-5e-05-256-0.0-5 |\
-#--p_model ProtBert --m_model ChemBERTa --fusion_name data/reactome/model/ProtBert-ChemBERTa-1-256-0.3-1-5e-05-256-0.0-5 |\
-#--p_model esm3-medium --m_model MoLFormer --fusion_name data/reactome/model/esm3-medium-MoLFormer-1-256-0.3-1-5e-05-256-0.0-5 |\
-#--p_model GearNet --m_model MolCLR --fusion_name data/reactome/model/GearNet-MolCLR-1-256-0.3-1-5e-05-256-0.0-5 |\
-#--p_model GearNet --m_model MoLFormer --fusion_name data/reactome/model/GearNet-MoLFormer-1-256-0.3-1-5e-05-256-0.0-5 |\
-#--p_model GearNet --m_model ChemBERTa --fusion_name data/reactome/model/GearNet-ChemBERTa-1-256-0.3-1-5e-05-256-0.0-5 |\
-#--p_model ProtBert --m_model MolCLR --fusion_name data/reactome/model/ProtBert-MolCLR-1-256-0.3-1-5e-05-256-0.1-5 |\
-#--p_model ProtBert --m_model MoLFormer --fusion_name data/reactome/model/ProtBert-MoLFormer-1-256-0.3-1-5e-05-256-0.1-5 |\
-#--p_model ProtBert --m_model ChemBERTa --fusion_name data/reactome/model/ProtBert-ChemBERTa-1-256-0.3-1-5e-05-256-0.1-5 |\
-#--p_model GearNet --m_model MolCLR --fusion_name data/reactome/model/GearNet-MolCLR-1-256-0.3-1-5e-05-256-0.1-5 |\
-#--p_model GearNet --m_model MoLFormer --fusion_name data/reactome/model/GearNet-MoLFormer-1-256-0.3-1-5e-05-256-0.1-5 |\
-#--p_model esm3-small --m_model MolCLR --fusion_name data/reactome/model/esm3-small-MolCLR-1-256-0.3-1-5e-05-256-0.1-5 |\
-#--p_model GearNet --m_model ChemBERTa --fusion_name data/reactome/model/GearNet-ChemBERTa-1-256-0.3-1-5e-05-256-0.1-5 |\
-#--p_model esm3-small --m_model ChemBERTa --fusion_name data/reactome/model/esm3-small-ChemBERTa-1-256-0.3-1-5e-05-256-0.1-5 |\
-#--p_model esm3-medium --m_model MolCLR --fusion_name data/reactome/model/esm3-medium-MolCLR-1-256-0.3-1-5e-05-256-0.1-5 |\
-#--p_model esm3-medium --m_model ChemBERTa --fusion_name data/reactome/model/esm3-medium-ChemBERTa-1-256-0.3-1-5e-05-256-0.1-5 |\
-#--p_model esm3-small --m_model MoLFormer --fusion_name data/reactome/model/esm3-small-MoLFormer-1-256-0.3-1-5e-05-256-0.1-5 |\
-#--p_model esm3-medium --m_model MoLFormer --fusion_name data/reactome/model/esm3-medium-MoLFormer-1-256-0.3-1-5e-05-256-0.1-5 |\
-#--p_model ProtBert --m_model MolCLR --fusion_name data/reactome/model/ProtBert-MolCLR-1-256-0.3-1-5e-05-256-0.5-5 |\
-#--p_model GearNet --m_model MoLFormer --fusion_name data/reactome/model/GearNet-MoLFormer-1-256-0.3-1-5e-05-256-0.5-5 |\
-#--p_model GearNet --m_model ChemBERTa --fusion_name data/reactome/model/GearNet-ChemBERTa-1-256-0.3-1-5e-05-256-0.5-5 |\
-#--p_model ProtBert --m_model MoLFormer --fusion_name data/reactome/model/ProtBert-MoLFormer-1-256-0.3-1-5e-05-256-0.5-5 |\
-#--p_model ProtBert --m_model ChemBERTa --fusion_name data/reactome/model/ProtBert-ChemBERTa-1-256-0.3-1-5e-05-256-0.5-5 |\
-#--p_model GearNet --m_model MolCLR --fusion_name data/reactome/model/GearNet-MolCLR-1-256-0.3-1-5e-05-256-0.5-5 |\
-#--p_model esm3-small --m_model MolCLR --fusion_name data/reactome/model/esm3-small-MolCLR-1-256-0.3-1-5e-05-256-0.5-5 |\
-#--p_model esm3-small --m_model ChemBERTa --fusion_name data/reactome/model/esm3-small-ChemBERTa-1-256-0.3-1-5e-05-256-0.5-5 |\
-#--p_model esm3-medium --m_model MolCLR --fusion_name data/reactome/model/esm3-medium-MolCLR-1-256-0.3-1-5e-05-256-0.5-5 |\
-#--p_model esm3-medium --m_model ChemBERTa --fusion_name data/reactome/model/esm3-medium-ChemBERTa-1-256-0.3-1-5e-05-256-0.5-5 |\
-#--p_model esm3-small --m_model MoLFormer --fusion_name data/reactome/model/esm3-small-MoLFormer-1-256-0.3-1-5e-05-256-0.5-5 |\
-#--p_model esm3-medium --m_model MoLFormer --fusion_name data/reactome/model/esm3-medium-MoLFormer-1-256-0.3-1-5e-05-256-0.5-5 |\
-#--p_model GearNet --m_model MoLFormer --fusion_name data/reactome/model/GearNet-MoLFormer-1-256-0.3-1-5e-05-256-0.0-1 |\
-#--p_model GearNet --m_model ChemBERTa --fusion_name data/reactome/model/GearNet-ChemBERTa-1-256-0.3-1-5e-05-256-0.0-1 |\
-#--p_model ProtBert --m_model MolCLR --fusion_name data/reactome/model/ProtBert-MolCLR-1-256-0.3-1-5e-05-256-0.0-1 |\
-#--p_model GearNet --m_model MoLFormer --fusion_name data/reactome/model/GearNet-MoLFormer-1-256-0.3-1-5e-05-256-0.0-10 |\
-#--p_model GearNet --m_model ChemBERTa --fusion_name data/reactome/model/GearNet-ChemBERTa-1-256-0.3-1-5e-05-256-0.0-10 |\
-#--p_model ProtBert --m_model MoLFormer --fusion_name data/reactome/model/ProtBert-MoLFormer-1-256-0.3-1-5e-05-256-0.0-1 |\
-#--p_model GearNet --m_model MolCLR --fusion_name data/reactome/model/GearNet-MolCLR-1-256-0.3-1-5e-05-256-0.0-1 |\
-#--p_model ProtBert --m_model ChemBERTa --fusion_name data/reactome/model/ProtBert-ChemBERTa-1-256-0.3-1-5e-05-256-0.0-1 |\
-#--p_model esm3-small --m_model MolCLR --fusion_name data/reactome/model/esm3-small-MolCLR-1-256-0.3-1-5e-05-256-0.0-1 |\
-#--p_model esm3-small --m_model ChemBERTa --fusion_name data/reactome/model/esm3-small-ChemBERTa-1-256-0.3-1-5e-05-256-0.0-1 |\
-#--p_model ProtBert --m_model MolCLR --fusion_name data/reactome/model/ProtBert-MolCLR-1-256-0.3-1-5e-05-256-0.0-10 |\
-#--p_model esm3-medium --m_model MolCLR --fusion_name data/reactome/model/esm3-medium-MolCLR-1-256-0.3-1-5e-05-256-0.0-1 |\
-#--p_model esm3-small --m_model MoLFormer --fusion_name data/reactome/model/esm3-small-MoLFormer-1-256-0.3-1-5e-05-256-0.0-1 |\
-#--p_model esm3-medium --m_model ChemBERTa --fusion_name data/reactome/model/esm3-medium-ChemBERTa-1-256-0.3-1-5e-05-256-0.0-1 |\
-#--p_model esm3-medium --m_model MoLFormer --fusion_name data/reactome/model/esm3-medium-MoLFormer-1-256-0.3-1-5e-05-256-0.0-1 |\
-#--p_model ProtBert --m_model MoLFormer --fusion_name data/reactome/model/ProtBert-MoLFormer-1-256-0.3-1-5e-05-256-0.0-10 |\
-#--p_model ProtBert --m_model ChemBERTa --fusion_name data/reactome/model/ProtBert-ChemBERTa-1-256-0.3-1-5e-05-256-0.0-10 |\
-#--p_model GearNet --m_model MolCLR --fusion_name data/reactome/model/GearNet-MolCLR-1-256-0.3-1-5e-05-256-0.0-10 |\
-#--p_model esm3-small --m_model MolCLR --fusion_name data/reactome/model/esm3-small-MolCLR-1-256-0.3-1-5e-05-256-0.0-10 |\
-#--p_model esm3-small --m_model ChemBERTa --fusion_name data/reactome/model/esm3-small-ChemBERTa-1-256-0.3-1-5e-05-256-0.0-10 |\
-#--p_model esm3-medium --m_model MolCLR --fusion_name data/reactome/model/esm3-medium-MolCLR-1-256-0.3-1-5e-05-256-0.0-10 |\
-#--p_model esm3-small --m_model MoLFormer --fusion_name data/reactome/model/esm3-small-MoLFormer-1-256-0.3-1-5e-05-256-0.0-10 |\
-#--p_model esm3-medium --m_model ChemBERTa --fusion_name data/reactome/model/esm3-medium-ChemBERTa-1-256-0.3-1-5e-05-256-0.0-10 |\
-#--p_model esm3-medium --m_model MoLFormer --fusion_name data/reactome/model/esm3-medium-MoLFormer-1-256-0.3-1-5e-05-256-0.0-10"
+configs="--p_model GearNet --m_model ChemBERTa --fusion_name data/reactome/model/GearNet-ChemBERTa-1-512-0.0-10-0.0001-256-0.0-1024 |\
+--p_model esm3-medium --m_model ChemBERTa --fusion_name data/reactome/model/esm3-medium-ChemBERTa-1-512-0.0-10-0.0001-256-0.0-1024 |\
+--p_model GearNet --m_model MoLFormer --fusion_name data/reactome/model/GearNet-MoLFormer-1-512-0.0-10-0.0001-256-0.0-1024 |\
+--p_model esm3-medium --m_model MoLFormer --fusion_name data/reactome/model/esm3-medium-MoLFormer-1-512-0.0-10-0.0001-256-0.0-1024 |\
+--p_model GearNet --m_model MolCLR --fusion_name data/reactome/model/GearNet-MolCLR-1-512-0.0-10-0.0001-256-0.0-1024 |\
+--p_model esm3-medium --m_model MolCLR --fusion_name data/reactome/model/esm3-medium-MolCLR-1-512-0.0-10-0.0001-256-0.0-1024 |\
+--p_model ProtBert --m_model ChemBERTa --fusion_name data/reactome/model/ProtBert-ChemBERTa-1-512-0.0-10-0.0001-256-0.0-1024 |\
+--p_model esm3-small --m_model ChemBERTa --fusion_name data/reactome/model/esm3-small-ChemBERTa-1-512-0.0-10-0.0001-256-0.0-1024 |\
+--p_model ProtBert --m_model MoLFormer --fusion_name data/reactome/model/ProtBert-MoLFormer-1-512-0.0-10-0.0001-256-0.0-1024 |\
+--p_model esm3-small --m_model MoLFormer --fusion_name data/reactome/model/esm3-small-MoLFormer-1-512-0.0-10-0.0001-256-0.0-1024 |\
+--p_model ProtBert --m_model MolCLR --fusion_name data/reactome/model/ProtBert-MolCLR-1-512-0.0-10-0.0001-256-0.0-1024 |\
+--p_model esm3-small --m_model MolCLR --fusion_name data/reactome/model/esm3-small-MolCLR-1-512-0.0-10-0.0001-256-0.0-1024"
 
 IFS='|' read -ra config_array <<< "$configs"
 config=${config_array[$((SLURM_ARRAY_TASK_ID - 1))]}
@@ -145,16 +59,6 @@ conda activate retd
 export PYTHONPATH=$PYTHONPATH:$(pwd)
 
 
-for task in "${task_array[@]}"; do
-    #itareate over values of lr, drop_out, n_layers
-    for lr in 1e-02 1e-03 1e-04; do
-        for drop_out in 0.0 0.1 0.3; do
-            for n_layers in 1 2 3; do
-                python eval_tasks/trainer.py $config $task --lr $lr --drop_out $drop_out --n_layers $n_layers --use_fuse 1 --use_model 1
-                python eval_tasks/trainer.py $config $task --lr $lr --drop_out $drop_out --n_layers $n_layers --use_fuse 0 --use_model 1
-                python eval_tasks/trainer.py $config $task --lr $lr --drop_out $drop_out --n_layers $n_layers --use_fuse 1 --use_model 0
-            done
-        done
-    done
-done
-
+python eval_tasks/trainer.py $config $task --use_fuse 1 --use_model 1
+python eval_tasks/trainer.py $config $task --use_fuse 0 --use_model 1
+python eval_tasks/trainer.py $config $task --use_fuse 1 --use_model 0
