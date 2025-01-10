@@ -57,7 +57,7 @@ IFS='|' read -ra task_array <<< "$tasks_configs"
 eval "$(conda shell.bash hook)"
 conda activate retd
 export PYTHONPATH=$PYTHONPATH:$(pwd)
-
+echo eval_tasks/trainer.py $config $task
 
 python eval_tasks/trainer.py $config $task --use_fuse 1 --use_model 1
 python eval_tasks/trainer.py $config $task --use_fuse 0 --use_model 1
