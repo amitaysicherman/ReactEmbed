@@ -21,34 +21,34 @@ configs="--p_model GearNet --m_model ChemBERTa --fusion_name data/reactome/model
 IFS='|' read -ra config_array <<< "$configs"
 config=${config_array[$((SLURM_ARRAY_TASK_ID - 1))]}
 
-tasks_configs="--task_name BACE --bs 64 --metric auc |\
---task_name BBBP --bs 64 --metric auc |\
---task_name CEP --bs 512 --metric rmse |\
---task_name ClinTox --bs 64 --metric auc |\
---task_name Delaney --bs 64 --metric rmse |\
---task_name FreeSolv --bs 64 --metric rmse |\
---task_name HIV --bs 512 --metric auc |\
---task_name Lipophilicity --bs 64 --metric rmse |\
---task_name Malaria --bs 256 --metric rmse |\
---task_name SIDER --bs 64 --metric auc |\
---task_name Tox21 --bs 256 --metric auc |\
---task_name BetaLactamase --bs 64 --metric rmse |\
---task_name Fluorescence --bs 512 --metric rmse |\
---task_name Stability --bs 512 --metric rmse |\
---task_name Solubility --bs 512 --metric rmse |\
---task_name BinaryLocalization --bs 256 --metric auc |\
---task_name SubcellularLocalization --bs 256 --metric auc |\
---task_name EnzymeCommission --bs 512 --metric auc |\
---task_name GeneOntologyMF --bs 512 --metric auc |\
---task_name GeneOntologyBP --bs 512 --metric auc |\
---task_name GeneOntologyCC --bs 512 --metric auc |\
---task_name HumanPPI --bs 512 --bs 256 --metric auc |\
---task_name YeastPPI --bs 256 --metric auc |\
---task_name PPIAffinity --bs 64 --metric rmse |\
---task_name BindingDB --bs 256 --metric rmse |\
---task_name PDBBind --bs 512 --metric rmse |\
---task_name DrugBank --bs 512 --metric auc |\
---task_name Davis --bs 512 --metric auc"
+tasks_configs="--task_name BACE --bs 2048 --metric auc |\
+--task_name BBBP --bs 2048 --metric auc |\
+--task_name CEP --bs 2048 --metric rmse |\
+--task_name ClinTox --bs 2048 --metric auc |\
+--task_name Delaney --bs 2048 --metric rmse |\
+--task_name FreeSolv --bs 2048 --metric rmse |\
+--task_name HIV --bs 2048 --metric auc |\
+--task_name Lipophilicity --bs 2048 --metric rmse |\
+--task_name Malaria --bs 2048 --metric rmse |\
+--task_name SIDER --bs 2048 --metric auc |\
+--task_name Tox21 --bs 2048 --metric auc |\
+--task_name BetaLactamase --bs 2048 --metric rmse |\
+--task_name Fluorescence --bs 2048 --metric rmse |\
+--task_name Stability --bs 2048 --metric rmse |\
+--task_name Solubility --bs 2048 --metric rmse |\
+--task_name BinaryLocalization --bs 2048 --metric auc |\
+--task_name SubcellularLocalization --bs 2048 --metric auc |\
+--task_name EnzymeCommission --bs 2048 --metric auc |\
+--task_name GeneOntologyMF --bs 2048 --metric auc |\
+--task_name GeneOntologyBP --bs 2048 --metric auc |\
+--task_name GeneOntologyCC --bs 2048 --metric auc |\
+--task_name HumanPPI  --bs 2048 --metric auc |\
+--task_name YeastPPI --bs 2048 --metric auc |\
+--task_name PPIAffinity --bs 2048 --metric rmse |\
+--task_name BindingDB --bs 2048 --metric rmse |\
+--task_name PDBBind --bs 2048 --metric rmse |\
+--task_name DrugBank --bs 2048 --metric auc |\
+--task_name Davis --bs 2048 --metric auc"
 
 
 IFS='|' read -ra task_array <<< "$tasks_configs"
