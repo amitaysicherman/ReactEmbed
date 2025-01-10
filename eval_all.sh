@@ -54,11 +54,17 @@ tasks_configs="--task_name BACE --bs 64 --metric auc |\
 IFS='|' read -ra task_array <<< "$tasks_configs"
 
 
+
 eval "$(conda shell.bash hook)"
 conda activate retd
 export PYTHONPATH=$PYTHONPATH:$(pwd)
 echo eval_tasks/trainer.py $config $task
 
-python eval_tasks/trainer.py $config $task --use_fuse 1 --use_model 1
-python eval_tasks/trainer.py $config $task --use_fuse 0 --use_model 1
-python eval_tasks/trainer.py $config $task --use_fuse 1 --use_model 0
+
+for task in "${task_array[@]}"
+do
+    echo $task
+    python eval_tasks/trainer.py $config $task --use_fuse 1 --use_model 1
+    python eval_tasks/trainer.py $config $task --use_fuse 0 --use_model 1
+    python eval_tasks/trainer.py $config $task --use_fuse 1 --use_model 0
+done
