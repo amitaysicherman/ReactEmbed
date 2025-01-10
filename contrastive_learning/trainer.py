@@ -134,7 +134,7 @@ if __name__ == '__main__':
     parser.add_argument('--batch_size', type=int, help='Batch size', default=256)
     parser.add_argument('--p_model', type=str, help='Protein model', default="ProtBert")
     parser.add_argument('--m_model', type=str, help='Molecule model', default="ChemBERTa")
-    parser.add_argument('--shared_dim', type=int, help='Shared space dimension', default=1024)
+    parser.add_argument('--shared_dim', type=int, help='Shared space dimension', default=256)
     parser.add_argument('--n_layers', type=int, help='Number of layers', default=1)
     parser.add_argument('--hidden_dim', type=int, help='Hidden dimension', default=512)
     parser.add_argument('--dropout', type=float, help='Dropout', default=0.0)
