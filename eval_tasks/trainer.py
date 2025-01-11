@@ -179,6 +179,8 @@ def main(use_fuse, use_model, bs, lr, drop_out, hidden_dim, task_name, fuse_base
     *res, train_res = train_model_with_config(config, task_name, fuse_base, mol_emd, protein_emd, max_no_improve,
                                               fuse_model=fuse_model, task_suffix=task_suffix, return_model=return_model,
                                               return_train=True)
+    if return_model:
+        return res
     res_to_print = res[0]
     with open(f"res_update.csv", "a") as f:
         f.write(
