@@ -22,7 +22,7 @@ def main(p_model="esm3-medium", m_model="ChemBERTa",
     model.eval()
     fuse_model: ReactEmbedModel = model.fuse_model
     fuse_model.eval()
-    x = fuse_model.dual_forward(proteins, "P")
+    x = fuse_model(proteins, "P")
     pred = model.layers(x)
     res = torch.sigmoid(pred).detach().cpu().numpy().flatten()
     go_matrix = preprocess.get_go_matrix()
