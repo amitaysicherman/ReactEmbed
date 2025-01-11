@@ -2,11 +2,14 @@ import torch
 
 from contrastive_learning.model import ReactEmbedModel
 from eval_tasks.trainer import main as trainer_task_main
+from preprocessing.seq_to_vec import SeqToVec
 from transferrin.utils import PreprocessManager, find_top_n_combinations
 
 transferrin_id = "P02787"
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
+DPPC = 'CCCCCCCCCCCCCCCC(=O)OCC(COP(=O)([O-])OCC[N+](C)(C)C)OC(=O)CCCCCCCCCCCCCCC'
+cholesterol = 'CC(C)CCCC(C)C1CCC2C3CC=C4CC(O)CCC4(C)C3CCC12C'
 
 
 def main(p_model="esm3-medium", m_model="ChemBERTa",
@@ -19,11 +22,19 @@ def main(p_model="esm3-medium", m_model="ChemBERTa",
                                      n_layers=n_layers, metric=metric, max_no_improve=15, return_model=True)
     vecs = preprocess.get_vecs()
     proteins = torch.tensor(vecs).to(device).float()
-    model.eval()
+
     fuse_model: ReactEmbedModel = model.fuse_model
     fuse_model.eval()
-    x = fuse_model(proteins, "P")
-    pred = model.layers(x)
+    proteins_fuse = fuse_model(proteins, "P")
+    seq_to_vec = SeqToVec(model_name=m_model)
+    dppc_vec = torch.tensor(seq_to_vec.to_vec(DPPC)).to(device).float()
+    dppc_fuse = fuse_model(dppc_vec, "M")
+    cholesterol_vec = torch.tensor(seq_to_vec.to_vec(cholesterol)).to(device).float()
+    cholesterol_fuse = fuse_model(cholesterol_vec, "M")
+    complex_fuse = 0.5 * proteins_fuse + 0.33 * dppc_fuse + 0.17 * cholesterol_fuse
+
+    model.eval()
+    pred = model.layers(complex_fuse)
     res = torch.sigmoid(pred).detach().cpu().numpy().flatten()
     go_matrix = preprocess.get_go_matrix()
     assert transferrin_id in go_matrix.index
@@ -74,4 +85,3 @@ if __name__ == '__main__':
     torch.manual_seed(42)
     main(args.p_model, args.m_model, args.fusion_name, args.metric, args.n_layers, args.hid_dim, args.drop_out,
          args.print_full_res, args.save_models)
-
