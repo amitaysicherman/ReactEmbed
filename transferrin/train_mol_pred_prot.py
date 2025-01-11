@@ -13,10 +13,10 @@ def main(p_model="esm3-medium", m_model="ChemBERTa",
          fuse_base="data/reactome/model/esm3-medium-ChemBERTa-1-256-0.3-1-5e-05-256-0.0/", metric="f1_max",
          n_layers=2, hid_dim=512, drop_out=0.3, print_full_res=False, save_models=False):
     preprocess = PreprocessManager(p_model=p_model, reactome=True)
-    score, model = trainer_task_main(use_fuse=True, use_model=False, bs=16, lr=0.001, drop_out=drop_out,
+    score, model = trainer_task_main(use_fuse=True, use_model=False, bs=2048, lr=0.001, drop_out=drop_out,
                                      hidden_dim=hid_dim,
                                      task_name="BBBP", fuse_base=fuse_base, mol_emd=m_model, protein_emd=p_model,
-                                     n_layers=n_layers, metric=metric, max_no_improve=5, return_model=True)
+                                     n_layers=n_layers, metric=metric, max_no_improve=15, return_model=True)
     vecs = preprocess.get_vecs()
     proteins = torch.tensor(vecs).to(device).float()
     model.eval()
@@ -60,16 +60,16 @@ if __name__ == '__main__':
     import argparse
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--p_model", type=str, default="esm3-medium")
+    parser.add_argument("--p_model", type=str, default="ProtBert")
     parser.add_argument("--m_model", type=str, default="ChemBERTa")
     parser.add_argument("--fusion_name", type=str,
-                        default="data/reactome/model/esm3-medium-ChemBERTa-1-256-0.3-1-5e-05-256-0.0/")
-    parser.add_argument("--metric", type=str, default="f1_max")
+                        default="data/reactome/model/ProtBert-ChemBERTa-1-512-0.0-10-0.0001-256-0.0-256")
+    parser.add_argument("--metric", type=str, default="auc")
     parser.add_argument("--print_full_res", action="store_true")
     parser.add_argument("--save_models", action="store_true")
-    parser.add_argument("--n_layers", type=int, default=2)
+    parser.add_argument("--n_layers", type=int, default=1)
     parser.add_argument("--hid_dim", type=int, default=512)
-    parser.add_argument("--drop_out", type=float, default=0.3)
+    parser.add_argument("--drop_out", type=float, default=0.0)
     args = parser.parse_args()
     torch.manual_seed(42)
     main(args.p_model, args.m_model, args.fusion_name, args.metric, args.n_layers, args.hid_dim, args.drop_out,
