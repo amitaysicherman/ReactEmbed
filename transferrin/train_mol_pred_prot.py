@@ -25,11 +25,12 @@ def train_ml_model(p_model, m_model, fuse_model):
     x1_train, x2_train, labels_train, x1_valid, x2_valid, labels_valid, x1_test, x2_test, labels_test = get_task_data(
         p_model, m_model)
     x = np.concatenate([x1_train, x1_valid, x1_test])
-    x = fuse_model(x, "M")
+    x = torch.tensor(x).to(device).float()
+    x = fuse_model(x, "M").detach().cpu().numpy()
     y = np.concatenate([labels_train, labels_valid, labels_test])
     model = KNeighborsClassifier(n_neighbors=5)
     model.fit(x, y)
-    return model    
+    return model
 
 
 def main(p_model="esm3-medium", m_model="ChemBERTa",
