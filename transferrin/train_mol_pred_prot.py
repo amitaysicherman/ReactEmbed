@@ -20,7 +20,7 @@ def main(p_model="esm3-medium", m_model="ChemBERTa",
                                      hidden_dim=hid_dim,
                                      task_name="BBBP", fuse_base=fuse_base, mol_emd=m_model, protein_emd=p_model,
                                      n_layers=n_layers, metric=metric, max_no_improve=15, return_model=True,
-                                     train_all_data=True)
+                                     train_all_data=False)
     vecs = preprocess.get_vecs()
     proteins = torch.tensor(vecs).to(device).float()
 
