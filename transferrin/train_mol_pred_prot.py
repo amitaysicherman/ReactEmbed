@@ -20,9 +20,7 @@ def get_task_data(p_model, m_model):
 
 
 def train_ml_model(p_model, m_model, fuse_model):
-    from sklearn.preprocessing import StandardScaler
-    from sklearn.svm import SVC
-    from sklearn.pipeline import make_pipeline
+    from sklearn.neighbors import KNeighborsClassifier
 
     x1_train, x2_train, labels_train, x1_valid, x2_valid, labels_valid, x1_test, x2_test, labels_test = get_task_data(
         p_model, m_model)
@@ -30,10 +28,11 @@ def train_ml_model(p_model, m_model, fuse_model):
     x = torch.tensor(x).to(device).float()
     x = fuse_model(x, "M").detach().cpu().numpy()
     y = np.concatenate([labels_train, labels_valid, labels_test])
-    # model = KNeighborsClassifier(n_neighbors=15)
-    model = make_pipeline(StandardScaler(), SVC(gamma='auto'))
+    model = KNeighborsClassifier(n_neighbors=15)
+    # model = make_pipeline(StandardScaler(), SVC(gamma='auto'))
     model.fit(x, y)
     print(f"Model score: {model.score(x, y)}")
+    # predict probabilities
     return model
 
 
