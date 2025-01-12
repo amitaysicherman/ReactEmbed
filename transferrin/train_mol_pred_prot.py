@@ -2,7 +2,6 @@ import numpy as np
 import torch
 
 from eval_tasks.models import load_fuse_model
-from preprocessing.seq_to_vec import SeqToVec
 from transferrin.utils import PreprocessManager, find_top_n_combinations
 
 transferrin_id = "P02787"
@@ -58,13 +57,13 @@ def main(p_model="esm3-medium", m_model="ChemBERTa",
     # fuse_model: ReactEmbedModel = model.fuse_model
     fuse_model.eval()
     proteins_fuse = fuse_model(proteins, "P")
-    seq_to_vec = SeqToVec(model_name=m_model)
-    dppc_vec = torch.tensor(seq_to_vec.to_vec(DPPC)).to(device).float()
-    dppc_fuse = fuse_model(dppc_vec, "M")
-    cholesterol_vec = torch.tensor(seq_to_vec.to_vec(cholesterol)).to(device).float()
-    cholesterol_fuse = fuse_model(cholesterol_vec, "M")
-    complex_fuse = 0.5 * proteins_fuse + 0.33 * dppc_fuse + 0.17 * cholesterol_fuse
-
+    # seq_to_vec = SeqToVec(model_name=m_model)
+    # dppc_vec = torch.tensor(seq_to_vec.to_vec(DPPC)).to(device).float()
+    # dppc_fuse = fuse_model(dppc_vec, "M")
+    # cholesterol_vec = torch.tensor(seq_to_vec.to_vec(cholesterol)).to(device).float()
+    # cholesterol_fuse = fuse_model(cholesterol_vec, "M")
+    # complex_fuse = 0.5 * proteins_fuse + 0.33 * dppc_fuse + 0.17 * cholesterol_fuse
+    complex_fuse = proteins_fuse
     # model.eval()
     # pred = model.layers(complex_fuse)
     # res = torch.sigmoid(pred).detach().cpu().numpy().flatten()
