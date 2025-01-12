@@ -30,6 +30,7 @@ def train_ml_model(p_model, m_model, fuse_model):
     y = np.concatenate([labels_train, labels_valid, labels_test])
     model = KNeighborsClassifier(n_neighbors=5)
     model.fit(x, y)
+    print(f"Model score: {model.score(x, y)}")
     return model
 
 
