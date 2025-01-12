@@ -28,7 +28,7 @@ def train_ml_model(p_model, m_model, fuse_model):
     x = torch.tensor(x).to(device).float()
     x = fuse_model(x, "M").detach().cpu().numpy()
     y = np.concatenate([labels_train, labels_valid, labels_test])
-    model = KNeighborsClassifier(n_neighbors=5)
+    model = KNeighborsClassifier(n_neighbors=15)
     model.fit(x, y)
     print(f"Model score: {model.score(x, y)}")
     return model
