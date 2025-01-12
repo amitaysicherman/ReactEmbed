@@ -2,6 +2,7 @@ import numpy as np
 import torch
 
 from eval_tasks.models import load_fuse_model
+from preprocessing.seq_to_vec import SeqToVec
 from transferrin.utils import PreprocessManager, find_top_n_combinations
 
 transferrin_id = "P02787"
@@ -20,15 +21,16 @@ def get_task_data(p_model, m_model):
 
 
 def train_ml_model(p_model, m_model, fuse_model):
-    from sklearn.neighbors import KNeighborsClassifier
-
+    # from sklearn.neighbors import KNeighborsClassifier
+    from sklearn.ensemble import RandomForestClassifier
     x1_train, x2_train, labels_train, x1_valid, x2_valid, labels_valid, x1_test, x2_test, labels_test = get_task_data(
         p_model, m_model)
     x = np.concatenate([x1_train, x1_valid, x1_test])
     x = torch.tensor(x).to(device).float()
     x = fuse_model(x, "M").detach().cpu().numpy()
     y = np.concatenate([labels_train, labels_valid, labels_test])
-    model = KNeighborsClassifier(n_neighbors=15)
+    # model = KNeighborsClassifier(n_neighbors=15)
+    model = RandomForestClassifier(n_estimators=10, max_depth=3, random_state=0)
     # model = make_pipeline(StandardScaler(), SVC(gamma='auto'))
     model.fit(x, y)
     print(f"Model score: {model.score(x, y)}")
@@ -56,12 +58,12 @@ def main(p_model="esm3-medium", m_model="ChemBERTa",
     # fuse_model: ReactEmbedModel = model.fuse_model
     fuse_model.eval()
     proteins_fuse = fuse_model(proteins, "P")
-    # seq_to_vec = SeqToVec(model_name=m_model)
-    # dppc_vec = torch.tensor(seq_to_vec.to_vec(DPPC)).to(device).float()
-    # dppc_fuse = fuse_model(dppc_vec, "M")
-    # cholesterol_vec = torch.tensor(seq_to_vec.to_vec(cholesterol)).to(device).float()
-    # cholesterol_fuse = fuse_model(cholesterol_vec, "M")
-    # complex_fuse = 0.5 * proteins_fuse + 0.33 * dppc_fuse + 0.17 * cholesterol_fuse
+    seq_to_vec = SeqToVec(model_name=m_model)
+    dppc_vec = torch.tensor(seq_to_vec.to_vec(DPPC)).to(device).float()
+    dppc_fuse = fuse_model(dppc_vec, "M")
+    cholesterol_vec = torch.tensor(seq_to_vec.to_vec(cholesterol)).to(device).float()
+    cholesterol_fuse = fuse_model(cholesterol_vec, "M")
+    complex_fuse = 0.5 * proteins_fuse + 0.33 * dppc_fuse + 0.17 * cholesterol_fuse
     complex_fuse = proteins_fuse
     # model.eval()
     # pred = model.layers(complex_fuse)
