@@ -73,7 +73,7 @@ def main(p_model="esm3-medium", m_model="ChemBERTa",
     transferrin_score = go_matrix.iloc[transferrin_index]["S"]
     print(f"Transferrin score: {transferrin_score}")
     print(f"Higher score count: {(go_matrix['S'] > transferrin_score).sum()}")
-    print(f"Higher score count: {(go_matrix['S'] >= == transferrin_score).sum()}")
+    print(f"Higher score count: {(go_matrix['S'] >= transferrin_score).sum()}")
     higher_score_count = (go_matrix["S"] > transferrin_score).sum()
     with open("transferrin/results.csv", "a") as f:
         txt = f"{p_model},{m_model},{fuse_base},{metric},{n_layers},{hid_dim},{drop_out},{transferrin_score},{higher_score_count}\n"
