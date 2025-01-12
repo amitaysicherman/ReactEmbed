@@ -143,9 +143,12 @@ def train_model_with_config(config: dict, task_name: str, fuse_base: str, mol_em
     best_train_scores = Scores(config['metric'])
     for epoch in range(5500):
         train_scores = run_epoch(model, train_loader, optimizer, criterion, config['metric'], "train")
+        if valid_loader is None:
+            continue
         with torch.no_grad():
             val_score = run_epoch(model, valid_loader, optimizer, criterion, config['metric'], "val")
             test_score = run_epoch(model, test_loader, optimizer, criterion, config['metric'], "test")
+
         improved = scores_manager.update(val_score, test_score)
         if improved:
             no_improve = 0
