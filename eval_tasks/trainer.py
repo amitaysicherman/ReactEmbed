@@ -10,6 +10,8 @@ device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 
 def run_epoch(model, loader, optimizer, criterion, metric_name, part) -> Scores:
+    if loader is None:
+        return Scores(metric_name)
     if part == "train":
         model.train()
     else:
@@ -81,7 +83,7 @@ def get_model_from_task(task: Task, dataset, conf, fuse_base, drop_out, n_layers
 
 def train_model_with_config(config: dict, task_name: str, fuse_base: str, mol_emd: str, protein_emd: str,
                             max_no_improve=15, fuse_model=None, return_valid=False, task_suffix="",
-                            return_model=False, return_train=False):
+                            return_model=False, return_train=False, train_all_data=False):
     use_fuse = config["use_fuse"]
     use_model = config["use_model"]
     bs = config["bs"]
@@ -92,7 +94,8 @@ def train_model_with_config(config: dict, task_name: str, fuse_base: str, mol_em
     hidden_dim = config["hidden_dim"]
 
     task = name_to_task[task_name]
-    train_loader, valid_loader, test_loader = get_dataloaders(task_name, mol_emd, protein_emd, bs)
+    train_loader, valid_loader, test_loader = get_dataloaders(task_name, mol_emd, protein_emd, bs,
+                                                              train_all_data=train_all_data)
     if task.criterion == torch.nn.BCEWithLogitsLoss:
         train_labels = train_loader.dataset.labels  # Shape: [n_samples, n_classes]
 
@@ -165,7 +168,7 @@ def train_model_with_config(config: dict, task_name: str, fuse_base: str, mol_em
 
 
 def main(use_fuse, use_model, bs, lr, drop_out, hidden_dim, task_name, fuse_base, mol_emd, protein_emd, n_layers,
-         metric, max_no_improve, fuse_model=None, task_suffix="", return_model=False):
+         metric, max_no_improve, fuse_model=None, task_suffix="", return_model=False, train_all_data=False):
     config = {
         "use_fuse": use_fuse,
         "use_model": use_model,
@@ -178,7 +181,7 @@ def main(use_fuse, use_model, bs, lr, drop_out, hidden_dim, task_name, fuse_base
     }
     res = train_model_with_config(config, task_name, fuse_base, mol_emd, protein_emd, max_no_improve,
                                               fuse_model=fuse_model, task_suffix=task_suffix, return_model=return_model,
-                                              return_train=True)
+                                  return_train=True, train_all_data=train_all_data)
 
     if return_model:
         return res

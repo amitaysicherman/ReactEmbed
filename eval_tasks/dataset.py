@@ -48,9 +48,22 @@ class TaskPrepDataset(Dataset):
             return self.x1[idx], self.labels[idx]
 
 
-def get_dataloaders(task_name, mol_emd, protein_emd, batch_size):
+def get_dataloaders(task_name, mol_emd, protein_emd, batch_size, train_all_data=False):
     x1_train, x2_train, labels_train, x1_valid, x2_valid, labels_valid, x1_test, x2_test, labels_test = load_data(
         task_name, mol_emd, protein_emd)
+    if train_all_data:
+        print("Using all data for training")
+        print(f"Train: {len(x1_train)}")
+        x1_train = np.concatenate([x1_train, x1_valid, x1_test])
+        print(f"Train: {len(x1_train)}")
+        if x2_train is not None:
+            x2_train = np.concatenate([x2_train, x2_valid, x2_test])
+        labels_train = np.concatenate([labels_train, labels_valid, labels_test])
+        print(f"Train: {len(labels_train)}")
+        train_loader = DataLoader(TaskPrepDataset(x1_train, x2_train, labels_train), batch_size=batch_size,
+                                  shuffle=True,
+                                  drop_last=False)
+        return train_loader, None, None
     train_loader = DataLoader(TaskPrepDataset(x1_train, x2_train, labels_train), batch_size=batch_size, shuffle=True,
                               drop_last=False)
     valid_loader = DataLoader(TaskPrepDataset(x1_valid, x2_valid, labels_valid), batch_size=batch_size, shuffle=False,
