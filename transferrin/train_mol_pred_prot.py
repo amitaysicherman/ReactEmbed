@@ -1,7 +1,7 @@
+import numpy as np
 import torch
 
-from contrastive_learning.model import ReactEmbedModel
-from eval_tasks.trainer import main as trainer_task_main
+from eval_tasks.models import load_fuse_model
 from preprocessing.seq_to_vec import SeqToVec
 from transferrin.utils import PreprocessManager, find_top_n_combinations
 
@@ -12,19 +12,42 @@ DPPC = 'CCCCCCCCCCCCCCCC(=O)OCC(COP(=O)([O-])OCC[N+](C)(C)C)OC(=O)CCCCCCCCCCCCCC
 cholesterol = 'CC(C)CCCC(C)C1CCC2C3CC=C4CC(O)CCC4(C)C3CCC12C'
 
 
+def get_task_data(p_model, m_model):
+    from eval_tasks.dataset import load_data
+    task_name = "BBBP"
+    x1_train, x2_train, labels_train, x1_valid, x2_valid, labels_valid, x1_test, x2_test, labels_test = load_data(
+        task_name, m_model, p_model)
+    return x1_train, x2_train, labels_train, x1_valid, x2_valid, labels_valid, x1_test, x2_test, labels_test
+
+
+def train_ml_model(p_model, m_model, fuse_model):
+    from sklearn.neighbors import KNeighborsClassifier
+    x1_train, x2_train, labels_train, x1_valid, x2_valid, labels_valid, x1_test, x2_test, labels_test = get_task_data(
+        p_model, m_model)
+    x = np.concatenate([x1_train, x1_valid, x1_test])
+    x = fuse_model(x)
+    y = np.concatenate([labels_train, labels_valid, labels_test])
+    model = KNeighborsClassifier(n_neighbors=5)
+    model.fit(x, y)
+    return model
+
+
 def main(p_model="esm3-medium", m_model="ChemBERTa",
          fuse_base="data/reactome/model/esm3-medium-ChemBERTa-1-256-0.3-1-5e-05-256-0.0/", metric="f1_max",
          n_layers=2, hid_dim=512, drop_out=0.3, print_full_res=False, save_models=False):
     preprocess = PreprocessManager(p_model=p_model, reactome=True)
-    score, model = trainer_task_main(use_fuse=True, use_model=False, bs=2048, lr=0.001, drop_out=drop_out,
-                                     hidden_dim=hid_dim,
-                                     task_name="BBBP", fuse_base=fuse_base, mol_emd=m_model, protein_emd=p_model,
-                                     n_layers=n_layers, metric=metric, max_no_improve=15, return_model=True,
-                                     train_all_data=False)
+    # score, model = trainer_task_main(use_fuse=True, use_model=False, bs=2048, lr=0.001, drop_out=drop_out,
+    #                                  hidden_dim=hid_dim,
+    #                                  task_name="BBBP", fuse_base=fuse_base, mol_emd=m_model, protein_emd=p_model,
+    #                                  n_layers=n_layers, metric=metric, max_no_improve=15, return_model=True,
+    #                                  train_all_data=False)
+    fuse_model = load_fuse_model(fuse_base)
+
+    model = train_ml_model(p_model, m_model, fuse_model)
+
     vecs = preprocess.get_vecs()
     proteins = torch.tensor(vecs).to(device).float()
-
-    fuse_model: ReactEmbedModel = model.fuse_model
+    # fuse_model: ReactEmbedModel = model.fuse_model
     fuse_model.eval()
     proteins_fuse = fuse_model(proteins, "P")
     seq_to_vec = SeqToVec(model_name=m_model)
@@ -34,9 +57,10 @@ def main(p_model="esm3-medium", m_model="ChemBERTa",
     cholesterol_fuse = fuse_model(cholesterol_vec, "M")
     complex_fuse = 0.5 * proteins_fuse + 0.33 * dppc_fuse + 0.17 * cholesterol_fuse
 
-    model.eval()
-    pred = model.layers(complex_fuse)
-    res = torch.sigmoid(pred).detach().cpu().numpy().flatten()
+    # model.eval()
+    # pred = model.layers(complex_fuse)
+    # res = torch.sigmoid(pred).detach().cpu().numpy().flatten()
+    res = model.predict(complex_fuse.detach().cpu().numpy())
     go_matrix = preprocess.get_go_matrix()
     assert transferrin_id in go_matrix.index
     assert len(go_matrix) == preprocess.get_vecs().shape[0]
