@@ -42,7 +42,8 @@ def main(p_model="esm3-medium", m_model="ChemBERTa",
     #                                  task_name="BBBP", fuse_base=fuse_base, mol_emd=m_model, protein_emd=p_model,
     #                                  n_layers=n_layers, metric=metric, max_no_improve=15, return_model=True,
     #                                  train_all_data=False)
-    fuse_model, dim = load_fuse_model(fuse_base).to(device)
+    fuse_model, dim = load_fuse_model(fuse_base)
+    fuse_model.eval().to(device)
     print(f"fuse_model: {fuse_model}")
     print(f"dim: {dim}")
     model = train_ml_model(p_model, m_model, fuse_model)
