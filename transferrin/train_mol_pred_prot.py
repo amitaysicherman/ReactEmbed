@@ -66,7 +66,7 @@ def main(p_model="esm3-medium", m_model="ChemBERTa",
     # model.eval()
     # pred = model.layers(complex_fuse)
     # res = torch.sigmoid(pred).detach().cpu().numpy().flatten()
-    res = model.predict_proba(complex_fuse.detach().cpu().numpy())
+    res = model.predict_proba(complex_fuse.detach().cpu().numpy())[:, 1]
     go_matrix = preprocess.get_go_matrix()
     assert transferrin_id in go_matrix.index
     assert len(go_matrix) == preprocess.get_vecs().shape[0]
