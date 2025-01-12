@@ -141,6 +141,7 @@ def train_model_with_config(config: dict, task_name: str, fuse_base: str, mol_em
     last_improve_epoch = 0
     scores_manager = ScoresManager(config['metric'])
     best_train_scores = Scores(config['metric'])
+    best_save_model = None
     for epoch in range(5500):
         train_scores = run_epoch(model, train_loader, optimizer, criterion, config['metric'], "train")
         if valid_loader is None:
@@ -154,6 +155,7 @@ def train_model_with_config(config: dict, task_name: str, fuse_base: str, mol_em
             no_improve = 0
             best_train_scores = train_scores
             last_improve_epoch = epoch
+            best_save_model = model.state_dict()
         else:
             no_improve += 1
             if no_improve > max_no_improve:
@@ -163,6 +165,9 @@ def train_model_with_config(config: dict, task_name: str, fuse_base: str, mol_em
     if return_valid:
         return scores_manager.test_scores.get_value(), scores_manager.valid_scores.get_value()
     if return_model:
+        if best_save_model is None:
+            best_save_model = model.state_dict()
+        model.load_state_dict(best_save_model)
         return scores_manager.test_scores.get_value(), model
     if return_train:
         return scores_manager.test_scores.get_value(), best_train_scores.get_value()
