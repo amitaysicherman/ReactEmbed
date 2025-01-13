@@ -153,6 +153,6 @@ if __name__ == '__main__':
     for p_model in ["ProtBert", "esm3-small", "esm3-medium", "GearNet"]:
         for m_model in ["MolCLR", "ChemBERTa", "MoLFormer"]:
             print(f"p_model: {p_model}, m_model: {m_model}")
-            fuse_name = args.fuse_name.replace("ProtBert", p_model).replace("ChemBERTa", m_model)
+            fuse_name = args.fusion_name.replace("ProtBert", p_model).replace("ChemBERTa", m_model)
             main(p_model, m_model, fuse_name, args.metric, args.n_layers, args.hid_dim, args.drop_out,
                  args.print_full_res, args.save_models)
