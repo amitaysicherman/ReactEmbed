@@ -45,33 +45,35 @@ def get_sklearn_classifier(name, **kwargs):
 def get_classifiers_iter():
     for name in ["KNeighbors", "SVC", "RandomForest", "LogisticRegression", "GradientBoosting", "MLP", "AdaBoost"]:
         if name == "KNeighbors":
-            yield get_sklearn_classifier(name, n_neighbors=1)
-            yield get_sklearn_classifier(name, n_neighbors=5)
-            yield get_sklearn_classifier(name, n_neighbors=10)
-            yield get_sklearn_classifier(name, n_neighbors=20)
-            yield get_sklearn_classifier(name, n_neighbors=50)
+            yield get_sklearn_classifier(name, n_neighbors=1), "KNeighbors-1"
+            yield get_sklearn_classifier(name, n_neighbors=5), "KNeighbors-5"
+            yield get_sklearn_classifier(name, n_neighbors=10), "KNeighbors-10"
+            yield get_sklearn_classifier(name, n_neighbors=20), "KNeighbors-20"
+            yield get_sklearn_classifier(name, n_neighbors=50), "KNeighbors-50"
         elif name == "SVC":
-            yield get_sklearn_classifier(name, probability=True, kernel="linear")
-            yield get_sklearn_classifier(name, probability=True, kernel="poly")
-            yield get_sklearn_classifier(name, probability=True, kernel="rbf")
-            yield get_sklearn_classifier(name, probability=True, kernel="sigmoid")
+            yield get_sklearn_classifier(name, probability=True, kernel="linear"), "SVC-linear"
+            yield get_sklearn_classifier(name, probability=True, kernel="poly"), "SVC-poly"
+            yield get_sklearn_classifier(name, probability=True, kernel="rbf"), "SVC-rbf"
+            yield get_sklearn_classifier(name, probability=True, kernel="sigmoid"), "SVC-sigmoid"
         elif name == "RandomForest":
-            yield get_sklearn_classifier(name, n_estimators=10, max_depth=2, random_state=0)
-            yield get_sklearn_classifier(name, n_estimators=100, max_depth=1, random_state=0)
-            yield get_sklearn_classifier(name, n_estimators=50, max_depth=2, random_state=0)
+            yield get_sklearn_classifier(name, n_estimators=10, max_depth=2, random_state=0), "RandomForest-10-2"
+            yield get_sklearn_classifier(name, n_estimators=100, max_depth=1, random_state=0), "RandomForest-100-1"
+            yield get_sklearn_classifier(name, n_estimators=50, max_depth=2, random_state=0), "RandomForest-50-2"
         elif name == "LogisticRegression":
-            yield get_sklearn_classifier(name, random_state=0)
+            yield get_sklearn_classifier(name, random_state=0), "LogisticRegression"
         elif name == "GradientBoosting":
-            yield get_sklearn_classifier(name, n_estimators=10, learning_rate=0.1, max_depth=2, random_state=0)
-            yield get_sklearn_classifier(name, n_estimators=100, learning_rate=0.1, max_depth=1, random_state=0)
+            yield get_sklearn_classifier(name, n_estimators=10, learning_rate=0.1, max_depth=2,
+                                         random_state=0), "GradientBoosting-10-0.1-2"
+            yield get_sklearn_classifier(name, n_estimators=100, learning_rate=0.1, max_depth=1,
+                                         random_state=0), "GradientBoosting-100-0.1-1"
         elif name == "MLP":
-            yield get_sklearn_classifier(name, hidden_layer_sizes=(100,), max_iter=1000)
-            yield get_sklearn_classifier(name, hidden_layer_sizes=(100, 100), max_iter=1000)
-            yield get_sklearn_classifier(name, hidden_layer_sizes=(100, 100, 100), max_iter=1000)
+            yield get_sklearn_classifier(name, hidden_layer_sizes=(100,), max_iter=1000), "MLP-100"
+            yield get_sklearn_classifier(name, hidden_layer_sizes=(100, 100), max_iter=1000), "MLP-100-100"
+            yield get_sklearn_classifier(name, hidden_layer_sizes=(100, 100, 100), max_iter=1000), "MLP-100-100-100"
         elif name == "AdaBoost":
-            yield get_sklearn_classifier(name, n_estimators=100, random_state=0)
-            yield get_sklearn_classifier(name, n_estimators=50, random_state=0)
-            yield get_sklearn_classifier(name, n_estimators=10, random_state=0)
+            yield get_sklearn_classifier(name, n_estimators=100, random_state=0), "AdaBoost-100"
+            yield get_sklearn_classifier(name, n_estimators=50, random_state=0), "AdaBoost-50"
+            yield get_sklearn_classifier(name, n_estimators=10, random_state=0), "AdaBoost-10"
         else:
             raise ValueError(f"Unknown classifier: {name}")
 
@@ -83,17 +85,6 @@ def get_task_data(p_model, m_model):
         task_name, m_model, p_model)
     return x1_train, x2_train, labels_train, x1_valid, x2_valid, labels_valid, x1_test, x2_test, labels_test
 
-
-def train_ml_model(p_model, m_model, fuse_model):
-    # model = KNeighborsClassifier(n_neighbors=7)
-    # model = SVC(probability=True)
-    # model = RandomForestClassifier(n_estimators=10, max_depth=3, random_state=0)
-    # model = LogisticRegression(random_state=0)
-    model = GradientBoostingClassifier(n_estimators=100, learning_rate=1.0, max_depth=1, random_state=0)
-    model.fit(x, y)
-    print(f"Model score: {model.score(x, y)}")
-    # predict probabilities
-    return model
 
 
 def main(p_model="esm3-medium", m_model="ChemBERTa",
@@ -124,15 +115,15 @@ def main(p_model="esm3-medium", m_model="ChemBERTa",
     x = torch.tensor(x).to(device).float()
     x = fuse_model(x, "M").detach().cpu().numpy()
     y = np.concatenate([labels_train, labels_valid, labels_test]).flatten()
-    for model in get_classifiers_iter():
+    for model, model_name in get_classifiers_iter():
         model.fit(x, y)
         mol_pred = model.predict_proba(molecules.detach().cpu().numpy().reshape(1, -1))[:, 1]
         complex_scores = []
         for name, id_ in [("transferrin", transferrin_id), ("insulin", insulin_id), ("Leptin", Leptin_id)]:
             index = protein_names.index(id_)
             complex_score = model.predict_proba(complex[index].detach().cpu().numpy().reshape(1, -1))[:, 1]
-            complex_scores.append(complex_score)
-        print(f"Model: {model}, mol_pred: {mol_pred}, complex_scores: {complex_scores}")
+            complex_scores.append(complex_score[0])
+        print(f"{model_name},{mol_pred[0]:.2f},{complex_scores[0]:.2f},{complex_scores[1]:.2f},{complex_scores[2]:.2f}")
 
 if __name__ == '__main__':
     import argparse
