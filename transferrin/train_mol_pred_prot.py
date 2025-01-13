@@ -32,7 +32,7 @@ def train_ml_model(p_model, m_model, fuse_model):
     x = torch.tensor(x).to(device).float()
     x = fuse_model(x, "M").detach().cpu().numpy()
     y = np.concatenate([labels_train, labels_valid, labels_test])
-    model = KNeighborsClassifier(n_neighbors=15)
+    model = KNeighborsClassifier(n_neighbors=7)
     # model = RandomForestClassifier(n_estimators=10, max_depth=3, random_state=0)
     # model = LogisticRegression(random_state=0)
     model.fit(x, y)
