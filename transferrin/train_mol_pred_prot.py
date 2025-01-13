@@ -16,6 +16,66 @@ DPPC = 'CCCCCCCCCCCCCCCC(=O)OCC(COP(=O)([O-])OCC[N+](C)(C)C)OC(=O)CCCCCCCCCCCCCC
 cholesterol = 'CC(C)CCCC(C)C1CCC2C3CC=C4CC(O)CCC4(C)C3CCC12C'
 
 
+def get_sklearn_classifier(name, **kwargs):
+    if name == "KNeighbors":
+        from sklearn.neighbors import KNeighborsClassifier
+        return KNeighborsClassifier(**kwargs)
+    elif name == "SVC":
+        from sklearn.svm import SVC
+        return SVC(**kwargs)
+    elif name == "RandomForest":
+        from sklearn.ensemble import RandomForestClassifier
+        return RandomForestClassifier(**kwargs)
+    elif name == "LogisticRegression":
+        from sklearn.linear_model import LogisticRegression
+        return LogisticRegression(**kwargs)
+    elif name == "GradientBoosting":
+        from sklearn.ensemble import GradientBoostingClassifier
+        return GradientBoostingClassifier(**kwargs)
+    elif name == "MLP":
+        from sklearn.neural_network import MLPClassifier
+        return MLPClassifier(**kwargs)
+    elif name == "AdaBoost":
+        from sklearn.ensemble import AdaBoostClassifier
+        return AdaBoostClassifier(**kwargs)
+    else:
+        raise ValueError(f"Unknown classifier: {name}")
+
+
+def get_classifiers_iter():
+    for name in ["KNeighbors", "SVC", "RandomForest", "LogisticRegression", "GradientBoosting", "MLP", "AdaBoost"]:
+        if name == "KNeighbors":
+            yield get_sklearn_classifier(name, n_neighbors=1)
+            yield get_sklearn_classifier(name, n_neighbors=5)
+            yield get_sklearn_classifier(name, n_neighbors=10)
+            yield get_sklearn_classifier(name, n_neighbors=20)
+            yield get_sklearn_classifier(name, n_neighbors=50)
+        elif name == "SVC":
+            yield get_sklearn_classifier(name, probability=True, kernel="linear")
+            yield get_sklearn_classifier(name, probability=True, kernel="poly")
+            yield get_sklearn_classifier(name, probability=True, kernel="rbf")
+            yield get_sklearn_classifier(name, probability=True, kernel="sigmoid")
+        elif name == "RandomForest":
+            yield get_sklearn_classifier(name, n_estimators=10, max_depth=2, random_state=0)
+            yield get_sklearn_classifier(name, n_estimators=100, max_depth=1, random_state=0)
+            yield get_sklearn_classifier(name, n_estimators=50, max_depth=2, random_state=0)
+        elif name == "LogisticRegression":
+            yield get_sklearn_classifier(name, random_state=0)
+        elif name == "GradientBoosting":
+            yield get_sklearn_classifier(name, n_estimators=10, learning_rate=0.1, max_depth=2, random_state=0)
+            yield get_sklearn_classifier(name, n_estimators=100, learning_rate=0.1, max_depth=1, random_state=0)
+        elif name == "MLP":
+            yield get_sklearn_classifier(name, hidden_layer_sizes=(100,), max_iter=1000)
+            yield get_sklearn_classifier(name, hidden_layer_sizes=(100, 100), max_iter=1000)
+            yield get_sklearn_classifier(name, hidden_layer_sizes=(100, 100, 100), max_iter=1000)
+        elif name == "AdaBoost":
+            yield get_sklearn_classifier(name, n_estimators=100, random_state=0)
+            yield get_sklearn_classifier(name, n_estimators=50, random_state=0)
+            yield get_sklearn_classifier(name, n_estimators=10, random_state=0)
+        else:
+            raise ValueError(f"Unknown classifier: {name}")
+
+
 def get_task_data(p_model, m_model):
     from eval_tasks.dataset import load_data
     task_name = "BBBP"
@@ -25,14 +85,6 @@ def get_task_data(p_model, m_model):
 
 
 def train_ml_model(p_model, m_model, fuse_model):
-    from sklearn.ensemble import GradientBoostingClassifier
-
-    x1_train, x2_train, labels_train, x1_valid, x2_valid, labels_valid, x1_test, x2_test, labels_test = get_task_data(
-        p_model, m_model)
-    x = np.concatenate([x1_train, x1_valid, x1_test])
-    x = torch.tensor(x).to(device).float()
-    x = fuse_model(x, "M").detach().cpu().numpy()
-    y = np.concatenate([labels_train, labels_valid, labels_test])
     # model = KNeighborsClassifier(n_neighbors=7)
     # model = SVC(probability=True)
     # model = RandomForestClassifier(n_estimators=10, max_depth=3, random_state=0)
@@ -47,17 +99,12 @@ def train_ml_model(p_model, m_model, fuse_model):
 def main(p_model="esm3-medium", m_model="ChemBERTa",
          fuse_base="data/reactome/model/esm3-medium-ChemBERTa-1-256-0.3-1-5e-05-256-0.0/", metric="f1_max",
          n_layers=2, hid_dim=512, drop_out=0.3, print_full_res=False, save_models=False):
-    preprocess = PreprocessManager(p_model=p_model, reactome=True)
     fuse_model, dim = load_fuse_model(fuse_base)
     fuse_model.eval().to(device)
-    print(f"fuse_model: {fuse_model}")
-    print(f"dim: {dim}")
-    model = train_ml_model(p_model, m_model, fuse_model)
-
+    preprocess = PreprocessManager(p_model=p_model, reactome=True)
     vecs = preprocess.get_vecs()
     protein_names = preprocess.get_proteins()
     proteins = torch.tensor(vecs).to(device).float()
-    fuse_model.eval()
     proteins_fuse = fuse_model(proteins, "P")
     mol_file = f"transferrin/mols_{m_model}.npy"
     if os.path.exists(mol_file):
@@ -71,50 +118,21 @@ def main(p_model="esm3-medium", m_model="ChemBERTa",
         molecules = 0.67 * dppc_fuse + 0.33 * cholesterol_fuse
         np.save(mol_file, molecules.detach().cpu().numpy())
     complex = 0.5 * proteins_fuse + 0.5 * molecules
-    # complex_fuse = proteins_fuse
-    # model.eval()
-    # pred = model.layers(complex_fuse)
-    # res = torch.sigmoid(pred).detach().cpu().numpy().flatten()
-    # res = model.predict_proba(complex_fuse.detach().cpu().numpy())[:, 1]
-    mol_pred = model.predict_proba(molecules.detach().cpu().numpy().reshape(1, -1))[:, 1]
-    print(f"Molecule score: {mol_pred}")
-    for name, id_ in [("transferrin", transferrin_id), ("insulin", insulin_id), ("Leptin", Leptin_id)]:
-        index = protein_names.index(id_)
-        complex_score = model.predict_proba(complex[index].detach().cpu().numpy().reshape(1, -1))[:, 1]
-        print(f"{name} score: {complex_score}")
-    # go_matrix = preprocess.get_go_matrix()
-    # assert transferrin_id in go_matrix.index
-    # assert len(go_matrix) == preprocess.get_vecs().shape[0]
-    # go_matrix["S"] = res.flatten()
-    # transferrin_index = go_matrix.index.get_loc(transferrin_id)
-    # transferrin_score = go_matrix.iloc[transferrin_index]["S"]
-    # print(f"Transferrin score: {transferrin_score}")
-    # print(f"Higher score count: {(go_matrix['S'] > transferrin_score).sum()}")
-    # print(f"Higher score count: {(go_matrix['S'] >= transferrin_score).sum()}")
-    # higher_score_count = (go_matrix["S"] > transferrin_score).sum()
-    # with open("transferrin/results.csv", "a") as f:
-    #     txt = f"{p_model},{m_model},{fuse_base},{metric},{n_layers},{hid_dim},{drop_out},{transferrin_score},{higher_score_count}\n"
-    #     print(txt)
-    #     f.write(txt)
-    #
-    # if save_models:
-    #     import os
-    #     save_dir = f"transferrin/models"
-    #     if not os.path.exists(save_dir):
-    #         os.makedirs(save_dir)
-    #     file_name = f"{p_model}_{m_model}_{metric}_{n_layers}_{hid_dim}_{drop_out}"
-    #     torch.save(model.state_dict(), f"{save_dir}/{file_name}.pt")
-    #
-    # if not print_full_res:
-    #     return
-    #
-    # single_res = find_top_n_combinations(go_matrix, transferrin_index, n_results=10, max_cols=1, min_samples=100)
-    # print("Transferrin results Single")
-    # print(single_res)
-    # double_res = find_top_n_combinations(go_matrix, transferrin_index, n_results=10, max_cols=2, min_samples=100)
-    # print("Transferrin results Double")
-    # print(double_res)
-    #
+    x1_train, x2_train, labels_train, x1_valid, x2_valid, labels_valid, x1_test, x2_test, labels_test = get_task_data(
+        p_model, m_model)
+    x = np.concatenate([x1_train, x1_valid, x1_test])
+    x = torch.tensor(x).to(device).float()
+    x = fuse_model(x, "M").detach().cpu().numpy()
+    y = np.concatenate([labels_train, labels_valid, labels_test])
+    for model in get_classifiers_iter():
+        model.fit(x, y)
+        mol_pred = model.predict_proba(molecules.detach().cpu().numpy().reshape(1, -1))[:, 1]
+        complex_scores = []
+        for name, id_ in [("transferrin", transferrin_id), ("insulin", insulin_id), ("Leptin", Leptin_id)]:
+            index = protein_names.index(id_)
+            complex_score = model.predict_proba(complex[index].detach().cpu().numpy().reshape(1, -1))[:, 1]
+            complex_scores.append(complex_score)
+        print(f"Model: {model}, mol_pred: {mol_pred}, complex_scores: {complex_scores}")
 
 if __name__ == '__main__':
     import argparse
@@ -132,5 +150,9 @@ if __name__ == '__main__':
     parser.add_argument("--drop_out", type=float, default=0.0)
     args = parser.parse_args()
     torch.manual_seed(42)
-    main(args.p_model, args.m_model, args.fusion_name, args.metric, args.n_layers, args.hid_dim, args.drop_out,
-         args.print_full_res, args.save_models)
+    for p_model in ["ProtBert", "esm3-small", "esm3-medium", "GearNet"]:
+        for m_model in ["MolCLR", "ChemBERTa", "MoLFormer"]:
+            print(f"p_model: {p_model}, m_model: {m_model}")
+            fuse_name = args.fuse_name.replace("ProtBert", p_model).replace("ChemBERTa", m_model)
+            main(p_model, m_model, fuse_name, args.metric, args.n_layers, args.hid_dim, args.drop_out,
+                 args.print_full_res, args.save_models)
