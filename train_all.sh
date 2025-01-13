@@ -4,7 +4,7 @@
 #SBATCH --mem=64G
 #SBATCH --requeue
 #SBATCH --gres=gpu:A4000:1
-#SBATCH --array=1-12
+#SBATCH --array=1-6
 
 
 configs="--flip_prob 0.1  |\
