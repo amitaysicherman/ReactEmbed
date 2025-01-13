@@ -67,11 +67,11 @@ def main(p_model="esm3-medium", m_model="ChemBERTa",
     # pred = model.layers(complex_fuse)
     # res = torch.sigmoid(pred).detach().cpu().numpy().flatten()
     # res = model.predict_proba(complex_fuse.detach().cpu().numpy())[:, 1]
+    mol_pred = model.predict_proba(molecules.detach().cpu().numpy().reshape(1, -1))[:, 1]
+    print(f"Molecule score: {mol_pred}")
     for name, id_ in [("transferrin", transferrin_id), ("insulin", insulin_id), ("Leptin", Leptin_id)]:
         index = protein_names.index(id_)
-        mol_pred = model.predict_proba(molecules[index].detach().cpu().numpy().reshape(1, -1))[:, 1]
         complex_score = model.predict_proba(complex[index].detach().cpu().numpy().reshape(1, -1))[:, 1]
-        print(f"{name} score: {mol_pred}")
         print(f"{name} score: {complex_score}")
     # go_matrix = preprocess.get_go_matrix()
     # assert transferrin_id in go_matrix.index
