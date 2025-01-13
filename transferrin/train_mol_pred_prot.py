@@ -70,9 +70,9 @@ def get_classifiers_iter():
             yield get_sklearn_classifier(name, n_estimators=100, learning_rate=0.1, max_depth=1,
                                          random_state=0), "GradientBoosting-100-0.1-1"
         elif name == "MLP":
-            yield get_sklearn_classifier(name, hidden_layer_sizes=(100,), max_iter=1000), "MLP-100"
-            yield get_sklearn_classifier(name, hidden_layer_sizes=(100, 100), max_iter=1000), "MLP-100-100"
-            yield get_sklearn_classifier(name, hidden_layer_sizes=(100, 100, 100), max_iter=1000), "MLP-100-100-100"
+            yield get_sklearn_classifier(name, hidden_layer_sizes=(50,), max_iter=1000), "MLP-50"
+            yield get_sklearn_classifier(name, hidden_layer_sizes=(100, 50), max_iter=1000), "MLP-100-50"
+            yield get_sklearn_classifier(name, hidden_layer_sizes=(100, 50, 10), max_iter=1000), "MLP-100-50-10"
         elif name == "AdaBoost":
             yield get_sklearn_classifier(name, n_estimators=100, random_state=0), "AdaBoost-100"
             yield get_sklearn_classifier(name, n_estimators=50, random_state=0), "AdaBoost-50"
