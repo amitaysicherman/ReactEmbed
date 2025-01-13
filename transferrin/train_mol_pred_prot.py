@@ -2,6 +2,7 @@ import os
 
 import numpy as np
 import torch
+from sklearn.svm import SVC
 
 from eval_tasks.models import load_fuse_model
 from preprocessing.seq_to_vec import SeqToVec
@@ -16,74 +17,6 @@ DPPC = 'CCCCCCCCCCCCCCCC(=O)OCC(COP(=O)([O-])OCC[N+](C)(C)C)OC(=O)CCCCCCCCCCCCCC
 cholesterol = 'CC(C)CCCC(C)C1CCC2C3CC=C4CC(O)CCC4(C)C3CCC12C'
 
 
-def get_sklearn_classifier(name, **kwargs):
-    if name == "KNeighbors":
-        from sklearn.neighbors import KNeighborsClassifier
-        return KNeighborsClassifier(**kwargs)
-    elif name == "SVC":
-        from sklearn.svm import SVC
-        return SVC(**kwargs)
-    elif name == "RandomForest":
-        from sklearn.ensemble import RandomForestClassifier
-        return RandomForestClassifier(**kwargs)
-    elif name == "LogisticRegression":
-        from sklearn.linear_model import LogisticRegression
-        return LogisticRegression(**kwargs)
-    elif name == "GradientBoosting":
-        from sklearn.ensemble import GradientBoostingClassifier
-        return GradientBoostingClassifier(**kwargs)
-    elif name == "MLP":
-        from sklearn.neural_network import MLPClassifier
-        return MLPClassifier(**kwargs)
-    elif name == "AdaBoost":
-        from sklearn.ensemble import AdaBoostClassifier
-        return AdaBoostClassifier(**kwargs)
-    else:
-        raise ValueError(f"Unknown classifier: {name}")
-
-
-def get_classifiers_iter():
-    for name in ["KNeighbors", "SVC", "RandomForest", "LogisticRegression", "GradientBoosting", "MLP", "AdaBoost"]:
-        if name == "KNeighbors":
-            yield get_sklearn_classifier(name, n_neighbors=1), "KNeighbors-1"
-            yield get_sklearn_classifier(name, n_neighbors=2), "KNeighbors-2"
-            yield get_sklearn_classifier(name, n_neighbors=3), "KNeighbors-4"
-            yield get_sklearn_classifier(name, n_neighbors=4), "KNeighbors-4"
-            yield get_sklearn_classifier(name, n_neighbors=5), "KNeighbors-5"
-            yield get_sklearn_classifier(name, n_neighbors=10), "KNeighbors-10"
-            yield get_sklearn_classifier(name, n_neighbors=20), "KNeighbors-20"
-            yield get_sklearn_classifier(name, n_neighbors=50), "KNeighbors-50"
-        elif name == "SVC":
-            yield get_sklearn_classifier(name, probability=True, kernel="linear"), "SVC-linear"
-            yield get_sklearn_classifier(name, probability=True, kernel="poly"), "SVC-poly"
-            yield get_sklearn_classifier(name, probability=True, kernel="rbf"), "SVC-rbf"
-            yield get_sklearn_classifier(name, probability=True, kernel="sigmoid"), "SVC-sigmoid"
-        elif name == "RandomForest":
-            yield get_sklearn_classifier(name, n_estimators=10, max_depth=2, random_state=0), "RandomForest-10-2"
-            yield get_sklearn_classifier(name, n_estimators=100, max_depth=1, random_state=0), "RandomForest-100-1"
-            yield get_sklearn_classifier(name, n_estimators=50, max_depth=2, random_state=0), "RandomForest-50-2"
-        elif name == "LogisticRegression":
-            yield get_sklearn_classifier(name, random_state=0, max_iter=1000), "LogisticRegression"
-            yield get_sklearn_classifier(name, C=0.1, random_state=0, max_iter=1000), "LogisticRegression-0.1"
-        elif name == "GradientBoosting":
-            yield get_sklearn_classifier(name, n_estimators=10, learning_rate=0.1, max_depth=2,
-                                         random_state=0), "GradientBoosting-10-0.1-2"
-            yield get_sklearn_classifier(name, n_estimators=100, learning_rate=0.1, max_depth=1,
-                                         random_state=0), "GradientBoosting-100-0.1-1"
-        elif name == "MLP":
-            yield get_sklearn_classifier(name, hidden_layer_sizes=(10,), max_iter=1000), "MLP-10"
-            yield get_sklearn_classifier(name, hidden_layer_sizes=(50,), max_iter=1000), "MLP-50"
-            yield get_sklearn_classifier(name, hidden_layer_sizes=(100,), max_iter=1000), "MLP-100"
-            yield get_sklearn_classifier(name, hidden_layer_sizes=(100, 50), max_iter=1000), "MLP-100-50"
-            yield get_sklearn_classifier(name, hidden_layer_sizes=(100, 50, 10), max_iter=1000), "MLP-100-50-10"
-        elif name == "AdaBoost":
-            yield get_sklearn_classifier(name, n_estimators=100, random_state=0), "AdaBoost-100"
-            yield get_sklearn_classifier(name, n_estimators=50, random_state=0), "AdaBoost-50"
-            yield get_sklearn_classifier(name, n_estimators=10, random_state=0), "AdaBoost-10"
-        else:
-            raise ValueError(f"Unknown classifier: {name}")
-
-
 def get_task_data(p_model, m_model):
     from eval_tasks.dataset import load_data
     task_name = "BBBP"
@@ -93,8 +26,7 @@ def get_task_data(p_model, m_model):
 
 
 def main(p_model="esm3-medium", m_model="ChemBERTa",
-         fuse_base="data/reactome/model/esm3-medium-ChemBERTa-1-256-0.3-1-5e-05-256-0.0/", metric="f1_max",
-         n_layers=2, hid_dim=512, drop_out=0.3, print_full_res=False, save_models=False):
+         fuse_base="data/reactome/model/esm3-medium-ChemBERTa-1-256-0.3-1-5e-05-256-0.0/"):
     fuse_model, dim = load_fuse_model(fuse_base)
     fuse_model.eval().to(device)
     preprocess = PreprocessManager(p_model=p_model, reactome=True)
@@ -125,17 +57,17 @@ def main(p_model="esm3-medium", m_model="ChemBERTa",
     print("=" * 70)
     print(f"{'Model':<25} {'Molecule':>10} {'Transferrin':>12} {'Insulin':>10} {'Leptin':>10}")
     print("-" * 70)  # Add separator line
-
-    for model, model_name in get_classifiers_iter():
-        model.fit(x, y)
-        mol_pred = model.predict_proba(molecules.detach().cpu().numpy().reshape(1, -1))[:, 1]
-        complex_scores = []
-        for name, id_ in [("transferrin", transferrin_id), ("insulin", insulin_id), ("Leptin", Leptin_id)]:
-            index = protein_names.index(id_)
-            complex_score = model.predict_proba(complex[index].detach().cpu().numpy().reshape(1, -1))[:, 1]
-            complex_scores.append(complex_score[0])
-        print(
-            f"{model_name:<25} {mol_pred[0]:>10.3f} {complex_scores[0]:>12.3f} {complex_scores[1]:>10.3f} {complex_scores[2]:>10.3f}")
+    model = SVC(probability=True, kernel='linear')
+    model_name = "SVM"
+    model.fit(x, y)
+    mol_pred = model.predict_proba(molecules.detach().cpu().numpy().reshape(1, -1))[:, 1]
+    complex_scores = []
+    for name, id_ in [("transferrin", transferrin_id), ("insulin", insulin_id), ("Leptin", Leptin_id)]:
+        index = protein_names.index(id_)
+        complex_score = model.predict_proba(complex[index].detach().cpu().numpy().reshape(1, -1))[:, 1]
+        complex_scores.append(complex_score[0])
+    print(
+        f"{model_name:<25} {mol_pred[0]:>10.3f} {complex_scores[0]:>12.3f} {complex_scores[1]:>10.3f} {complex_scores[2]:>10.3f}")
 
 
 if __name__ == '__main__':
