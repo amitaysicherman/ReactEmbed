@@ -86,5 +86,4 @@ if __name__ == '__main__':
     parser.add_argument("--drop_out", type=float, default=0.0)
     args = parser.parse_args()
     torch.manual_seed(42)
-    main(args.p_model, args.m_model, args.fusion_name, args.metric, args.n_layers, args.hid_dim, args.drop_out,
-         args.print_full_res, args.save_models)
+    main(args.p_model, args.m_model, args.fusion_name)
