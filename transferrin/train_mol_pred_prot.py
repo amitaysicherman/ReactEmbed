@@ -37,7 +37,7 @@ def train_ml_model(p_model, m_model, fuse_model):
     # model = SVC(probability=True)
     # model = RandomForestClassifier(n_estimators=10, max_depth=3, random_state=0)
     # model = LogisticRegression(random_state=0)
-    model = GradientBoostingClassifier(n_estimators=1000, learning_rate=1.0, max_depth=1, random_state=0)
+    model = GradientBoostingClassifier(n_estimators=100, learning_rate=1.0, max_depth=1, random_state=0)
     model.fit(x, y)
     print(f"Model score: {model.score(x, y)}")
     # predict probabilities
