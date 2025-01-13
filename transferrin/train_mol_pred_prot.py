@@ -3,9 +3,11 @@ import torch
 
 from eval_tasks.models import load_fuse_model
 from preprocessing.seq_to_vec import SeqToVec
-from transferrin.utils import PreprocessManager, find_top_n_combinations
+from transferrin.utils import PreprocessManager
 
 transferrin_id = "P02787"
+insulin_id = "P01308"
+Leptin_id = "P41159"
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 DPPC = 'CCCCCCCCCCCCCCCC(=O)OCC(COP(=O)([O-])OCC[N+](C)(C)C)OC(=O)CCCCCCCCCCCCCCC'
@@ -42,11 +44,6 @@ def main(p_model="esm3-medium", m_model="ChemBERTa",
          fuse_base="data/reactome/model/esm3-medium-ChemBERTa-1-256-0.3-1-5e-05-256-0.0/", metric="f1_max",
          n_layers=2, hid_dim=512, drop_out=0.3, print_full_res=False, save_models=False):
     preprocess = PreprocessManager(p_model=p_model, reactome=True)
-    # score, model = trainer_task_main(use_fuse=True, use_model=False, bs=2048, lr=0.001, drop_out=drop_out,
-    #                                  hidden_dim=hid_dim,
-    #                                  task_name="BBBP", fuse_base=fuse_base, mol_emd=m_model, protein_emd=p_model,
-    #                                  n_layers=n_layers, metric=metric, max_no_improve=15, return_model=True,
-    #                                  train_all_data=False)
     fuse_model, dim = load_fuse_model(fuse_base)
     fuse_model.eval().to(device)
     print(f"fuse_model: {fuse_model}")
@@ -54,8 +51,8 @@ def main(p_model="esm3-medium", m_model="ChemBERTa",
     model = train_ml_model(p_model, m_model, fuse_model)
 
     vecs = preprocess.get_vecs()
+    protein_names = preprocess.get_proteins()
     proteins = torch.tensor(vecs).to(device).float()
-    # fuse_model: ReactEmbedModel = model.fuse_model
     fuse_model.eval()
     proteins_fuse = fuse_model(proteins, "P")
     seq_to_vec = SeqToVec(model_name=m_model)
@@ -63,45 +60,52 @@ def main(p_model="esm3-medium", m_model="ChemBERTa",
     dppc_fuse = fuse_model(dppc_vec, "M")
     cholesterol_vec = torch.tensor(seq_to_vec.to_vec(cholesterol)).to(device).float()
     cholesterol_fuse = fuse_model(cholesterol_vec, "M")
-    complex_fuse = 0.5 * proteins_fuse + 0.33 * dppc_fuse + 0.17 * cholesterol_fuse
-    complex_fuse = proteins_fuse
+    molecules = 0.67 * dppc_fuse + 0.33 * cholesterol_fuse
+    complex = 0.5 * proteins_fuse + 0.5 * molecules
+    # complex_fuse = proteins_fuse
     # model.eval()
     # pred = model.layers(complex_fuse)
     # res = torch.sigmoid(pred).detach().cpu().numpy().flatten()
-    res = model.predict_proba(complex_fuse.detach().cpu().numpy())[:, 1]
-    go_matrix = preprocess.get_go_matrix()
-    assert transferrin_id in go_matrix.index
-    assert len(go_matrix) == preprocess.get_vecs().shape[0]
-    go_matrix["S"] = res.flatten()
-    transferrin_index = go_matrix.index.get_loc(transferrin_id)
-    transferrin_score = go_matrix.iloc[transferrin_index]["S"]
-    print(f"Transferrin score: {transferrin_score}")
-    print(f"Higher score count: {(go_matrix['S'] > transferrin_score).sum()}")
-    print(f"Higher score count: {(go_matrix['S'] >= transferrin_score).sum()}")
-    higher_score_count = (go_matrix["S"] > transferrin_score).sum()
-    with open("transferrin/results.csv", "a") as f:
-        txt = f"{p_model},{m_model},{fuse_base},{metric},{n_layers},{hid_dim},{drop_out},{transferrin_score},{higher_score_count}\n"
-        print(txt)
-        f.write(txt)
-
-    if save_models:
-        import os
-        save_dir = f"transferrin/models"
-        if not os.path.exists(save_dir):
-            os.makedirs(save_dir)
-        file_name = f"{p_model}_{m_model}_{metric}_{n_layers}_{hid_dim}_{drop_out}"
-        torch.save(model.state_dict(), f"{save_dir}/{file_name}.pt")
-
-    if not print_full_res:
-        return
-
-    single_res = find_top_n_combinations(go_matrix, transferrin_index, n_results=10, max_cols=1, min_samples=100)
-    print("Transferrin results Single")
-    print(single_res)
-    double_res = find_top_n_combinations(go_matrix, transferrin_index, n_results=10, max_cols=2, min_samples=100)
-    print("Transferrin results Double")
-    print(double_res)
-
+    # res = model.predict_proba(complex_fuse.detach().cpu().numpy())[:, 1]
+    for name, id_ in [("transferrin", transferrin_id), ("insulin", insulin_id), ("Leptin", Leptin_id)]:
+        index = protein_names.index(id_)
+        mol_pred = model.predict_proba(molecules[index].detach().cpu().numpy().reshape(1, -1))[:, 1]
+        complex_score = model.predict_proba(complex[index].detach().cpu().numpy().reshape(1, -1))[:, 1]
+        print(f"{name} score: {mol_pred}")
+        print(f"{name} score: {complex_score}")
+    # go_matrix = preprocess.get_go_matrix()
+    # assert transferrin_id in go_matrix.index
+    # assert len(go_matrix) == preprocess.get_vecs().shape[0]
+    # go_matrix["S"] = res.flatten()
+    # transferrin_index = go_matrix.index.get_loc(transferrin_id)
+    # transferrin_score = go_matrix.iloc[transferrin_index]["S"]
+    # print(f"Transferrin score: {transferrin_score}")
+    # print(f"Higher score count: {(go_matrix['S'] > transferrin_score).sum()}")
+    # print(f"Higher score count: {(go_matrix['S'] >= transferrin_score).sum()}")
+    # higher_score_count = (go_matrix["S"] > transferrin_score).sum()
+    # with open("transferrin/results.csv", "a") as f:
+    #     txt = f"{p_model},{m_model},{fuse_base},{metric},{n_layers},{hid_dim},{drop_out},{transferrin_score},{higher_score_count}\n"
+    #     print(txt)
+    #     f.write(txt)
+    #
+    # if save_models:
+    #     import os
+    #     save_dir = f"transferrin/models"
+    #     if not os.path.exists(save_dir):
+    #         os.makedirs(save_dir)
+    #     file_name = f"{p_model}_{m_model}_{metric}_{n_layers}_{hid_dim}_{drop_out}"
+    #     torch.save(model.state_dict(), f"{save_dir}/{file_name}.pt")
+    #
+    # if not print_full_res:
+    #     return
+    #
+    # single_res = find_top_n_combinations(go_matrix, transferrin_index, n_results=10, max_cols=1, min_samples=100)
+    # print("Transferrin results Single")
+    # print(single_res)
+    # double_res = find_top_n_combinations(go_matrix, transferrin_index, n_results=10, max_cols=2, min_samples=100)
+    # print("Transferrin results Double")
+    # print(double_res)
+    #
 
 if __name__ == '__main__':
     import argparse
