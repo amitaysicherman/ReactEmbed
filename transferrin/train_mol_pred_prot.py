@@ -46,6 +46,9 @@ def get_classifiers_iter():
     for name in ["KNeighbors", "SVC", "RandomForest", "LogisticRegression", "GradientBoosting", "MLP", "AdaBoost"]:
         if name == "KNeighbors":
             yield get_sklearn_classifier(name, n_neighbors=1), "KNeighbors-1"
+            yield get_sklearn_classifier(name, n_neighbors=2), "KNeighbors-2"
+            yield get_sklearn_classifier(name, n_neighbors=3), "KNeighbors-4"
+            yield get_sklearn_classifier(name, n_neighbors=4), "KNeighbors-4"
             yield get_sklearn_classifier(name, n_neighbors=5), "KNeighbors-5"
             yield get_sklearn_classifier(name, n_neighbors=10), "KNeighbors-10"
             yield get_sklearn_classifier(name, n_neighbors=20), "KNeighbors-20"
@@ -115,6 +118,9 @@ def main(p_model="esm3-medium", m_model="ChemBERTa",
     x = torch.tensor(x).to(device).float()
     x = fuse_model(x, "M").detach().cpu().numpy()
     y = np.concatenate([labels_train, labels_valid, labels_test]).flatten()
+    print(f"{'Model':<25} {'Molecule':>10} {'Transferrin':>12} {'Insulin':>10} {'Leptin':>10}")
+    print("-" * 70)  # Add separator line
+
     for model, model_name in get_classifiers_iter():
         model.fit(x, y)
         mol_pred = model.predict_proba(molecules.detach().cpu().numpy().reshape(1, -1))[:, 1]
@@ -123,7 +129,8 @@ def main(p_model="esm3-medium", m_model="ChemBERTa",
             index = protein_names.index(id_)
             complex_score = model.predict_proba(complex[index].detach().cpu().numpy().reshape(1, -1))[:, 1]
             complex_scores.append(complex_score[0])
-        print(f"{model_name},{mol_pred[0]:.2f},{complex_scores[0]:.2f},{complex_scores[1]:.2f},{complex_scores[2]:.2f}")
+        print(
+            f"{model_name:<25} {mol_pred[0]:>10.3f} {complex_scores[0]:>12.3f} {complex_scores[1]:>10.3f} {complex_scores[2]:>10.3f}")
 
 if __name__ == '__main__':
     import argparse
@@ -143,7 +150,6 @@ if __name__ == '__main__':
     torch.manual_seed(42)
     for p_model in ["ProtBert", "esm3-small", "esm3-medium", "GearNet"]:
         for m_model in ["MolCLR", "ChemBERTa", "MoLFormer"]:
-            print(f"p_model: {p_model}, m_model: {m_model}")
             fuse_name = args.fusion_name.replace("ProtBert", p_model).replace("ChemBERTa", m_model)
             main(p_model, m_model, fuse_name, args.metric, args.n_layers, args.hid_dim, args.drop_out,
                  args.print_full_res, args.save_models)
