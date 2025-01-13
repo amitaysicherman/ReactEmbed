@@ -60,9 +60,9 @@ def run_epoch(model, optimizer, loader, contrastive_loss, is_train):
     return total_loss / count
 
 
-def get_loader(data_name, split, batch_size, p_model, m_model, flip_prob):
+def get_loader(data_name, split, batch_size, p_model, m_model, flip_prob, samples_ratio, no_pp_mm):
     dataset = TripletsDataset(data_name=data_name, p_model=p_model, m_model=m_model, split=split,
-                              flip_prob=flip_prob)
+                              flip_prob=flip_prob, samples_ratio=samples_ratio, no_pp_mm=no_pp_mm)
     sampler = TripletsBatchSampler(dataset, batch_size)
     return DataLoader(dataset, batch_sampler=sampler)
 
@@ -75,11 +75,9 @@ def build_models(p_dim, m_dim, shared_dim, n_layers, hidden_dim, dropout, save_d
 
 
 def main(data_name, batch_size, p_model, m_model, shared_dim, n_layers, hidden_dim, dropout,
-         epochs, lr, flip_prob=0, datasets=None, override=False):
-    name = model_args_to_name(batch_size=batch_size, p_model=p_model, m_model=m_model,
-                              shared_dim=shared_dim, n_layers=n_layers,
-                              hidden_dim=hidden_dim, dropout=dropout, epochs=epochs,
-                              lr=lr, flip_prob=flip_prob)
+         epochs, lr, flip_prob=0, samples_ratio=1, no_pp_mm=0, datasets=None, override=False):
+    name = model_args_to_name(p_model, m_model, n_layers, hidden_dim, dropout, epochs, lr, batch_size, flip_prob,
+                              shared_dim, samples_ratio, no_pp_mm)
     save_dir = f"data/{data_name}/model/{name}/"
     model_file = f"{save_dir}/model.pt"
     if not override and os.path.exists(model_file):
@@ -90,9 +88,9 @@ def main(data_name, batch_size, p_model, m_model, shared_dim, n_layers, hidden_d
     if datasets is not None:
         train_loader, valid_loader, test_loader = datasets
     else:
-        train_loader = get_loader(data_name, "train", batch_size, p_model, m_model, flip_prob)
-        valid_loader = get_loader(data_name, "valid", batch_size, p_model, m_model, flip_prob)
-        test_loader = get_loader(data_name, "test", batch_size, p_model, m_model, flip_prob)
+        train_loader = get_loader(data_name, "train", batch_size, p_model, m_model, flip_prob, samples_ratio, no_pp_mm)
+        valid_loader = get_loader(data_name, "valid", batch_size, p_model, m_model, flip_prob, samples_ratio, no_pp_mm)
+        test_loader = get_loader(data_name, "test", batch_size, p_model, m_model, flip_prob, samples_ratio, no_pp_mm)
 
     p_dim = model_to_dim[p_model]
     m_dim = model_to_dim[m_model]
@@ -132,8 +130,8 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Contrastive Learning')
     parser.add_argument('--batch_size', type=int, help='Batch size', default=256)
-    parser.add_argument('--p_model', type=str, help='Protein model', default="ProtBert")
-    parser.add_argument('--m_model', type=str, help='Molecule model', default="ChemBERTa")
+    parser.add_argument('--p_model', type=str, help='Protein model', default="esm3-medium")
+    parser.add_argument('--m_model', type=str, help='Molecule model', default="MoLFormer")
     parser.add_argument('--shared_dim', type=int, help='Shared space dimension', default=256)
     parser.add_argument('--n_layers', type=int, help='Number of layers', default=1)
     parser.add_argument('--hidden_dim', type=int, help='Hidden dimension', default=512)
@@ -141,10 +139,13 @@ if __name__ == '__main__':
     parser.add_argument('--epochs', type=int, help='Number of epochs', default=10)
     parser.add_argument('--lr', type=float, help='Learning rate', default=1e-4)
     parser.add_argument('--flip_prob', type=float, help='Flip Prob', default=0.0)
+    parser.add_argument("--samples_ratio", type=float, default=1)
+    parser.add_argument("--no_pp_mm", type=int, default=0)
     parser.add_argument('--data_name', type=str, help='Data name', default="reactome")
     parser.add_argument('--override', action='store_true', help='Override existing model')
     args = parser.parse_args()
 
     main(data_name=args.data_name, batch_size=args.batch_size, p_model=args.p_model, m_model=args.m_model,
          shared_dim=args.shared_dim, n_layers=args.n_layers, hidden_dim=args.hidden_dim, dropout=args.dropout,
-         epochs=args.epochs, lr=args.lr, flip_prob=args.flip_prob, override=args.override)
+         epochs=args.epochs, lr=args.lr, flip_prob=args.flip_prob, samples_ratio=args.samples_ratio,
+         no_pp_mm=args.no_pp_mm, override=args.override)

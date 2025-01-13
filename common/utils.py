@@ -1,27 +1,9 @@
 from enum import Enum
 
 
-def model_args_to_name(**kwargs):
-    names_to_check = ["batch_size", "p_model", "m_model", "n_layers", "hidden_dim", "dropout", "epochs",
-                      "lr", "flip_prob", "shared_dim"]
-    for name in names_to_check:
-        if name not in kwargs:
-            raise ValueError(f"Missing argument: {name}")
-    for k in kwargs:
-        if k not in names_to_check:
-            raise ValueError(f"Extra argument: {k}")
-    batch_size = kwargs["batch_size"]
-    p_model = kwargs["p_model"]
-    m_model = kwargs["m_model"]
-    n_layers = kwargs["n_layers"]
-    hidden_dim = kwargs["hidden_dim"]
-    dropout = kwargs["dropout"]
-    epochs = kwargs["epochs"]
-    lr = kwargs["lr"]
-    flip_prob = kwargs["flip_prob"]
-    shared_dim = kwargs["shared_dim"]
-
-    return f"{p_model}-{m_model}-{n_layers}-{hidden_dim}-{dropout}-{epochs}-{lr}-{batch_size}-{flip_prob}-{shared_dim}"
+def model_args_to_name(p_model, m_model, n_layers, hidden_dim, dropout, epochs, lr, batch_size, flip_prob, shared_dim,
+                       samples_ratio, no_pp_mm):
+    return f"{p_model}-{m_model}-{n_layers}-{hidden_dim}-{dropout}-{epochs}-{lr}-{batch_size}-{flip_prob}-{shared_dim}-{samples_ratio}-{no_pp_mm}"
 
 
 def name_to_model_args(name):
@@ -39,11 +21,12 @@ def name_to_model_args(name):
     lr = float(names[6])
     batch_size = int(names[7])
     flip_prob = float(names[8])
-    min_value = int(names[9])
+    shared_dim = int(names[9])
+    samples_ratio = int(names[10])
+    no_pp_mm = int(names[11])
     return {"p_model": p_model, "m_model": m_model, "n_layers": n_layers, "hidden_dim": hidden_dim, "dropout": dropout,
-            "epochs": epochs, "lr": lr, "batch_size": batch_size, "flip_prob": flip_prob, "min_value": min_value}
-
-
+            "epochs": epochs, "lr": lr, "batch_size": batch_size, "flip_prob": flip_prob, "shared_dim": shared_dim,
+            "samples_ratio": samples_ratio, "no_pp_mm": no_pp_mm}
 
 
 class Config(Enum):

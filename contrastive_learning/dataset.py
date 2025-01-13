@@ -23,7 +23,8 @@ def prep_entity(entities, empty_list):
 
 
 class TripletsDataset(Dataset):
-    def __init__(self, data_name, split, p_model="ProtBert", m_model="ChemBERTa", n_duplicates=10, flip_prob=0):
+    def __init__(self, data_name, split, p_model="ProtBert", m_model="ChemBERTa", n_duplicates=10, flip_prob=0,
+                 samples_ratio=1, no_pp_mm=0):
         self.split = split
 
         self.flip_prob = flip_prob
@@ -57,6 +58,8 @@ class TripletsDataset(Dataset):
             elements = proteins + molecules
             for i, e1 in enumerate(elements):
                 for j, e2 in enumerate(elements[i + 1:], start=i + 1):
+                    if no_pp_mm == 1 and types[i] == types[j]:
+                        continue
                     self.pair_counts[f"{types[i]}-{types[j]}"][(e1, e2)] += 1
                     self.pair_counts[f"{types[j]}-{types[i]}"][(e2, e1)] += 1
 
@@ -83,6 +86,8 @@ class TripletsDataset(Dataset):
             t1, t2 = t.split("-")
             ttag = "P" if t2 == "M" else "M"
             for e1, e2 in tqdm(self.split_pair[t], desc=f"Generating {t} triplets"):
+                if samples_ratio < 1 and random.random() > samples_ratio:
+                    continue
                 for _ in range(n_duplicates):
                     pair_count = self.pair_counts[t][(e1, e2)]
                     pair_count = min(pair_count, 10)
