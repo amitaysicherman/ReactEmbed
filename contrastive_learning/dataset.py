@@ -154,9 +154,9 @@ class TripletsBatchSampler(Sampler):
                 continue
             if len(self.dataset.triples[t]) < self.batch_size:
                 yield [(t, i) for i in range(len(self.dataset.triples[t]))]
-
-            idx = random.choice(range(0, len(self.dataset.triples[t]) - self.batch_size - 1))
-            yield [(t, idx + i) for i in range(self.batch_size)]
+            else:
+                idx = random.choice(range(0, len(self.dataset.triples[t]) - self.batch_size - 1))
+                yield [(t, idx + i) for i in range(self.batch_size)]
 
     def __len__(self):
         return self.max_num_steps
