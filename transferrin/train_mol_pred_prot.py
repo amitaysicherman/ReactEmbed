@@ -123,7 +123,7 @@ def main(p_model="esm3-medium", m_model="ChemBERTa",
     x = np.concatenate([x1_train, x1_valid, x1_test])
     x = torch.tensor(x).to(device).float()
     x = fuse_model(x, "M").detach().cpu().numpy()
-    y = np.concatenate([labels_train, labels_valid, labels_test])
+    y = np.concatenate([labels_train, labels_valid, labels_test]).flatten()
     for model in get_classifiers_iter():
         model.fit(x, y)
         mol_pred = model.predict_proba(molecules.detach().cpu().numpy().reshape(1, -1))[:, 1]
