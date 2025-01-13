@@ -63,14 +63,17 @@ def get_classifiers_iter():
             yield get_sklearn_classifier(name, n_estimators=100, max_depth=1, random_state=0), "RandomForest-100-1"
             yield get_sklearn_classifier(name, n_estimators=50, max_depth=2, random_state=0), "RandomForest-50-2"
         elif name == "LogisticRegression":
-            yield get_sklearn_classifier(name, random_state=0), "LogisticRegression"
+            yield get_sklearn_classifier(name, random_state=0, max_iter=1000), "LogisticRegression"
+            yield get_sklearn_classifier(name, C=0.1, random_state=0, max_iter=1000), "LogisticRegression-0.1"
         elif name == "GradientBoosting":
             yield get_sklearn_classifier(name, n_estimators=10, learning_rate=0.1, max_depth=2,
                                          random_state=0), "GradientBoosting-10-0.1-2"
             yield get_sklearn_classifier(name, n_estimators=100, learning_rate=0.1, max_depth=1,
                                          random_state=0), "GradientBoosting-100-0.1-1"
         elif name == "MLP":
+            yield get_sklearn_classifier(name, hidden_layer_sizes=(10,), max_iter=1000), "MLP-10"
             yield get_sklearn_classifier(name, hidden_layer_sizes=(50,), max_iter=1000), "MLP-50"
+            yield get_sklearn_classifier(name, hidden_layer_sizes=(100,), max_iter=1000), "MLP-100"
             yield get_sklearn_classifier(name, hidden_layer_sizes=(100, 50), max_iter=1000), "MLP-100-50"
             yield get_sklearn_classifier(name, hidden_layer_sizes=(100, 50, 10), max_iter=1000), "MLP-100-50-10"
         elif name == "AdaBoost":
@@ -87,7 +90,6 @@ def get_task_data(p_model, m_model):
     x1_train, x2_train, labels_train, x1_valid, x2_valid, labels_valid, x1_test, x2_test, labels_test = load_data(
         task_name, m_model, p_model)
     return x1_train, x2_train, labels_train, x1_valid, x2_valid, labels_valid, x1_test, x2_test, labels_test
-
 
 
 def main(p_model="esm3-medium", m_model="ChemBERTa",
@@ -135,14 +137,15 @@ def main(p_model="esm3-medium", m_model="ChemBERTa",
         print(
             f"{model_name:<25} {mol_pred[0]:>10.3f} {complex_scores[0]:>12.3f} {complex_scores[1]:>10.3f} {complex_scores[2]:>10.3f}")
 
+
 if __name__ == '__main__':
     import argparse
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--p_model", type=str, default="ProtBert")
-    parser.add_argument("--m_model", type=str, default="ChemBERTa")
+    parser.add_argument("--p_model", type=str, default="esm3-medium")
+    parser.add_argument("--m_model", type=str, default="MoLFormer")
     parser.add_argument("--fusion_name", type=str,
-                        default="data/reactome/model/ProtBert-ChemBERTa-1-512-0.0-10-0.0001-256-0.0-256")
+                        default="data/reactome/model/esm3-medium-MoLFormer-1-512-0.0-10-0.0001-256-0.0-256")
     parser.add_argument("--metric", type=str, default="auc")
     parser.add_argument("--print_full_res", action="store_true")
     parser.add_argument("--save_models", action="store_true")
@@ -151,8 +154,5 @@ if __name__ == '__main__':
     parser.add_argument("--drop_out", type=float, default=0.0)
     args = parser.parse_args()
     torch.manual_seed(42)
-    for p_model in ["ProtBert", "esm3-small", "esm3-medium", "GearNet"]:
-        for m_model in ["MolCLR", "ChemBERTa", "MoLFormer"]:
-            fuse_name = args.fusion_name.replace("ProtBert", p_model).replace("ChemBERTa", m_model)
-            main(p_model, m_model, fuse_name, args.metric, args.n_layers, args.hid_dim, args.drop_out,
-                 args.print_full_res, args.save_models)
+    main(args.p_model, args.m_model, args.fusion_name, args.metric, args.n_layers, args.hid_dim, args.drop_out,
+         args.print_full_res, args.save_models)
