@@ -67,7 +67,7 @@ def main(p_model="esm3-medium", m_model="ChemBERTa",
         complex_score = model.predict_proba(complex[index].detach().cpu().numpy().reshape(1, -1))[:, 1]
         complex_scores.append(complex_score[0])
     print(
-        f"{model_name:<25} {mol_pred[0]:>10.3f} {complex_scores[0]:>12.3f} {complex_scores[1]:>10.3f} {complex_scores[2]:>10.3f}")
+        f"{model_name:<25} {mol_pred[0]:>10.4f} {complex_scores[0]:>12.4f} {complex_scores[1]:>10.4f} {complex_scores[2]:>10.4f}")
 
 
 if __name__ == '__main__':
