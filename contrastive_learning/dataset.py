@@ -150,6 +150,11 @@ class TripletsBatchSampler(Sampler):
     def __iter__(self):
         for _ in range(self.max_num_steps):
             t = random.choice(TRIPLET_TYPES)
+            if len(self.dataset.triples[t]) == 0:
+                continue
+            if len(self.dataset.triples[t]) < self.batch_size:
+                yield [(t, i) for i in range(len(self.dataset.triples[t]))]
+
             idx = random.choice(range(0, len(self.dataset.triples[t]) - self.batch_size - 1))
             yield [(t, idx + i) for i in range(self.batch_size)]
 
