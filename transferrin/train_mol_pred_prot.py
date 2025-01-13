@@ -1,3 +1,5 @@
+import os
+
 import numpy as np
 import torch
 
@@ -57,12 +59,17 @@ def main(p_model="esm3-medium", m_model="ChemBERTa",
     proteins = torch.tensor(vecs).to(device).float()
     fuse_model.eval()
     proteins_fuse = fuse_model(proteins, "P")
-    seq_to_vec = SeqToVec(model_name=m_model)
-    dppc_vec = torch.tensor(seq_to_vec.to_vec(DPPC)).to(device).float()
-    dppc_fuse = fuse_model(dppc_vec, "M")
-    cholesterol_vec = torch.tensor(seq_to_vec.to_vec(cholesterol)).to(device).float()
-    cholesterol_fuse = fuse_model(cholesterol_vec, "M")
-    molecules = 0.67 * dppc_fuse + 0.33 * cholesterol_fuse
+    mol_file = f"transferrin/mols_{m_model}.npy"
+    if os.path.exists(mol_file):
+        molecules = torch.tensor(np.load(mol_file)).to(device).float()
+    else:
+        seq_to_vec = SeqToVec(model_name=m_model)
+        dppc_vec = torch.tensor(seq_to_vec.to_vec(DPPC)).to(device).float()
+        dppc_fuse = fuse_model(dppc_vec, "M")
+        cholesterol_vec = torch.tensor(seq_to_vec.to_vec(cholesterol)).to(device).float()
+        cholesterol_fuse = fuse_model(cholesterol_vec, "M")
+        molecules = 0.67 * dppc_fuse + 0.33 * cholesterol_fuse
+        np.save(mol_file, molecules.detach().cpu().numpy())
     complex = 0.5 * proteins_fuse + 0.5 * molecules
     # complex_fuse = proteins_fuse
     # model.eval()
