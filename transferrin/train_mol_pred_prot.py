@@ -118,6 +118,9 @@ def main(p_model="esm3-medium", m_model="ChemBERTa",
     x = torch.tensor(x).to(device).float()
     x = fuse_model(x, "M").detach().cpu().numpy()
     y = np.concatenate([labels_train, labels_valid, labels_test]).flatten()
+    print("=== Results ===")
+    print(f"{m_model} + {p_model}")
+    print("=" * 70)
     print(f"{'Model':<25} {'Molecule':>10} {'Transferrin':>12} {'Insulin':>10} {'Leptin':>10}")
     print("-" * 70)  # Add separator line
 
