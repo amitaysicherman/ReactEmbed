@@ -195,7 +195,7 @@ def main(use_fuse, use_model, bs, lr, drop_out, hidden_dim, task_name, fuse_base
         return res
     res_to_print = res[0]
     train_res = res[1]
-    with open(f"res_update.csv", "a") as f:
+    with open(f"res_ab.csv", "a") as f:
         f.write(
             f"{use_fuse},{use_model},{bs},{lr},{drop_out},{hidden_dim},{task_name},{fuse_base},{mol_emd},{protein_emd},{n_layers},{metric},{max_no_improve},{res_to_print},{train_res}\n")
 
