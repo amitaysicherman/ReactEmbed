@@ -4,7 +4,7 @@
 #SBATCH --mem=64G
 #SBATCH --requeue
 #SBATCH --gres=gpu:A4000:1
-#SBATCH --array=1-6
+#SBATCH --array=1-55
 
 
 configs="python contrastive_learning/trainer.py  --override --p_model GearNet --m_model MoLFormer --flip_prob 0.1   |\
