@@ -6,7 +6,7 @@ from sklearn.svm import SVC
 
 from eval_tasks.models import load_fuse_model
 from preprocessing.seq_to_vec import SeqToVec
-from transferrin.utils import PreprocessManager
+from transferrin.utils import PreprocessManager, find_top_n_combinations
 
 transferrin_id = "P02787"
 insulin_id = "P01308"
@@ -68,8 +68,11 @@ def main(p_model="esm3-medium", m_model="ChemBERTa",
         complex_scores.append(complex_score[0])
     print(
         f"{model_name:<25} {mol_pred[0]:>10.4f} {complex_scores[0]:>12.4f} {complex_scores[1]:>10.4f} {complex_scores[2]:>10.4f}")
-
-
+    all_complexes_scores = model.predict_proba(complex.detach().cpu().numpy())[:, 1]
+    go = preprocess.get_go_matrix()
+    go["S"] = all_complexes_scores
+    top_combinations = find_top_n_combinations(go, protein_names.index(transferrin_id))
+    print(top_combinations)
 if __name__ == '__main__':
     import argparse
 
