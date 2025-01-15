@@ -52,5 +52,5 @@ for name, protein_id in name_to_id.items():
 
 for p_model in ["ProtBert", "esm3-small", "esm3-medium"]:
     seq_to_vec = SeqToVec(model_name=p_model)
-    vecs = seq_to_vec.lines_to_vecs(output_seq_file)
+    vecs = seq_to_vec.lines_to_vecs(all_seqs)
     np.save(f"transferrin/can_{p_model}.npy", vecs)

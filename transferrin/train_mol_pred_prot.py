@@ -6,15 +6,19 @@ from sklearn.svm import SVC
 
 from eval_tasks.models import load_fuse_model
 from preprocessing.seq_to_vec import SeqToVec
-from transferrin.utils import PreprocessManager, find_top_n_combinations
+from transferrin.utils import PreprocessManager
 
-transferrin_id = "P02787"
-insulin_id = "P01308"
-Leptin_id = "P41159"
+# transferrin_id = "P02787"
+# insulin_id = "P01308"
+# Leptin_id = "P41159"
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 DPPC = 'CCCCCCCCCCCCCCCC(=O)OCC(COP(=O)([O-])OCC[N+](C)(C)C)OC(=O)CCCCCCCCCCCCCCC'
 cholesterol = 'CC(C)CCCC(C)C1CCC2C3CC=C4CC(O)CCC4(C)C3CCC12C'
+with open("transferrin/can_seqs.txt") as f:
+    lines = f.read().splitlines()
+names = [line.split(",")[0] for line in lines]
+ids = [line.split(",")[1] for line in lines]
 
 
 def get_task_data(p_model, m_model):
@@ -30,8 +34,8 @@ def main(p_model="esm3-medium", m_model="ChemBERTa",
     fuse_model, dim = load_fuse_model(fuse_base)
     fuse_model.eval().to(device)
     preprocess = PreprocessManager(p_model=p_model, reactome=True)
-    vecs = preprocess.get_vecs()
-    protein_names = preprocess.get_proteins()
+    vecs = np.load(f"transferrin/can_{p_model}.npy")
+    protein_names = ids
     proteins = torch.tensor(vecs).to(device).float()
     proteins_fuse = fuse_model(proteins, "P")
     mol_file = f"transferrin/mols_{m_model}.npy"
@@ -60,19 +64,27 @@ def main(p_model="esm3-medium", m_model="ChemBERTa",
     model = SVC(probability=True, kernel='linear')
     model_name = "SVM"
     model.fit(x, y)
-    mol_pred = model.predict_proba(molecules.detach().cpu().numpy().reshape(1, -1))[:, 1]
-    complex_scores = []
-    for name, id_ in [("transferrin", transferrin_id), ("insulin", insulin_id), ("Leptin", Leptin_id)]:
-        index = protein_names.index(id_)
-        complex_score = model.predict_proba(complex[index].detach().cpu().numpy().reshape(1, -1))[:, 1]
-        complex_scores.append(complex_score[0])
-    print(
-        f"{model_name:<25} {mol_pred[0]:>10.4f} {complex_scores[0]:>12.4f} {complex_scores[1]:>10.4f} {complex_scores[2]:>10.4f}")
-    all_complexes_scores = model.predict_proba(complex.detach().cpu().numpy())[:, 1]
-    go = preprocess.get_go_matrix()
-    go["S"] = all_complexes_scores
-    top_combinations = find_top_n_combinations(go, protein_names.index(transferrin_id))
-    print(top_combinations)
+    mol_score = model.predict_proba(molecules.detach().cpu().numpy().reshape(1, -1))[:, 1].flatten()[0]
+    proteins_scores = model.predict_proba(proteins.detach().cpu().numpy())[:, 1].flatten().tolist()
+    names = ["LNP"] + protein_names
+    values = [mol_score] + proteins_scores
+    for name, value in zip(names, values):
+        print(f"{name:<25} {value:>10.4f}")
+    print("=" * 70)
+
+    # for name, id_ in [("transferrin", transferrin_id), ("insulin", insulin_id), ("Leptin", Leptin_id)]:
+    #     index = protein_names.index(id_)
+    #     complex_score = model.predict_proba(complex[index].detach().cpu().numpy().reshape(1, -1))[:, 1]
+    #     complex_scores.append(complex_score[0])
+    # print(
+    #     f"{model_name:<25} {mol_pred[0]:>10.4f} {complex_scores[0]:>12.4f} {complex_scores[1]:>10.4f} {complex_scores[2]:>10.4f}")
+    # all_complexes_scores = model.predict_proba(complex.detach().cpu().numpy())[:, 1]
+    # go = preprocess.get_go_matrix()
+    # go["S"] = all_complexes_scores
+    # top_combinations = find_top_n_combinations(go, protein_names.index(transferrin_id))
+    # print(top_combinations)
+
+
 if __name__ == '__main__':
     import argparse
 
