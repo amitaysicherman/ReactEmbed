@@ -1,8 +1,6 @@
 import random
-from collections import Counter
 from os.path import join as pjoin
 
-import numpy as np
 import torch
 from torch.utils.data import Dataset, Sampler
 from tqdm import tqdm
@@ -55,7 +53,6 @@ class TripletsDataset(Dataset):
         print("Not empty molecules:", len(self.molecules_non_empty))
         self.types = PAIR_TYPES
         self.pair_counts = {t: Counter() for t in self.types}
-        edge_deg_counter = {t: Counter() for t in self.types}
         # Count pair frequencies
         with open(reactions_file) as f:
             lines = f.read().splitlines()
@@ -73,23 +70,10 @@ class TripletsDataset(Dataset):
             elements = proteins + molecules
             for i, e1 in enumerate(elements):
                 for j, e2 in enumerate(elements[i + 1:], start=i + 1):
-                    edge_deg_counter[f"{types[i]}-{types[j]}"][e1] += 1
-                    edge_deg_counter[f"{types[j]}-{types[i]}"][e2] += 1
-
                     if no_pp_mm == 1 and types[i] == types[j]:
                         continue
                     self.pair_counts[f"{types[i]}-{types[j]}"][(e1, e2)] += 1
                     self.pair_counts[f"{types[j]}-{types[i]}"][(e2, e1)] += 1
-        # print molecule and protein source edge counts
-        for t in edge_deg_counter:
-            print(t)
-            print_hist_as_csv(edge_deg_counter[t].values())
-
-        for t in self.pair_counts:
-            print(f"Number of {t} pairs: {len(self.pair_counts[t]):,}")
-            # print sum of all pairs count per type
-            print(f"Sum of {t} pairs: {sum(self.pair_counts[t].values()):,}")
-            print_hist_as_csv(self.pair_counts[t].values())
 
 
         # Split the valid pairs
@@ -191,5 +175,229 @@ class TripletsBatchSampler(Sampler):
         return self.max_num_steps
 
 
+import networkx as nx
+import numpy as np
+from collections import Counter, defaultdict
+from typing import Dict, Tuple
+
+
+def build_heterogeneous_graph(pair_counts):
+    """
+    Build a heterogeneous graph from pair counts
+
+    Args:
+        pair_counts (dict): Dictionary of Counters containing edge information
+            Format: {edge_type: Counter((node1, node2): count)}
+
+    Returns:
+        nx.MultiGraph: Heterogeneous graph with protein and molecule nodes
+    """
+    G = nx.MultiGraph()
+
+    for edge_type, pairs in pair_counts.items():
+        source_type, target_type = edge_type.split("-")
+
+        for (source, target), weight in pairs.items():
+            if not G.has_node(source):
+                G.add_node(source, node_type=source_type)
+            if not G.has_node(target):
+                G.add_node(target, node_type=target_type)
+
+            G.add_edge(source,
+                       target,
+                       weight=weight,
+                       edge_type=edge_type)
+
+    return G
+
+
+def analyze_edge_weights(G) -> Dict[str, Dict[str, float]]:
+    """Analyze edge weights by type"""
+    weight_stats = defaultdict(lambda: {"count": 0, "total": 0, "min": float('inf'),
+                                        "max": 0, "mean": 0, "median": 0, "std": 0})
+
+    for _, _, attrs in G.edges(data=True):
+        edge_type = attrs['edge_type']
+        weight = attrs['weight']
+        stats = weight_stats[edge_type]
+        stats["count"] += 1
+        stats["total"] += weight
+        stats["min"] = min(stats["min"], weight)
+        stats["max"] = max(stats["max"], weight)
+
+        # Collect weights for statistical analysis
+        if "weights" not in stats:
+            stats["weights"] = []
+        stats["weights"].append(weight)
+
+    # Calculate statistics
+    for edge_type, stats in weight_stats.items():
+        weights = stats.pop("weights")  # Remove raw weights after calculation
+        stats["mean"] = np.mean(weights)
+        stats["median"] = np.median(weights)
+        stats["std"] = np.std(weights)
+        stats["quartiles"] = np.percentile(weights, [25, 75]).tolist()
+
+    return dict(weight_stats)
+
+
+def analyze_node_connectivity(G) -> Dict[str, Dict[str, float]]:
+    """Analyze node connectivity by type"""
+    node_stats = defaultdict(lambda: {"count": 0, "avg_degree": 0, "max_degree": 0,
+                                      "min_degree": float('inf'), "density": 0})
+
+    # Calculate degree statistics by node type
+    for node, attrs in G.nodes(data=True):
+        node_type = attrs['node_type']
+        degree = G.degree(node)
+        stats = node_stats[node_type]
+        stats["count"] += 1
+        stats["max_degree"] = max(stats["max_degree"], degree)
+        stats["min_degree"] = min(stats["min_degree"], degree)
+        if "degrees" not in stats:
+            stats["degrees"] = []
+        stats["degrees"].append(degree)
+
+    # Calculate averages and clean up
+    for node_type, stats in node_stats.items():
+        degrees = stats.pop("degrees")  # Remove raw degrees after calculation
+        stats["avg_degree"] = np.mean(degrees)
+        stats["degree_std"] = np.std(degrees)
+        stats["degree_quartiles"] = np.percentile(degrees, [25, 75]).tolist()
+
+    return dict(node_stats)
+
+
+def calculate_centrality_metrics(G) -> Tuple[Dict, Dict, Dict]:
+    """Calculate various centrality metrics"""
+    # Degree centrality
+    degree_cent = nx.degree_centrality(G)
+    # Betweenness centrality (can be slow for large graphs)
+    between_cent = nx.betweenness_centrality(G, k=min(100, G.number_of_nodes()))
+    # Eigenvector centrality
+    eigen_cent = nx.eigenvector_centrality_numpy(G, weight='weight')
+
+    return degree_cent, between_cent, eigen_cent
+
+
+def analyze_clustering(G) -> Dict[str, float]:
+    """Analyze clustering coefficients"""
+    clustering_stats = {
+        "avg_clustering": nx.average_clustering(G),
+        "transitivity": nx.transitivity(G),
+    }
+
+    # Calculate clustering by node type
+    clustering_by_type = defaultdict(list)
+    node_clustering = nx.clustering(G)
+
+    for node, coef in node_clustering.items():
+        node_type = G.nodes[node]['node_type']
+        clustering_by_type[node_type].append(coef)
+
+    for node_type, coeffs in clustering_by_type.items():
+        clustering_stats[f"avg_clustering_{node_type}"] = np.mean(coeffs)
+
+    return clustering_stats
+
+
+def analyze_graph(G):
+    """
+    Comprehensive graph analysis including edge weights, connectivity, centrality, and clustering
+
+    Args:
+        G (nx.MultiGraph): The heterogeneous graph
+    """
+    print("=== Basic Graph Statistics ===")
+    print(f"Total nodes: {G.number_of_nodes()}")
+    print(f"Total edges: {G.number_of_edges()}")
+
+    # Node type distribution
+    node_types = Counter(nx.get_node_attributes(G, 'node_type').values())
+    print("\n=== Node Type Distribution ===")
+    for ntype, count in node_types.items():
+        print(f"{ntype}: {count}")
+
+    # Edge weight analysis
+    print("\n=== Edge Weight Analysis ===")
+    weight_stats = analyze_edge_weights(G)
+    for edge_type, stats in weight_stats.items():
+        print(f"\n{edge_type} edges:")
+        print(f"Count: {stats['count']}")
+        print(f"Total weight: {stats['total']}")
+        print(f"Weight range: {stats['min']} - {stats['max']}")
+        print(f"Mean weight: {stats['mean']:.2f} ± {stats['std']:.2f}")
+        print(f"Median weight: {stats['median']:.2f}")
+        print(f"Weight quartiles (25%, 75%): {stats['quartiles']}")
+
+    # Connectivity analysis
+    print("\n=== Node Connectivity Analysis ===")
+    node_stats = analyze_node_connectivity(G)
+    for node_type, stats in node_stats.items():
+        print(f"\n{node_type} nodes:")
+        print(f"Count: {stats['count']}")
+        print(f"Degree range: {stats['min_degree']} - {stats['max_degree']}")
+        print(f"Average degree: {stats['avg_degree']:.2f} ± {stats['degree_std']:.2f}")
+        print(f"Degree quartiles (25%, 75%): {stats['degree_quartiles']}")
+
+    # Component analysis
+    components = list(nx.connected_components(G))
+    print(f"\n=== Component Analysis ===")
+    print(f"Number of connected components: {len(components)}")
+    print(f"Largest component size: {len(max(components, key=len))}")
+
+    # Clustering analysis
+    print("\n=== Clustering Analysis ===")
+    try:
+        clustering_stats = analyze_clustering(G)
+        print(f"Average clustering coefficient: {clustering_stats['avg_clustering']:.4f}")
+        print(f"Transitivity: {clustering_stats['transitivity']:.4f}")
+        for metric, value in clustering_stats.items():
+            if metric.startswith('avg_clustering_'):
+                node_type = metric.split('_')[-1]
+                print(f"Average clustering for {node_type} nodes: {value:.4f}")
+    except Exception as e:
+        print(f"Error calculating clustering metrics: {e}")
+
+
+class HeterogeneousGraphBuilder:
+    def __init__(self, dataset):
+        """
+        Initialize graph builder with a TripletsDataset
+
+        Args:
+            dataset (TripletsDataset): Dataset containing pair counts
+        """
+        self.dataset = dataset
+        self.graph = None
+
+    def build(self):
+        """Build the heterogeneous graph from the dataset's pair counts"""
+        self.graph = build_heterogeneous_graph(self.dataset.pair_counts)
+        return self.graph
+
+    def analyze(self):
+        """Analyze the built graph"""
+        if self.graph is None:
+            raise ValueError("Graph hasn't been built yet. Call build() first.")
+        analyze_graph(self.graph)
+
+    def get_node_vectors(self, node):
+        """Get the feature vector for a node based on its type"""
+        node_type = self.graph.nodes[node]['node_type']
+        if node_type == 'P':
+            return self.dataset.proteins[node]
+        else:  # node_type == 'M'
+            return self.dataset.molecules[node]
+
+    def get_edge_subgraph(self, edge_type):
+        """Extract a subgraph containing only edges of a specific type"""
+        edges = [(u, v) for u, v, d in self.graph.edges(data=True)
+                 if d['edge_type'] == edge_type]
+        return nx.Graph(self.graph.edge_subgraph(edges))
+
 if __name__ == "__main__":
-    dataset = TripletsDataset("reactome", "all", p_model="ProtBert", m_model="ChemBERTa")
+    dataset = TripletsDataset("reactome", "all", p_model="ProtBert", m_model="ChemBERTa", n_duplicates=1)
+    builder = HeterogeneousGraphBuilder(dataset)
+    G = builder.build()
+    builder.analyze()
