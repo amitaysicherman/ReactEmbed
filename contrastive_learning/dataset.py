@@ -19,7 +19,7 @@ def print_hist_as_csv(ags):
     hist, bins = ags
     print("bin, count")
     for i, c in enumerate(hist):
-        print(f"{bins[i]:.2f}-{bins[i + 1]}, {c}")
+        print(f"{(bins[i + 1] - bins[i]) / 2:.2f}, {c:,}")
 
 def prep_entity(entities, empty_list):
     if entities == "" or entities == " ":
