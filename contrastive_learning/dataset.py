@@ -17,6 +17,10 @@ TRIPLET_TYPES = ["P-P-M", "P-M-P", "M-P-P", "M-M-P", "P-P-P", "M-M-M", "M-P-M", 
 
 def print_hist_as_csv(counts):
     counts = list(counts)
+    print(np.mean(counts))
+    print(np.median(counts))
+    print(np.std(counts))
+    print(np.quantile(counts, 0.25), np.quantile(counts, 0.75))
     counts = np.clip(counts, np.quantile(counts, 0.5), np.quantile(counts, 0.95))
     hist, bins = np.histogram(counts, bins=10)
     print("bin, count")
