@@ -15,11 +15,14 @@ PAIR_TYPES = ["P-P", "P-M", "M-P", "M-M"]
 TRIPLET_TYPES = ["P-P-M", "P-M-P", "M-P-P", "M-M-P", "P-P-P", "M-M-M", "M-P-M", "P-M-M"]
 
 
-def print_hist_as_csv(ags):
-    hist, bins = ags
+def print_hist_as_csv(counts):
+    counts = list(counts)
+    counts = np.clip(counts, np.quantile(counts, 0.5), np.quantile(counts, 0.95))
+    hist, bins = np.histogram(counts, bins=10)
     print("bin, count")
     for i, c in enumerate(hist):
-        print(f"{(bins[i + 1] + bins[i]) / 2:.2f}, {c:,}")
+        print(bins[i], bins[i + 1], c, sep=",")
+
 
 def prep_entity(entities, empty_list):
     if entities == "" or entities == " ":
@@ -76,16 +79,14 @@ class TripletsDataset(Dataset):
         # print molecule and protein source edge counts
         for t in edge_deg_counter:
             print(t)
-            print_hist_as_csv(np.histogram(list(edge_deg_counter[t].values()), bins=10))
-
+            print_hist_as_csv(edge_deg_counter[t].values())
 
         for t in self.pair_counts:
             print(f"Number of {t} pairs: {len(self.pair_counts[t]):,}")
             # print sum of all pairs count per type
             print(f"Sum of {t} pairs: {sum(self.pair_counts[t].values()):,}")
-            counts = np.array(list(self.pair_counts[t].values()))
-            counts = np.clip(counts, np.quantile(counts, 0.10), np.quantile(counts, 0.90))
-            print_hist_as_csv(np.histogram(counts, bins=10))
+            print_hist_as_csv(self.pair_counts[t].values())
+
 
         # Split the valid pairs
         self.split_pair = {}
