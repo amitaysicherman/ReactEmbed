@@ -42,7 +42,8 @@ class TripletsDataset(Dataset):
         print("Not empty molecules:", len(self.molecules_non_empty))
         self.types = PAIR_TYPES
         self.pair_counts = {t: Counter() for t in self.types}
-
+        self.source_edge_counter_p = Counter()
+        self.source_edge_counter_m = Counter()
         # Count pair frequencies
         with open(reactions_file) as f:
             lines = f.read().splitlines()
@@ -60,11 +61,24 @@ class TripletsDataset(Dataset):
             elements = proteins + molecules
             for i, e1 in enumerate(elements):
                 for j, e2 in enumerate(elements[i + 1:], start=i + 1):
+                    if types[i] == "P":
+                        self.source_edge_counter_p[e1] += 1
+                    else:
+                        self.source_edge_counter_m[e1] += 1
+                    if types[j] == "P":
+                        self.source_edge_counter_p[e2] += 1
+                    else:
+                        self.source_edge_counter_m[e2] += 1
+
                     if no_pp_mm == 1 and types[i] == types[j]:
                         continue
                     self.pair_counts[f"{types[i]}-{types[j]}"][(e1, e2)] += 1
                     self.pair_counts[f"{types[j]}-{types[i]}"][(e2, e1)] += 1
-        # print all paits count per type
+        # print molecule and protein source edge counts
+        print(np.histogram(list(self.source_edge_counter_p.values())))
+        print(np.histogram(list(self.source_edge_counter_m.values())))
+
+
         for t in self.pair_counts:
             print(f"Number of {t} pairs: {len(self.pair_counts[t]):,}")
             # print sum of all pairs count per type
@@ -72,8 +86,6 @@ class TripletsDataset(Dataset):
             counts = np.array(list(self.pair_counts[t].values()))
             counts = np.clip(counts, np.quantile(counts, 0.10), np.quantile(counts, 0.90))
             print(np.histogram(counts, bins=10))
-
-
 
         # Split the valid pairs
         self.split_pair = {}
