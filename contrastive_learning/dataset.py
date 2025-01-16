@@ -38,7 +38,8 @@ class TripletsDataset(Dataset):
         self.molecules_non_empty = [i for i in range(len(self.molecules)) if i not in self.empty_molecule_index]
         print(f"Empty proteins: {len(self.empty_protein_index)}")
         print(f"Empty molecules: {len(self.empty_molecule_index)}")
-
+        print("Not empty proteins:", len(self.proteins_non_empty))
+        print("Not empty molecules:", len(self.molecules_non_empty))
         self.types = PAIR_TYPES
         self.pair_counts = {t: Counter() for t in self.types}
 
@@ -54,6 +55,7 @@ class TripletsDataset(Dataset):
                 proteins, molecules = line.split()
             proteins = prep_entity(proteins, self.empty_protein_index)
             molecules = prep_entity(molecules, self.empty_molecule_index)
+
             types = ["P"] * len(proteins) + ["M"] * len(molecules)
             elements = proteins + molecules
             for i, e1 in enumerate(elements):
@@ -62,6 +64,16 @@ class TripletsDataset(Dataset):
                         continue
                     self.pair_counts[f"{types[i]}-{types[j]}"][(e1, e2)] += 1
                     self.pair_counts[f"{types[j]}-{types[i]}"][(e2, e1)] += 1
+        # print all paits count per type
+        for t in self.pair_counts:
+            print(f"Number of {t} pairs: {len(self.pair_counts[t]):,}")
+            # print sum of all pairs count per type
+            print(f"Sum of {t} pairs: {sum(self.pair_counts[t].values()):,}")
+            counts = np.array(list(self.pair_counts[t].values()))
+            counts = np.clip(counts, np.quantile(counts, 0.10), np.quantile(counts, 0.90))
+            print(np.histogram(counts, bins=10))
+
+
 
         # Split the valid pairs
         self.split_pair = {}
@@ -160,3 +172,7 @@ class TripletsBatchSampler(Sampler):
 
     def __len__(self):
         return self.max_num_steps
+
+
+if __name__ == "__main__":
+    dataset = TripletsDataset("reactome", "all", p_model="ProtBert", m_model="ChemBERTa")
