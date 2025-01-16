@@ -48,8 +48,7 @@ class TripletsDataset(Dataset):
         print("Not empty molecules:", len(self.molecules_non_empty))
         self.types = PAIR_TYPES
         self.pair_counts = {t: Counter() for t in self.types}
-        self.source_edge_counter_p = Counter()
-        self.source_edge_counter_m = Counter()
+        edge_deg_counter = {t: Counter() for t in self.types}
         # Count pair frequencies
         with open(reactions_file) as f:
             lines = f.read().splitlines()
@@ -67,22 +66,17 @@ class TripletsDataset(Dataset):
             elements = proteins + molecules
             for i, e1 in enumerate(elements):
                 for j, e2 in enumerate(elements[i + 1:], start=i + 1):
-                    if types[i] == "P":
-                        self.source_edge_counter_p[e1] += 1
-                    else:
-                        self.source_edge_counter_m[e1] += 1
-                    if types[j] == "P":
-                        self.source_edge_counter_p[e2] += 1
-                    else:
-                        self.source_edge_counter_m[e2] += 1
+                    edge_deg_counter[f"{types[i]}-{types[j]}"][e1] += 1
+                    edge_deg_counter[f"{types[j]}-{types[i]}"][e2] += 1
 
                     if no_pp_mm == 1 and types[i] == types[j]:
                         continue
                     self.pair_counts[f"{types[i]}-{types[j]}"][(e1, e2)] += 1
                     self.pair_counts[f"{types[j]}-{types[i]}"][(e2, e1)] += 1
         # print molecule and protein source edge counts
-        print_hist_as_csv(np.histogram(list(self.source_edge_counter_p.values())))
-        print_hist_as_csv(np.histogram(list(self.source_edge_counter_m.values())))
+        for t in edge_deg_counter:
+            print(t)
+            print_hist_as_csv(np.histogram(list(edge_deg_counter[t].values()), bins=10))
 
 
         for t in self.pair_counts:
