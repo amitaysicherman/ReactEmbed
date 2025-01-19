@@ -1,110 +1,177 @@
-# ReactEmbed: Enhancing Protein and Molecule Representations with Biological Reactions Data
+# ReactEmbed: Enhancing Protein and Molecule Representations with Biochemical Reactions Data
 
-This is the official implementation for the paper "ReactEmbed: Enhancing Protein and Molecule Representations with
-Biological Reactions Data".
+Official implementation of "ReactEmbed: A Cross-Domain Framework for Protein-Molecule Representation Learning via
+Biochemical Reaction Networks".
 
-![reaction](github_images/reaction_flatten.png)
+![reaction](github_images/react.png)
 
-## Setup Instructions
+## Overview
 
-Follow these steps to set up the project environment and build the package:
+ReactEmbed is a novel method that enhances protein and molecule representations by integrating biochemical reaction data
+with pre-trained embeddings. Our approach leverages biochemical reactions to capture functional context and dynamic
+interactions between proteins and molecules, leading to more comprehensive and accurate representations.
 
-1. Create a new Python 3.8 environment
+## Installation
 
-   Using conda:
-   ```bash
-   conda create -n reactembed python=3.8
-   conda activate reactembed
-   ```
+```bash
+# Clone the repository
+git clone https://github.com/amitaysicherman/ReactEmbed.git
+cd ReactEmbed
 
-   Or using venv:
-   ```bash
-   python3.8 -m venv reactembed
-   source reactembed/bin/activate  # On Windows, use reactembed\Scripts\activate
-   ```
-
-2. Install requirements
-   ```bash
-   pip install -r requirements.txt 
-   pip install -e ./
-   ```
+# Install dependencies 
+pip install -r requirements.txt
+```
 
 ## Usage
 
-### Preprocess Reactome dataset:
+### Data Preprocessing
 
-To preprocess the Reactome data, run the preprocess_reactome.sh script:
-
-```bash
-scripts/preprocess_reactome.sh
-```
-
-This script performs several steps to download, extract, and process the Reactome data.
-
-### Train the ReactEmbed model:
-
-Run the following command to train the model:
+1. First download and preprocess the reaction data:
 
 ```bash
-python contrastive_learning/trainer.py
+# Process Reactome data
+python preprocessing/biopax_parser.py --data_name reactome
+
+# Generate embeddings
+python preprocessing/seq_to_vec.py --model ProtBert --data_name reactome
+python preprocessing/seq_to_vec.py --model MolFormer --data_name reactome
 ```
 
-Common arguments for training ReactEmbed:
+### Training ReactEmbed Model
 
-- `--protein_embedding`: Protein embedding model to use (choices: "ProtBert-BFD", "ProtBertT5-xl", "ESM-1B", "ESM2", "
-  ESM3")
-- `--molecule_embedding`: Molecule embedding model to use (choices: "pebchem10m", "roberta", "chemberta")
-- `--fusion_batch_size`: Batch size for fusion model training
-- `--fusion_output_dim`: Output dimension of fusion model
-- `--fusion_dropout`: Dropout rate for fusion model
-- `--fusion_learning_rate`: Learning rate for fusion model
-- `--fusion_num_layers`: Number of layers in fusion model
-- `--fusion_hidden_dim`: Hidden dimension in fusion model
-- `--fusion_target`: Target for fusion (e.g., 'protein' or 'all')
-- `--fusion_train_all`: Whether to train on all data (1) or not (0)
-- `--fusion_max_epochs_no_improve`: Maximum epochs with no improvement for fusion model
-- `--use_triplet_loss`: Whether to use triplet loss (1) or not (0)
-- `--fusion_epochs`: Number of epochs to train fusion model
-- `--fusion_name`: Name of the fusion model
-
-### Evaluate ReactEmbed on downstream tasks:
-
-1. Preprocess the downstream dataset:
+You can train the ReactEmbed model using the contrastive learning trainer:
 
 ```bash
-python eval_tasks/preprocessing.py --task_name [task_name] --protein_embedding [protein_embedding] --molecule_embedding [molecule_embedding]
+python contrastive_learning/trainer.py \
+    --batch_size 8192 \
+    --p_model ProtBert \
+    --m_model MolFormer \
+    --shared_dim 256 \
+    --n_layers 1 \
+    --hidden_dim 512 \
+    --dropout 0.0 \
+    --epochs 10 \
+    --lr 1e-4
 ```
 
-2. Train and evaluate the model:
+Key training parameters:
+
+- `batch_size`: Number of triplets per batch
+- `p_model`: Protein model (ProtBert, ESM3-small, ESM3-medium, GearNet)
+- `m_model`: Molecule model (MolFormer, MolCLR, ChemBERTa)
+- `shared_dim`: Dimension of shared embedding space
+- `n_layers`: Number of MLP layers
+- `hidden_dim`: Hidden layer dimension
+- `dropout`: Dropout rate
+- `lr`: Learning rate
+
+### Evaluating on Downstream Tasks
+
+To evaluate the model on downstream tasks:
+
+1. First prepare task-specific data:
 
 ```bash
-python eval_tasks/trainer.py --task_name [task_name]
+# Prepare sequences
+python eval_tasks/prep_tasks_seqs.py --task_name BBBP
+
+# Prepare vectors
+python eval_tasks/prep_tasks_vecs.py \
+    --task_name BBBP \
+    --p_model ProtBert \
+    --m_model MolFormer
 ```
 
-Common arguments for evaluation:
+2. Run evaluation:
 
-- `--task_name`: Name of the task to run (choices: "BetaLactamase", "Fluorescence", "Stability", "HumanPPI", "
-  BindingDB", "BACE", "BBBP", "ClinTox", "SIDER", "DrugBank", "Davis")
-- `--protein_embedding`: Protein embedding model to use
-- `--molecule_embedding`: Molecule embedding model to use
-- `--downstream_batch_size`: Batch size for downstream task
-- `--downstream_learning_rate`: Learning rate for downstream task
-- `--downstream_num_layers`: Number of layers in downstream model
-- `--downstream_hidden_dim`: Hidden dimension in downstream model (-1 for auto)
-- `--downstream_dropout`: Dropout rate for downstream model
-- `--print_downstream_results`: Whether to print downstream results (1) or not (0)
-- `--use_fusion_for_downstream`: Whether to use fusion model for downstream task (1) or not (0)
-- `--use_pretrained_for_downstream`: Whether to use pretrained model for downstream task (1) or not (0)
+```bash
+python eval_tasks/trainer.py \
+    --use_fuse 1 \
+    --use_model 1 \
+    --bs 16 \
+    --lr 0.001 \
+    --drop_out 0.0 \
+    --hidden_dim 512 \
+    --task_name BBBP \
+    --fusion_name "path/to/trained/model" \
+    --m_model MolFormer \
+    --p_model ProtBert \
+    --n_layers 1 \
+    --metric auc
+```
+
+Key evaluation parameters:
+
+- `use_fuse`: Whether to use fused embeddings (1/0)
+- `use_model`: Whether to use pre-trained embeddings (1/0)
+- `bs`: Batch size
+- `lr`: Learning rate
+- `drop_out`: Dropout rate
+- `hidden_dim`: Hidden dimension
+- `task_name`: Name of evaluation task
+- `fusion_name`: Path to trained ReactEmbed model
+- `metric`: Evaluation metric (auc, rmse)
+
+### End-to-End Pipeline
+
+You can also run the complete pipeline using:
+
+```bash 
+python experiment_main.py \
+    --p_model ProtBert \
+    --m_model MolFormer \
+    --data_name reactome \
+    --cl_batch_size 8192 \
+    --cl_n_layers 1 \
+    --cl_hidden_dim 512 \
+    --cl_dropout 0.0 \
+    --cl_epochs 10 \
+    --cl_lr 0.001 \
+    --task_name BBBP \
+    --task_metric auc
+```
+
+This will:
+
+1. Preprocess the data if needed
+2. Train ReactEmbed model
+3. Evaluate on the specified task
+
+## Supported Tasks
+
+### Molecule Property Prediction
+
+- BBBP (Blood-Brain Barrier Penetration)
+- FreeSolv (Hydration Free Energy)
+- Lipophilicity
+- CEP (Clean Energy Project)
+
+### Protein Property Prediction
+
+- BetaLactamase
+- Fluorescence
+- Stability
+- GeneOntology (MF/BP/CC)
+
+### Interaction Prediction
+
+- Drug-Target Interaction (DrugBank, Davis)
+- Protein-Protein Interaction (HumanPPI, YeastPPI)
+- Binding Affinity (BindingDB, PDBBind)
 
 ## Citation
 
-If you use this code, please cite our paper:
+If you find this work useful, please cite our paper:
 
 ```bibtex
-@article{reactembed2023,
-  title={ReactEmbed: Enhancing Protein and Molecule Representations with Biological Reactions Data},
-  author={[Author names]},
-  journal={[Journal]},
-  year={2023}
+@inproceedings{sicherman2025reactembed,
+  title={ReactEmbed: Enhancing Protein and Molecule Representations with Biochemical Reactions Data},
+  author={Sicherman, Amitay and Radinsky, Kira},
+  booktitle={Proceedings of the 31st ACM SIGKDD Conference on Knowledge Discovery and Data Mining},
+  year={2025}
 }
 ```
+
+## License
+
+This project is licensed under the MIT License.

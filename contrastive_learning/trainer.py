@@ -52,9 +52,6 @@ def run_epoch(model, optimizer, loader, contrastive_loss, is_train):
         total_loss += cont_loss.mean().item()
         count += 1
         if not is_train:
-            with open("tmp.txt", "a") as f:
-                f.write(f"{t1[0]} {t2[0]} {t3[0]} {cont_loss.mean().item()}\n")
-
             continue
         cont_loss.backward()
         optimizer.step()
@@ -113,8 +110,7 @@ def main(data_name, batch_size, p_model, m_model, shared_dim, n_layers, hidden_d
         train_loss = run_epoch(model, optimizer, train_loader, contrastive_loss, is_train=True)
         with torch.no_grad():
             valid_loss = run_epoch(model, optimizer, valid_loader, contrastive_loss, is_train=False)
-            # test_loss = run_epoch(model, optimizer, test_loader, contrastive_loss, is_train=False)
-            test_loss = 0
+            test_loss = run_epoch(model, optimizer, test_loader, contrastive_loss, is_train=False)
         print(f"Epoch {epoch} Train Loss: {train_loss}, Valid Loss: {valid_loss}, Test Loss: {test_loss}")
 
         if valid_loss < best_valid_loss:
