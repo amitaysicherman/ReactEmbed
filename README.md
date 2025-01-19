@@ -159,18 +159,6 @@ This will:
 - Protein-Protein Interaction (HumanPPI, YeastPPI)
 - Binding Affinity (BindingDB, PDBBind)
 
-## Citation
-
-If you find this work useful, please cite our paper:
-
-```bibtex
-@inproceedings{sicherman2025reactembed,
-  title={ReactEmbed: Enhancing Protein and Molecule Representations with Biochemical Reactions Data},
-  author={Sicherman, Amitay and Radinsky, Kira},
-  booktitle={Proceedings of the 31st ACM SIGKDD Conference on Knowledge Discovery and Data Mining},
-  year={2025}
-}
-```
 
 ## License
 
