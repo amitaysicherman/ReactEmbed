@@ -230,6 +230,8 @@ if __name__ == "__main__":
 
     data = smiles_to_data("CCO")
     model = GINet().to(device)
+    # number of parameters
+    print(sum(p.numel() for p in model.parameters()))
     with torch.no_grad():
         emb, _ = model(data)
 

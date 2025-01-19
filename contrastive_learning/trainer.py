@@ -51,12 +51,13 @@ def run_epoch(model, optimizer, loader, contrastive_loss, is_train):
         cont_loss = contrastive_loss(shared_1, shared_2, shared_3)
         total_loss += cont_loss.mean().item()
         count += 1
-
+        print(t1[0], t2[0], t3[0], cont_loss.mean().item())
         if not is_train:
             continue
         cont_loss.backward()
         optimizer.step()
         optimizer.zero_grad()
+
     return total_loss / count
 
 
@@ -130,8 +131,8 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Contrastive Learning')
     parser.add_argument('--batch_size', type=int, help='Batch size', default=256)
-    parser.add_argument('--p_model', type=str, help='Protein model', default="esm3-medium")
-    parser.add_argument('--m_model', type=str, help='Molecule model', default="MoLFormer")
+    parser.add_argument('--p_model', type=str, help='Protein model', default="ProtBert")
+    parser.add_argument('--m_model', type=str, help='Molecule model', default="ChemBERTa")
     parser.add_argument('--shared_dim', type=int, help='Shared space dimension', default=256)
     parser.add_argument('--n_layers', type=int, help='Number of layers', default=1)
     parser.add_argument('--hidden_dim', type=int, help='Hidden dimension', default=512)
