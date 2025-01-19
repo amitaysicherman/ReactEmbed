@@ -152,7 +152,7 @@ class TripletsDataset(Dataset):
 
 
 class TripletsBatchSampler(Sampler):
-    def __init__(self, dataset: TripletsDataset, batch_size, max_num_steps=5_000):
+    def __init__(self, dataset: TripletsDataset, batch_size, max_num_steps=5_00):
         self.dataset = dataset
         self.batch_size = batch_size
         max_len = max(len(self.dataset.triples[t]) for t in self.dataset.triples)
