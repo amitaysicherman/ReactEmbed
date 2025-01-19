@@ -51,7 +51,8 @@ def run_epoch(model, optimizer, loader, contrastive_loss, is_train):
         cont_loss = contrastive_loss(shared_1, shared_2, shared_3)
         total_loss += cont_loss.mean().item()
         count += 1
-        print(t1[0], t2[0], t3[0], cont_loss.mean().item())
+        with open("tmp.txt", "a") as f:
+            f.write(f"{t1[0]} {t2[0]} {t3[0]} {cont_loss.mean().item()}\n")
         if not is_train:
             continue
         cont_loss.backward()
